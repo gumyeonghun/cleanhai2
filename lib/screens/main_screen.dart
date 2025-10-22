@@ -1,4 +1,4 @@
-import 'package:cleanhai2/chatting/chat/chat_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:cleanhai2/config/palette.dart';
 import 'package:firebase_auth/firebase_auth.dart';

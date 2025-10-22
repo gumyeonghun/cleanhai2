@@ -1,4 +1,5 @@
 import 'package:cleanhai2/chatting/chat/chat_screen.dart';
+import 'package:cleanhai2/tasks/todo_not_index.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cleanhai2/reservation/reservation.dart';
@@ -14,12 +15,15 @@ class applicationIndex extends StatefulWidget {
 class _applicationIndexState extends State<applicationIndex> {
 
   final _authentication2 = FirebaseAuth.instance;
+  bool notIndex = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('everycleaner'),
+        backgroundColor: Colors.blue[300],
+        foregroundColor: Colors.white,
+        title: Text('everycleaner',style: TextStyle(fontWeight:FontWeight.bold,fontSize: 30),),
         centerTitle: true,
         actions: [IconButton(icon: Icon(
           Icons.exit_to_app_sharp,
@@ -103,12 +107,15 @@ class _applicationIndexState extends State<applicationIndex> {
                     Navigator.push(context,
                         MaterialPageRoute(
                             builder: (context) {
+                              if(notIndex){
+                                return TodoNotIndex();
+                              }
                               return TodoHomepage();
                             }
                         )
                     );
                   },
-                  child: Text('청소의뢰하기',
+                  child: Text('청소일정등록',
                     style: TextStyle( fontSize:20,fontWeight: FontWeight.bold),
                   ),
                   style:ElevatedButton.styleFrom(
