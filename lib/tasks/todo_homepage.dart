@@ -55,9 +55,7 @@ class _TodoHomepageState extends State<TodoHomepage> {
                       labelText: '청소요청 숙박업소',
                       fillColor: Colors.blue.withValues(alpha: 0.2),
                       filled: true,
-                      border:InputBorder.none,
-                                ),
-                  ),
+                      border:InputBorder.none,),                  ),
                   SizedBox(
                     height: 20,
                   ),
@@ -69,13 +67,13 @@ class _TodoHomepageState extends State<TodoHomepage> {
                     TextInputAction.done,
                     keyboardType: TextInputType.text
                     ,
-                    maxLines: 5,
+                    maxLines: 10,
                     controller: controller2,
                     decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderSide: BorderSide(
                               color: Colors.black,
-                              width: 3.0
+                              width: 5.0
                           ),
                         ),
                         hintText: '청소요청사항'
@@ -86,12 +84,12 @@ class _TodoHomepageState extends State<TodoHomepage> {
                   ),
                   ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.yellow[100],
+                        backgroundColor: Colors.red[500],
                       ),
                       onPressed: (){
                    onCreate();
                   },
-                      child: Text('청소일정등록',style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black),))
+                      child: Text('청소일정등록',style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),))
                   ]
               ),
             )
