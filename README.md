@@ -1,16 +1,35 @@
 # cleanhai2
 
-A new Flutter project.
+숙박업소 전용 어플리케이션
 
-## Getting Started
+에브리클리너
 
-This project is a starting point for a Flutter application.
+* screens폴더
 
-A few resources to get you started if this is your first Flutter project:
+main_screen 파일
+로그인 및 회원가입 페이지 (구글로그인기능 미완성)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+index 파일
+로그인 후 가장 먼저 뜨는 목록창
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+* chat 폴더
+채팅관련파일모음
+
+* reservation 폴더
+청소예약목록 및 수정 파일모음
+
+* task폴더
+
+청소일정등록관련파일모음
+
+todo기능넣기 과제
+
+로그인 후 청소일정등록 버튼을 눌러서 확인해주세요
+
+todo_homepage 청소일정등록 및 목록
+todo_index 각각의 청소일정목록칸
+todo_detail 청소요청사항 (상세일정)
+todo Todo클래스
+todo_not_index 청소일정이 없게되면 나오는 페이지
+
+
