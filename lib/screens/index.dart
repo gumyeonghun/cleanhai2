@@ -1,0 +1,128 @@
+import 'package:cleanhai2/chatting/chat/chat_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:cleanhai2/reservation/reservation.dart';
+import 'package:cleanhai2/tasks/todo_homepage.dart';
+
+class applicationIndex extends StatefulWidget {
+  const applicationIndex({super.key});
+
+  @override
+  State<applicationIndex> createState() => _applicationIndexState();
+}
+
+class _applicationIndexState extends State<applicationIndex> {
+
+  final _authentication2 = FirebaseAuth.instance;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('everycleaner'),
+        centerTitle: true,
+        actions: [IconButton(icon: Icon(
+          Icons.exit_to_app_sharp,
+          color: Colors.black,
+        ),
+          onPressed: (){
+            _authentication2.signOut();
+          },
+        )],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 50),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: 50,
+              width: double.infinity,
+              child: ElevatedButton(
+                  onPressed: (){
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) {
+                              return ReservationIndex();
+                            }
+                        )
+                    );
+                  },
+                  child:
+                  Text('청소의뢰목록',
+                  style: TextStyle( fontSize:20,fontWeight: FontWeight.w700),
+                  ),
+                style:ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                )
+              ),
+            ),
+            SizedBox(
+              height: 20,
+            ),
+            SizedBox(
+              height: 50,
+              width: double.infinity,
+              child: ElevatedButton(
+                  onPressed: (){
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) {
+                              return ChatScreen();
+                            }
+                        )
+                    );
+                  },
+                  child:
+                  Text('메세지',
+                    style: TextStyle( fontSize:20,fontWeight: FontWeight.w700),
+                  ),
+                  style:ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[500],
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  )
+              ),
+            ),
+            SizedBox(
+              height: 20,
+            ),
+            SizedBox(
+              height: 50,
+              width: double.infinity,
+              child: ElevatedButton(
+                  onPressed: (){
+                    Navigator.push(context,
+                        MaterialPageRoute(
+                            builder: (context) {
+                              return TodoHomepage();
+                            }
+                        )
+                    );
+                  },
+                  child: Text('청소의뢰하기',
+                    style: TextStyle( fontSize:20,fontWeight: FontWeight.bold),
+                  ),
+                  style:ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  )
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
