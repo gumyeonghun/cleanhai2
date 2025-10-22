@@ -22,14 +22,14 @@ index 파일
 
 청소일정등록관련파일모음
 
-todo기능넣기 과제
+todo 기능넣기 과제
 
-로그인 후 청소일정등록 버튼을 눌러서 확인해주세요
+기능구동확인은 로그인 후 청소일정등록 버튼을 눌러서 확인해주세요
 
 todo_homepage 청소일정등록 및 목록
 todo_index 각각의 청소일정목록칸
 todo_detail 청소요청사항 (상세일정)
 todo Todo클래스
-todo_not_index 청소일정이 없게되면 나오는 페이지
+todo_not_index 청소일정이 없을때 나오는 페이지
 
 
