@@ -5,17 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:cleanhai2/reservation/reservation.dart';
 import 'package:cleanhai2/tasks/todo_homepage.dart';
 
-class applicationIndex extends StatefulWidget {
-  const applicationIndex({super.key});
+class ApplicationIndex extends StatefulWidget {
+  const ApplicationIndex({super.key});
 
   @override
-  State<applicationIndex> createState() => _applicationIndexState();
+  State<ApplicationIndex> createState() => _ApplicationIndexState();
 }
 
-class _applicationIndexState extends State<applicationIndex> {
+class _ApplicationIndexState extends State<ApplicationIndex> {
 
   final _authentication2 = FirebaseAuth.instance;
-  bool notIndex = false;
 
   @override
   Widget build(BuildContext context) {
@@ -107,9 +106,6 @@ class _applicationIndexState extends State<applicationIndex> {
                     Navigator.push(context,
                         MaterialPageRoute(
                             builder: (context) {
-                              if(notIndex){
-                                return TodoNotIndex();
-                              }
                               return TodoHomepage();
                             }
                         )

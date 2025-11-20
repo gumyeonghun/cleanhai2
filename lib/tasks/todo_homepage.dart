@@ -1,7 +1,6 @@
-import 'package:cleanhai2/reservation/reservation.dart';
 import 'package:cleanhai2/tasks/todo_index.dart';
+import 'package:cleanhai2/tasks/todo_not_index.dart';
 import 'package:flutter/material.dart';
-import 'package:cleanhai2/tasks/todo_index.dart';
 import 'package:cleanhai2/tasks/todo.dart';
 
 class TodoHomepage extends StatefulWidget {
@@ -35,7 +34,7 @@ class _TodoHomepageState extends State<TodoHomepage> {
         builder: (BuildContext context){
           return SizedBox(
             width: double.infinity,
-            height: 500,
+            height: 300,
             child: Padding(
                 padding: EdgeInsets.only(
               top: 30,
@@ -60,14 +59,11 @@ class _TodoHomepageState extends State<TodoHomepage> {
                     height: 20,
                   ),
                   TextField(
-                    onSubmitted: (value){
-                      onCreate();
-                    },
                     textInputAction:
                     TextInputAction.done,
                     keyboardType: TextInputType.text
                     ,
-                    maxLines: 10,
+                    maxLines: null,
                     controller: controller2,
                     decoration: InputDecoration(
                         border: OutlineInputBorder(
@@ -119,7 +115,8 @@ class _TodoHomepageState extends State<TodoHomepage> {
           backgroundColor: Colors.blueAccent,
           foregroundColor: Colors.white,
         ),
-        body: Padding(
+        body:todoList.isEmpty? TodoNotIndex() :
+        Padding(
           padding: const EdgeInsets.all(15.0),
           child: ListView.separated(
               itemCount: todoList.length,

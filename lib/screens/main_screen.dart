@@ -49,16 +49,15 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                   child: Container(
                     height: 300,
                     decoration: BoxDecoration(
-                      image: DecorationImage(image:
-                      AssetImage('image/sky2.jpg'),
-                          fit: BoxFit.fill),
+                      color: Colors.blue
                     ),
                     child: Container(
-                      padding: EdgeInsets.only(top: 100,left: 20),
+                      padding: EdgeInsets.only(top: 120,left: 20,right: 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          RichText(text: TextSpan(
+                          RichText(
+                            text: TextSpan(
                             text: 'Welcome Korea NO.1 Cleaning service ',
                             style: TextStyle(
                                 letterSpacing: 1.0,
@@ -67,28 +66,19 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                             ),
                             children: [
                               TextSpan(
-                                text:'에브리클리너',
+                                text:'청소5분대기조',
                                 style: TextStyle(
                                     letterSpacing: 2.0,
-                                    fontSize: 25,
+                                    fontSize: 40,
                                     color: Colors.white,
-                                    fontWeight: FontWeight.w600
+                                    fontWeight: FontWeight.bold
                                 ),
                               ),
                             ],
                           ),
                           ),
                           SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            isSignupScreen ? 'Signup to continue':'Signin to continue',
-                            style: TextStyle(
-                              letterSpacing: 1.0,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.teal,
-                            ),
+                            height: 20,
                           ),
                         ],
                       ),
@@ -142,7 +132,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                     ),
                                     if(!isSignupScreen)
                                       Container(
-                                        margin: EdgeInsets.only(top: 3),
+                                        margin: EdgeInsets.only(top: 10),
                                         height: 2,
                                         width: 55,
                                         color: Colors.orange,
@@ -167,7 +157,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                     ),
                                     if(isSignupScreen)
                                       Container(
-                                        margin: EdgeInsets.only(top: 3),
+                                        margin: EdgeInsets.only(top: 10),
                                         height: 2,
                                         width: 55,
                                         color: Colors.orange,
@@ -187,8 +177,8 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                                       TextFormField(
                                         key : ValueKey(1),
                                         validator: (value){
-                                          if(value!.isEmpty || value.length<4){
-                                            return '4글자 이상 입력해 주세요';
+                                          if(value!.isEmpty){
+                                            return '글자를 입력해 주세요';
                                           }
                                           return null;
                                         },
@@ -461,10 +451,13 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                           print(e);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('E-mail과 비밀번호를 확인 해주세요'),
+                              content: Text('입력한 정보를 확인 해주세요'),
                               backgroundColor: Colors.blue,
                             ),
                           );
+                          setState(() {
+                            showSpinner = false;
+                          });
                         }
                        }
                           if(!isSignupScreen){
@@ -486,6 +479,15 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                               }
                             } catch(e){
                               print(e);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('E-mail과 비밀번호를 확인 해주세요'),
+                                  backgroundColor: Colors.blue,
+                                ),
+                              );
+                              setState(() {
+                                showSpinner = false;
+                              });
                             }
                           }
                         },
@@ -519,12 +521,25 @@ class _LoginSignupScreenState extends State<LoginSignupScreen> {
                 ),
               ),
               // 전송버튼
+
               Positioned(
-                  top: MediaQuery.of(context).size.height-250,
+                  top: MediaQuery.of(context).size.height-280,
                   right: 0,
                   left: 0,
                   child: Column(
                     children: [
+                      Container(
+                        child: Text(
+                          isSignupScreen ? '회원가입을 해 주세요':'로그인을 해 주세요',
+                          style: TextStyle(
+                            letterSpacing: 1.0,
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.deepOrange,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20,),
                       Text(isSignupScreen ? 'or Signup with' : ' or Signin with',
                         style: TextStyle(fontSize: 20),
                       ),

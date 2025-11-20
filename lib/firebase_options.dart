@@ -72,4 +72,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'cleanhai20092213.firebasestorage.app',
     iosBundleId: 'com.example.cleanhai2',
   );
+
 }
