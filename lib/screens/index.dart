@@ -1,9 +1,7 @@
 import 'package:cleanhai2/chatting/chat/chat_screen.dart';
-import 'package:cleanhai2/tasks/todo_not_index.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cleanhai2/reservation/reservation.dart';
-import 'package:cleanhai2/tasks/todo_homepage.dart';
+
 
 class ApplicationIndex extends StatefulWidget {
   const ApplicationIndex({super.key});
@@ -43,14 +41,6 @@ class _ApplicationIndexState extends State<ApplicationIndex> {
               width: double.infinity,
               child: ElevatedButton(
                   onPressed: (){
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) {
-                              return ReservationIndex();
-                            }
-                        )
-                    );
                   },
                   child:
                   Text('청소의뢰목록',
@@ -103,13 +93,6 @@ class _ApplicationIndexState extends State<ApplicationIndex> {
               width: double.infinity,
               child: ElevatedButton(
                   onPressed: (){
-                    Navigator.push(context,
-                        MaterialPageRoute(
-                            builder: (context) {
-                              return TodoHomepage();
-                            }
-                        )
-                    );
                   },
                   child: Text('청소일정등록',
                     style: TextStyle( fontSize:20,fontWeight: FontWeight.bold),
