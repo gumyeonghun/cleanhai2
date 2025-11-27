@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:kpostal/kpostal.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:cleanhai2/ui/page/main/widgets/main_page.dart';
 
 class AuthController extends GetxController {
@@ -20,7 +22,9 @@ class AuthController extends GetxController {
   String userEmail = '';
   String userPassword = '';
   String confirmPassword = '';
-  String userAddress = '';
+  final RxString userAddress = ''.obs;
+  double? userLatitude;
+  double? userLongitude;
   final Rx<DateTime?> userBirthDate = Rx<DateTime?>(null);
 
   // Getter for isLoading (alias for showSpinner)
@@ -59,7 +63,7 @@ class AuthController extends GetxController {
           backgroundColor: Colors.red, colorText: Colors.white);
         return;
       }
-      if (userAddress.isEmpty) {
+      if (userAddress.value.isEmpty) {
         Get.snackbar('오류', '주소를 입력해주세요.', 
           backgroundColor: Colors.red, colorText: Colors.white);
         return;
@@ -87,7 +91,9 @@ class AuthController extends GetxController {
           'userName': userName,
           'email': userEmail,
           'userType': userType.value,
-          'address': userAddress,
+          'address': userAddress.value,
+          'latitude': userLatitude,
+          'longitude': userLongitude,
           'birthDate': Timestamp.fromDate(userBirthDate.value!),
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -254,5 +260,34 @@ class AuthController extends GetxController {
     } finally {
       showSpinner.value = false;
     }
+  }
+
+  // 주소 업데이트 (KpostalView 사용)
+  Future<void> updateAddress() async {
+    await Get.to(() => KpostalView(
+      callback: (Kpostal result) async {
+        double? lat = result.latitude;
+        double? lng = result.longitude;
+
+        // 좌표가 없는 경우 주소로 좌표 검색
+        if (lat == null || lng == null) {
+          try {
+            List<Location> locations = await locationFromAddress(result.address);
+            if (locations.isNotEmpty) {
+              lat = locations.first.latitude;
+              lng = locations.first.longitude;
+            }
+          } catch (e) {
+            debugPrint('좌표 변환 실패: $e');
+          }
+        }
+
+        userAddress.value = result.address;
+        userLatitude = lat;
+        userLongitude = lng;
+        
+        Get.back();
+      },
+    ));
   }
 }

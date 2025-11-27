@@ -35,7 +35,7 @@ class LoginSignupPage extends StatelessWidget {
                       SizedBox(height: 20),
                       // Logo/Title
                       Text(
-                        '청소 매칭 서비스',
+                        '청소5분대기조',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -164,24 +164,76 @@ class LoginSignupPage extends StatelessWidget {
                                 ),
                                 SizedBox(height: 16),
 
-                                // Address
-                                _buildTextField(
-                                  key: ValueKey('address'),
-                                  hintText: '주소',
-                                  icon: Icons.home_outlined,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return '주소를 입력해 주세요';
-                                    }
-                                    return null;
-                                  },
-                                  onSaved: (value) => controller.userAddress = value!,
-                                  onChanged: (value) => controller.userAddress = value,
+                                // Address Button
+                                GestureDetector(
+                                  onTap: controller.updateAddress,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.grey[200]!),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.home_outlined, color: Colors.grey[400], size: 20),
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: Obx(() => Text(
+                                            controller.userAddress.value.isEmpty ? '주소 검색' : controller.userAddress.value,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: controller.userAddress.value.isEmpty ? Colors.grey[400] : Colors.black87,
+                                            ),
+                                          )),
+                                        ),
+                                        Icon(Icons.search, color: Colors.grey[400], size: 20),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                                 SizedBox(height: 16),
 
                                 // Birth Date
-                                _buildDatePicker(context, controller),
+                                GestureDetector(
+                                  onTap: () async {
+                                    final DateTime? picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: DateTime.now().subtract(Duration(days: 365 * 20)),
+                                      firstDate: DateTime(1900),
+                                      lastDate: DateTime.now(),
+                                      locale: const Locale('ko', 'KR'),
+                                    );
+                                    if (picked != null) {
+                                      controller.setBirthDate(picked);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[50],
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.grey[200]!),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.calendar_today_outlined, color: Colors.grey[400], size: 20),
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: Obx(() => Text(
+                                            controller.userBirthDate.value != null
+                                                ? "${controller.userBirthDate.value!.year}-${controller.userBirthDate.value!.month.toString().padLeft(2, '0')}-${controller.userBirthDate.value!.day.toString().padLeft(2, '0')}"
+                                                : '생년월일',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: controller.userBirthDate.value != null ? Colors.black87 : Colors.grey[400],
+                                            ),
+                                          )),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                                 SizedBox(height: 16),
                               ],
 
@@ -460,55 +512,6 @@ class LoginSignupPage extends StatelessWidget {
             fontSize: 14,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDatePicker(BuildContext context, AuthController controller) {
-    return GestureDetector(
-      onTap: () async {
-        final DateTime? picked = await showDatePicker(
-          context: context,
-          initialDate: DateTime.now().subtract(Duration(days: 365 * 20)), // Default to 20 years ago
-          firstDate: DateTime(1900),
-          lastDate: DateTime.now(),
-          locale: const Locale('ko', 'KR'),
-        );
-        if (picked != null) {
-          controller.setBirthDate(picked);
-        }
-      },
-      child: AbsorbPointer(
-        child: Obx(() => TextFormField(
-          key: ValueKey('birthDate'),
-          decoration: InputDecoration(
-            hintText: '생년월일',
-            hintStyle: TextStyle(color: Colors.grey[400]),
-            prefixIcon: Icon(Icons.calendar_today_outlined, color: Colors.grey[400], size: 20),
-            filled: true,
-            fillColor: Colors.grey[50],
-            contentPadding: EdgeInsets.symmetric(vertical: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[200]!),
-            ),
-          ),
-          controller: TextEditingController(
-            text: controller.userBirthDate.value != null 
-                ? "${controller.userBirthDate.value!.year}-${controller.userBirthDate.value!.month.toString().padLeft(2, '0')}-${controller.userBirthDate.value!.day.toString().padLeft(2, '0')}"
-                : ""
-          ),
-          validator: (value) {
-            if (controller.userBirthDate.value == null) {
-              return '생년월일을 선택해 주세요';
-            }
-            return null;
-          },
-        )),
       ),
     );
   }
