@@ -46,9 +46,13 @@ dependencies:
   kpostal: ^1.1.0
   geocoding: ^3.0.0
   geolocator: ^14.0.2
-  tosspayments_widget_sdk_flutter: ^2.1.2
-  webview_flutter: ^4.4.2
+  webview_flutter: ^4.13.0
   uuid: ^4.5.1
+  get: ^4.7.3
+  geocoding_platform_interface: ^3.2.0
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^7.0.1
+  flutter_rating_bar: ^4.0.1
 
 dev_dependencies:
   flutter_test:

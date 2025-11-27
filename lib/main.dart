@@ -1,54 +1,49 @@
-import 'package:cleanhai2/cleaning_service/ui/home/widgets/home_page.dart';
 import 'package:cleanhai2/firebase_options.dart';
-import 'package:cleanhai2/screens/index.dart';
-import 'package:cleanhai2/screens/main_screen.dart';
+import 'package:cleanhai2/ui/page/main/widgets/main_page.dart';
+import 'package:cleanhai2/ui/page/auth/login_signup_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get/get.dart';
 
-
-
-
-void main() async{
-
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform
   );
 
-  runApp(ProviderScope(child: MyApp()));
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Chatting app',
+    return GetMaterialApp(
+      title: '청소5분대기조',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple,
-        brightness: Brightness.light),
-          appBarTheme: AppBarTheme(
-            titleTextStyle: TextStyle(
-              fontSize: 25,
-              color: Colors.blue,
-              fontWeight: FontWeight.bold
-            ),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Color(0xFF2575FC),
+          brightness: Brightness.light
+        ),
+        appBarTheme: AppBarTheme(
+          titleTextStyle: TextStyle(
+            fontSize: 20,
+            color: Colors.white,
+            fontWeight: FontWeight.bold
           ),
-
-
-          primarySwatch: Colors.blue
+        ),
+        primarySwatch: Colors.blue
       ),
       home: StreamBuilder(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot){
-            if(snapshot.hasData){
-              return HomePage();
-            } return LoginSignupScreen();
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return MainPage();
           }
+          return LoginSignupPage();
+        }
       ),
     );
   }
