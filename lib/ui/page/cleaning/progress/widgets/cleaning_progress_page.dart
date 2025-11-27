@@ -352,7 +352,7 @@ class CleaningProgressPage extends StatelessWidget {
                    ),
                  )
                else
-                 Text('청소 직원이 완료 보고서를 작성 중입니다.', style: TextStyle(color: Colors.grey)),
+                 Text('청소 전문가가 완료 보고서를 작성 중입니다.', style: TextStyle(color: Colors.grey)),
              ]
           ],
         ],

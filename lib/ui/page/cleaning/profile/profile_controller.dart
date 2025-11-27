@@ -6,6 +6,8 @@ import 'package:geocoding/geocoding.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:cleanhai2/data/model/user_model.dart';
+import 'package:cleanhai2/data/model/cleaning_staff.dart';
+import 'package:cleanhai2/data/model/cleaning_request.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
 import '../../auth/login_signup_page.dart';
 
@@ -17,10 +19,16 @@ class ProfileController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxBool isEditing = false.obs; // 편집 모드 상태
 
-  // 텍스트 컨트롤러
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  
+  final TextEditingController cleaningDetailsController = TextEditingController(); // For owners
+
+  // Availability
+  final RxList<String> availableDays = <String>[].obs;
+  final Rx<TimeOfDay?> startTime = Rx<TimeOfDay?>(null);
+  final Rx<TimeOfDay?> endTime = Rx<TimeOfDay?>(null);
+  final RxBool isAutoRegisterEnabled = false.obs;
+
   // 프로필 이미지
   final Rx<File?> selectedImage = Rx<File?>(null);
   final ImagePicker _picker = ImagePicker();
@@ -35,6 +43,7 @@ class ProfileController extends GetxController {
   void onClose() {
     nameController.dispose();
     phoneController.dispose();
+    cleaningDetailsController.dispose();
     super.onClose();
   }
 
@@ -48,9 +57,56 @@ class ProfileController extends GetxController {
       if (userProfile != null) {
         nameController.text = userProfile.userName ?? '';
         phoneController.text = userProfile.phoneNumber ?? '';
+        cleaningDetailsController.text = userProfile.cleaningDetails ?? '';
+        
+        availableDays.assignAll(userProfile.availableDays ?? []);
+        if (userProfile.availableStartTime != null) {
+          startTime.value = _parseTime(userProfile.availableStartTime!);
+        }
+        if (userProfile.availableEndTime != null) {
+          endTime.value = _parseTime(userProfile.availableEndTime!);
+        }
+        isAutoRegisterEnabled.value = userProfile.isAutoRegisterEnabled;
       }
     }
     isLoading.value = false;
+  }
+
+  TimeOfDay? _parseTime(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String _formatTime(TimeOfDay time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  void toggleDay(String day) {
+    if (availableDays.contains(day)) {
+      availableDays.remove(day);
+    } else {
+      availableDays.add(day);
+    }
+  }
+
+  Future<void> selectTime(BuildContext context, bool isStart) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isStart 
+          ? (startTime.value ?? TimeOfDay(hour: 9, minute: 0))
+          : (endTime.value ?? TimeOfDay(hour: 18, minute: 0)),
+    );
+    if (picked != null) {
+      if (isStart) {
+        startTime.value = picked;
+      } else {
+        endTime.value = picked;
+      }
+    }
   }
 
   // 편집 모드 토글
@@ -61,7 +117,23 @@ class ProfileController extends GetxController {
       if (user != null) {
         nameController.text = user.userName ?? '';
         phoneController.text = user.phoneNumber ?? '';
+        cleaningDetailsController.text = user.cleaningDetails ?? '';
         selectedImage.value = null;
+        
+        availableDays.assignAll(user.availableDays ?? []);
+        if (user.availableStartTime != null) {
+          startTime.value = _parseTime(user.availableStartTime!);
+        } else {
+          startTime.value = null;
+        }
+        
+        if (user.availableEndTime != null) {
+          endTime.value = _parseTime(user.availableEndTime!);
+        } else {
+          endTime.value = null;
+        }
+        
+        isAutoRegisterEnabled.value = user.isAutoRegisterEnabled;
       }
     }
     isEditing.value = !isEditing.value;
@@ -99,10 +171,97 @@ class ProfileController extends GetxController {
         userName: nameController.text,
         phoneNumber: phoneController.text,
         profileImageUrl: imageUrl,
+        availableDays: availableDays.toList(),
+        availableStartTime: startTime.value != null ? _formatTime(startTime.value!) : null,
+        availableEndTime: endTime.value != null ? _formatTime(endTime.value!) : null,
+        isAutoRegisterEnabled: isAutoRegisterEnabled.value,
+        cleaningDetails: cleaningDetailsController.text,
       );
 
       await _repository.updateUserProfile(updatedUser);
       userModel.value = updatedUser;
+      
+      // Sync Logic
+      if (user.userType == 'staff') {
+        // ... (Staff Logic - Unchanged) ...
+        if (isAutoRegisterEnabled.value) {
+          final existingStaff = await _repository.getCleaningStaffByAuthorId(user.id);
+          final availabilityStr = '근무 가능: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}';
+          
+          if (existingStaff != null) {
+            final updatedStaff = existingStaff.copyWith(
+              authorName: updatedUser.userName ?? '',
+              imageUrl: updatedUser.profileImageUrl,
+              address: updatedUser.address,
+              latitude: updatedUser.latitude,
+              longitude: updatedUser.longitude,
+              content: availabilityStr,
+              updatedAt: DateTime.now(),
+            );
+            await _repository.updateCleaningStaff(updatedStaff);
+          } else {
+            final newStaff = CleaningStaff(
+              id: '',
+              authorId: user.id,
+              authorName: updatedUser.userName ?? '',
+              title: '청소 가능합니다',
+              content: availabilityStr,
+              imageUrl: updatedUser.profileImageUrl,
+              address: updatedUser.address,
+              latitude: updatedUser.latitude,
+              longitude: updatedUser.longitude,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            );
+            await _repository.createCleaningStaff(newStaff);
+          }
+        } else {
+          await _repository.deleteCleaningStaffByAuthorId(user.id);
+        }
+      } else if (user.userType == 'owner') {
+        // Owner Logic
+        if (isAutoRegisterEnabled.value) {
+          final existingRequest = await _repository.getCleaningRequestByAuthorId(user.id);
+          
+          final contentStr = '청소 필요 요일: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}\n상세: ${cleaningDetailsController.text}';
+          
+          if (existingRequest != null && existingRequest.status == 'pending') {
+            // Update existing pending request
+            final updatedRequest = existingRequest.copyWith(
+              authorName: updatedUser.userName ?? '',
+              imageUrl: updatedUser.profileImageUrl,
+              address: updatedUser.address,
+              latitude: updatedUser.latitude,
+              longitude: updatedUser.longitude,
+              title: '${updatedUser.userName}님의 청소 의뢰',
+              content: contentStr,
+              updatedAt: DateTime.now(),
+            );
+            await _repository.updateCleaningRequest(updatedRequest);
+          } else if (existingRequest == null || existingRequest.status != 'pending') {
+            // Create new request if no pending request exists
+            final newRequest = CleaningRequest(
+              id: '',
+              authorId: user.id,
+              authorName: updatedUser.userName ?? '',
+              title: '${updatedUser.userName}님의 청소 의뢰',
+              content: contentStr,
+              price: '협의', // Default price
+              imageUrl: updatedUser.profileImageUrl,
+              address: updatedUser.address,
+              latitude: updatedUser.latitude,
+              longitude: updatedUser.longitude,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              status: 'pending',
+            );
+            await _repository.createCleaningRequest(newRequest);
+          }
+        } else {
+          // Delete pending request if exists
+          await _repository.deleteCleaningRequestByAuthorId(user.id);
+        }
+      }
       
       isEditing.value = false;
       selectedImage.value = null;
@@ -144,10 +303,15 @@ class ProfileController extends GetxController {
             address: result.address,
             latitude: lat,
             longitude: lng,
-            userName: user.userName, // 기존 값 유지
-            phoneNumber: user.phoneNumber, // 기존 값 유지
-            profileImageUrl: user.profileImageUrl, // 기존 값 유지
+            userName: user.userName,
+            phoneNumber: user.phoneNumber,
+            profileImageUrl: user.profileImageUrl,
             userType: user.userType,
+            availableDays: user.availableDays,
+            availableStartTime: user.availableStartTime,
+            availableEndTime: user.availableEndTime,
+            isAutoRegisterEnabled: user.isAutoRegisterEnabled,
+            cleaningDetails: user.cleaningDetails,
           );
 
           await _repository.updateUserProfile(updatedUser);
@@ -161,6 +325,6 @@ class ProfileController extends GetxController {
 
   Future<void> logout() async {
     await _auth.signOut();
-    Get.offAll(() => LoginSignupPage()); // Navigate to login page and clear all routes
+    Get.offAll(() => LoginSignupPage()); // Navigate to login page after sign out
   }
 }

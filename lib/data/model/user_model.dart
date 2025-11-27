@@ -11,6 +11,12 @@ class UserModel {
   final String? profileImageUrl;
   final String userType; // 'owner' or 'staff'
 
+  final List<String>? availableDays;
+  final String? availableStartTime;
+  final String? availableEndTime;
+  final bool isAutoRegisterEnabled;
+  final String? cleaningDetails; // For owners: Room info, etc.
+
   UserModel({
     required this.id,
     required this.email,
@@ -20,7 +26,12 @@ class UserModel {
     this.userName,
     this.phoneNumber,
     this.profileImageUrl,
-    this.userType = 'owner', // Default to owner for backward compatibility
+    this.userType = 'owner',
+    this.availableDays,
+    this.availableStartTime,
+    this.availableEndTime,
+    this.isAutoRegisterEnabled = false,
+    this.cleaningDetails,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -35,6 +46,11 @@ class UserModel {
       phoneNumber: data['phoneNumber'],
       profileImageUrl: data['profileImageUrl'],
       userType: data['userType'] ?? 'owner',
+      availableDays: List<String>.from(data['availableDays'] ?? []),
+      availableStartTime: data['availableStartTime'],
+      availableEndTime: data['availableEndTime'],
+      isAutoRegisterEnabled: data['isAutoRegisterEnabled'] ?? false,
+      cleaningDetails: data['cleaningDetails'],
     );
   }
 
@@ -48,6 +64,11 @@ class UserModel {
       'phoneNumber': phoneNumber,
       'profileImageUrl': profileImageUrl,
       'userType': userType,
+      'availableDays': availableDays,
+      'availableStartTime': availableStartTime,
+      'availableEndTime': availableEndTime,
+      'isAutoRegisterEnabled': isAutoRegisterEnabled,
+      'cleaningDetails': cleaningDetails,
     };
   }
 }

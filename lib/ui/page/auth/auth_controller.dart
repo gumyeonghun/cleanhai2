@@ -43,6 +43,8 @@ class AuthController extends GetxController {
           password: userPassword,
         );
 
+        debugPrint('회원가입 - 선택된 userType: ${userType.value}');
+        
         await _firestore.collection('users').doc(newUser.user!.uid).set({
           'userName': userName,
           'email': userEmail,

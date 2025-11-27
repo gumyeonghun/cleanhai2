@@ -50,7 +50,7 @@ class HomePage extends StatelessWidget {
         ),
         child: FloatingActionButton(
           onPressed: () {
-            Get.to(() => WritePage());
+            Get.to(() => WritePage(type: 'request'));
           },
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -62,7 +62,7 @@ class HomePage extends StatelessWidget {
           return Center(child: CircularProgressIndicator());
         }
         
-        final requests = controller.cleaningRequests;
+        final requests = controller.sortedRequests;
 
         if (requests.isEmpty) {
            return Center(

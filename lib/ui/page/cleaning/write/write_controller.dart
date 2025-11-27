@@ -91,8 +91,8 @@ class WriteController extends GetxController {
       final userProfile = await _repository.getUserProfile(user.uid);
       if (userProfile != null) {
         userType.value = userProfile.userType;
-        // Set default type based on user role if not in edit mode
-        if (!isEditMode.value) {
+        // Set default type based on user role if not in edit mode AND initialType is not provided
+        if (!isEditMode.value && initialType == null) {
           if (userType.value == 'owner') {
             selectedType.value = 'request';
           } else if (userType.value == 'staff') {

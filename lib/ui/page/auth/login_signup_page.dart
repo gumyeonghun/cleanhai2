@@ -169,11 +169,11 @@ class LoginSignupPage extends StatelessWidget {
                                 ),
                               ),
                               SizedBox(height: 10),
-                              Row(
+                              Obx(() => Row(
                                 children: [
                                   Expanded(
                                     child: _buildRoleButton(
-                                      title: '숙박업소',
+                                      title: '청소 의뢰자',
                                       value: 'owner',
                                       groupValue: controller.userType.value,
                                       onTap: () => controller.setUserType('owner'),
@@ -182,14 +182,14 @@ class LoginSignupPage extends StatelessWidget {
                                   SizedBox(width: 12),
                                   Expanded(
                                     child: _buildRoleButton(
-                                      title: '청소직원',
+                                      title: '청소 전문가',
                                       value: 'staff',
                                       groupValue: controller.userType.value,
                                       onTap: () => controller.setUserType('staff'),
                                     ),
                                   ),
                                 ],
-                              ),
+                              )),
                             ],
 
                             SizedBox(height: 30),

@@ -397,7 +397,7 @@ class DetailPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '청소 직원 프로필',
+                          '청소 전문가 프로필',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -406,7 +406,7 @@ class DetailPage extends StatelessWidget {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          userProfile?.userType == 'staff' ? '청소 직원' : '숙박업소',
+                          userProfile?.userType == 'staff' ? '청소 전문가' : '청소 의뢰자',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -452,7 +452,7 @@ class DetailPage extends StatelessWidget {
                 _buildProfileRow(
                   icon: Icons.badge,
                   label: '회원 유형',
-                  value: userProfile.userType == 'staff' ? '청소 직원' : '숙박업소',
+                  value: userProfile.userType == 'staff' ? '청소 전문가' : '청소 의뢰자',
                 ),
               ] else ...[
                 Center(

@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:cleanhai2/data/model/chat_room.dart';
 import 'package:cleanhai2/data/repository/chat_repository.dart';
 
@@ -24,12 +25,19 @@ class ChatRoomListController extends GetxController {
     }
 
     isLoading.value = true;
-    _repository.getMyChatRooms(user.uid).listen((rooms) {
-      chatRooms.assignAll(rooms);
-      isLoading.value = false;
-    });
+    _repository.getMyChatRooms(user.uid).listen(
+      (rooms) {
+        chatRooms.assignAll(rooms);
+        isLoading.value = false;
+      },
+      onError: (error) {
+        debugPrint('Error loading chat rooms: $error');
+        isLoading.value = false;
+      },
+    );
   }
 
+  @override
   Future<void> refresh() async {
     loadChatRooms();
   }

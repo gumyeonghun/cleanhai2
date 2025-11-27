@@ -165,7 +165,7 @@ class WritePage extends StatelessWidget {
                 controller: controller.titleController,
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
-                  hintText: controller.selectedType.value == 'request' ? '예: 롯데호텔입니다' : '예: 20년차 가정주부입니다',
+                  hintText: controller.selectedType.value == 'request' ? '예: 호텔입니다' : '예: 20년차 가정주부입니다',
                   hintStyle: TextStyle(color: Colors.grey[400]),
                   filled: true,
                   fillColor: Colors.grey[50],

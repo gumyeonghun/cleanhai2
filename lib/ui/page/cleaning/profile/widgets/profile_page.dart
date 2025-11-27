@@ -125,7 +125,7 @@ class ProfilePage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  userModel?.userType == 'staff' ? '청소 전문가' : '숙박업소 사장님',
+                  userModel?.userType == 'staff' ? '청소 전문가' : '청소 의뢰자',
                   style: TextStyle(
                     color: userModel?.userType == 'staff' ? Colors.green[700] : Color(0xFFE53935),
                     fontWeight: FontWeight.bold,
@@ -178,6 +178,8 @@ class ProfilePage extends StatelessWidget {
                         ],
                       ),
                     ),
+                    
+                    SizedBox(height: 30),
                     
                     SizedBox(height: 30),
                     
@@ -247,6 +249,173 @@ class ProfilePage extends StatelessWidget {
                         ],
                       ),
                     ),
+                    
+                    if (userModel?.userType == 'staff' || userModel?.userType == 'owner') ...[
+                      SizedBox(height: 30),
+                      _buildSectionTitle(userModel?.userType == 'staff' ? '근무 설정' : '청소 설정'),
+                      SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userModel?.userType == 'staff' ? '근무 가능 요일' : '청소 필요 요일',
+                              style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              children: ['월', '화', '수', '목', '금', '토', '일'].map((day) {
+                                return Obx(() {
+                                  final isSelected = controller.availableDays.contains(day);
+                                  return ChoiceChip(
+                                    label: Text(day),
+                                    selected: isSelected,
+                                    onSelected: controller.isEditing.value 
+                                        ? (selected) => controller.toggleDay(day)
+                                        : null,
+                                    selectedColor: Color(0xFFE53935).withValues(alpha: 0.2),
+                                    labelStyle: TextStyle(
+                                      color: isSelected ? Color(0xFFE53935) : Colors.black,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                    backgroundColor: Colors.grey[100],
+                                  );
+                                });
+                              }).toList(),
+                            ),
+                            SizedBox(height: 20),
+                            Text(
+                              userModel?.userType == 'staff' ? '근무 가능 시간' : '청소 필요 시간',
+                              style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: controller.isEditing.value 
+                                        ? () => controller.selectTime(context, true)
+                                        : null,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Obx(() => Text(
+                                        controller.startTime.value != null 
+                                            ? '${controller.startTime.value!.hour.toString().padLeft(2, '0')}:${controller.startTime.value!.minute.toString().padLeft(2, '0')}'
+                                            : '시작 시간',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: controller.startTime.value != null ? Colors.black87 : Colors.grey[400],
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                  child: Text('~', style: TextStyle(color: Colors.grey[400])),
+                                ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: controller.isEditing.value 
+                                        ? () => controller.selectTime(context, false)
+                                        : null,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Obx(() => Text(
+                                        controller.endTime.value != null 
+                                            ? '${controller.endTime.value!.hour.toString().padLeft(2, '0')}:${controller.endTime.value!.minute.toString().padLeft(2, '0')}'
+                                            : '종료 시간',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: controller.endTime.value != null ? Colors.black87 : Colors.grey[400],
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            
+                            if (userModel?.userType == 'owner') ...[
+                              SizedBox(height: 20),
+                              Text(
+                                '상세 정보 (호실 등)',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 10),
+                              TextFormField(
+                                controller: controller.cleaningDetailsController,
+                                enabled: controller.isEditing.value,
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  hintText: '예: 101호, 102호 청소 필요합니다.',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: controller.isEditing.value ? Colors.grey[50] : Colors.transparent,
+                                  contentPadding: EdgeInsets.all(16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  userModel?.userType == 'staff' ? '대기 목록 자동 등록' : '청소 의뢰 자동 등록',
+                                  style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                                ),
+                                Obx(() => Switch(
+                                  value: controller.isAutoRegisterEnabled.value,
+                                  onChanged: controller.isEditing.value 
+                                      ? (value) => controller.isAutoRegisterEnabled.value = value
+                                      : null,
+                                  activeThumbColor: Color(0xFFE53935),
+                                )),
+                              ],
+                            ),
+                            Text(
+                              userModel?.userType == 'staff' 
+                                  ? '활성화하면 설정한 시간에 맞춰 대기 목록에 자동으로 노출됩니다.'
+                                  : '활성화하면 설정한 내용으로 청소 의뢰가 자동으로 등록됩니다.',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     
                     SizedBox(height: 32),
                     
