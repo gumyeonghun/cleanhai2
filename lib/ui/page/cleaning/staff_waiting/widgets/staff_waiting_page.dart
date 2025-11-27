@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import '../staff_waiting_controller.dart';
 import '../../write/widgets/write_page.dart';
+import '../../detail/widgets/detail_page.dart';
+import 'staff_profile_write_page.dart';
 
 class StaffWaitingPage extends StatelessWidget {
   const StaffWaitingPage({super.key});
@@ -15,16 +17,42 @@ class StaffWaitingPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(
-          '대기중인 청소 전문가',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
+        title: Obx(() => controller.searchQuery.value.isEmpty
+            ? Text(
+                '대기중인 청소 전문가',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              )
+            : TextField(
+                autofocus: true,
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: '이름, 제목, 내용, 주소로 검색...',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) => controller.updateSearchQuery(value),
+              )),
         centerTitle: true,
         elevation: 0,
+        actions: [
+          Obx(() => IconButton(
+                icon: Icon(
+                  controller.searchQuery.value.isEmpty ? Icons.search : Icons.close,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  if (controller.searchQuery.value.isEmpty) {
+                    controller.updateSearchQuery(' '); // 검색 모드 활성화
+                  } else {
+                    controller.updateSearchQuery(''); // 검색 모드 비활성화
+                  }
+                },
+              )),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF6A11CB), Color(0xFFE53935)],
+              colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -44,8 +72,21 @@ class StaffWaitingPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // 프로필로 등록 버튼
+            // 확장된 버튼들
             if (controller.isFabExpanded.value) ...[
+              // 직접 작성하기 버튼
+              FloatingActionButton.extended(
+                onPressed: () {
+                  Get.to(() => StaffProfileWritePage());
+                  controller.toggleFab();
+                },
+                heroTag: 'write',
+                backgroundColor: Color(0xFF1E88E5),
+                icon: Icon(Icons.edit),
+                label: Text('직접 작성하기'),
+              ),
+              SizedBox(height: 12),
+              // 프로필로 빠른 등록 버튼
               FloatingActionButton.extended(
                 onPressed: () {
                   controller.registerWithProfile();
@@ -54,50 +95,17 @@ class StaffWaitingPage extends StatelessWidget {
                 heroTag: 'profile',
                 backgroundColor: Colors.green,
                 icon: Icon(Icons.person_add),
-                label: Text('프로필로 등록'),
+                label: Text('프로필로 빠른 등록'),
               ),
               SizedBox(height: 12),
             ],
-            // 직접 작성 버튼
-            if (controller.isFabExpanded.value) ...[
-              FloatingActionButton.extended(
-                onPressed: () {
-                  Get.to(() => WritePage(type: 'staff'));
-                  controller.toggleFab();
-                },
-                heroTag: 'write',
-                backgroundColor: Color(0xFFE53935),
-                icon: Icon(Icons.edit),
-                label: Text('직접 작성'),
-              ),
-              SizedBox(height: 12),
-            ],
-            // 메인 FAB
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF6A11CB), Color(0xFFE53935)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0xFFE53935).withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: FloatingActionButton(
-                onPressed: controller.toggleFab,
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                child: AnimatedRotation(
-                  turns: controller.isFabExpanded.value ? 0.125 : 0,
-                  duration: Duration(milliseconds: 200),
-                  child: Icon(Icons.add),
-                ),
+            // 메인 FAB 버튼
+            FloatingActionButton(
+              onPressed: controller.toggleFab,
+              backgroundColor: Color(0xFF1E88E5),
+              child: Icon(
+                controller.isFabExpanded.value ? Icons.close : Icons.add,
+                color: Colors.white,
               ),
             ),
           ],
@@ -140,114 +148,189 @@ class StaffWaitingPage extends StatelessWidget {
   }
 
   Widget _staffItem(BuildContext context, CleaningStaff staff) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Staff Avatar
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF6A11CB), Color(0xFFE53935)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    final controller = Get.find<StaffWaitingController>();
+    
+    return InkWell(
+      onTap: () {
+        // 청소 전문가 상세 페이지로 이동
+        Get.to(() => DetailPage(cleaningStaff: staff));
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Staff Avatar
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
               ),
-              shape: BoxShape.circle,
+              child: Icon(
+                Icons.person,
+                size: 35,
+                color: Colors.white,
+              ),
             ),
-            child: Icon(
-              Icons.person,
-              size: 30,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(width: 16),
-          
-          // Staff Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  staff.authorName,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                SizedBox(height: 4),
-                if (staff.title.isNotEmpty)
+            SizedBox(width: 16),
+            
+            // Staff Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    staff.title,
+                    staff.authorName,
                     style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                SizedBox(height: 4),
-                if (staff.address != null)
-                  Row(
-                    children: [
-                      Icon(Icons.location_on_outlined, size: 14, color: Colors.grey[500]),
-                      SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          staff.address!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                  SizedBox(height: 4),
+                  if (staff.title.isNotEmpty)
+                    Text(
+                      staff.title,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey[700],
                       ),
-                    ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  SizedBox(height: 4),
+                  // 평점 표시
+                  Obx(() {
+                    final ratings = controller.staffRatings[staff.authorId];
+                    if (ratings != null && ratings['reviewCount'] > 0) {
+                      final avgRating = ratings['averageRating'] as double;
+                      final reviewCount = ratings['reviewCount'] as int;
+                      return Row(
+                        children: [
+                          Icon(Icons.star, size: 16, color: Colors.amber),
+                          SizedBox(width: 4),
+                          Text(
+                            '${avgRating.toStringAsFixed(1)} ($reviewCount)',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      );
+                    } else {
+                      return Text(
+                        '아직 후기가 없습니다',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[400],
+                        ),
+                      );
+                    }
+                  }),
+                  SizedBox(height: 4),
+                  if (staff.address != null)
+                    Row(
+                      children: [
+                        Icon(Icons.location_on_outlined, size: 16, color: Colors.grey[500]),
+                        SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            staff.address!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[500],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  SizedBox(height: 4),
+                  Text(
+                    DateFormat('yyyy.MM.dd HH:mm').format(staff.createdAt),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[400],
+                    ),
                   ),
-                SizedBox(height: 4),
-                Text(
-                  DateFormat('yyyy.MM.dd HH:mm').format(staff.createdAt),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[400],
+                ],
+              ),
+            ),
+            
+            // Action Button
+            Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '대기중',
+                    style: TextStyle(
+                      color: Color(0xFF1E88E5),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+                SizedBox(height: 8),
+                // Request Button (Only for non-staff users)
+                Obx(() {
+                  final user = controller.currentUser.value;
+                  if (user != null && user.userType == 'owner') {
+                    return ElevatedButton(
+                      onPressed: () {
+                        Get.to(() => WritePage(
+                          type: 'request',
+                          targetStaffId: staff.authorId,
+                        ));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF1E88E5),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        minimumSize: Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        '의뢰하기',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    );
+                  }
+                  return SizedBox.shrink();
+                }),
               ],
             ),
-          ),
-          
-          // Action Button
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Color(0xFFE53935).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '대기중',
-              style: TextStyle(
-                color: Color(0xFFE53935),
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

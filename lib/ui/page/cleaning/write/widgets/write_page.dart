@@ -8,12 +8,14 @@ class WritePage extends StatelessWidget {
   final String? type; // 'request' or 'staff'
   final CleaningRequest? existingRequest;
   final CleaningStaff? existingStaff;
+  final String? targetStaffId; // For direct requests
 
   const WritePage({
     super.key,
     this.type,
     this.existingRequest,
     this.existingStaff,
+    this.targetStaffId,
   });
 
   @override
@@ -22,6 +24,7 @@ class WritePage extends StatelessWidget {
       initialType: type,
       existingRequest: existingRequest,
       existingStaff: existingStaff,
+      targetStaffId: targetStaffId,
     ));
 
     return GestureDetector(
@@ -40,7 +43,7 @@ class WritePage extends StatelessWidget {
           flexibleSpace: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF6A11CB), Color(0xFFE53935)],
+                colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -103,7 +106,7 @@ class WritePage extends StatelessWidget {
                               padding: EdgeInsets.symmetric(vertical: 15),
                               decoration: BoxDecoration(
                                 color: controller.selectedType.value == 'request'
-                                    ? Color(0xFFE53935)
+                                    ? Color(0xFF1E88E5)
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -127,7 +130,7 @@ class WritePage extends StatelessWidget {
                               padding: EdgeInsets.symmetric(vertical: 15),
                               decoration: BoxDecoration(
                                 color: controller.selectedType.value == 'staff'
-                                    ? Color(0xFFE53935)
+                                    ? Color(0xFF1E88E5)
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -180,7 +183,7 @@ class WritePage extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Color(0xFFE53935)),
+                    borderSide: BorderSide(color: Color(0xFF1E88E5)),
                   ),
                 ),
                 validator: (value) {
@@ -228,7 +231,7 @@ class WritePage extends StatelessWidget {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Color(0xFFE53935)),
+                            borderSide: BorderSide(color: Color(0xFF1E88E5)),
                           ),
                           suffixText: '원',
                         ),
@@ -282,7 +285,7 @@ class WritePage extends StatelessWidget {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Color(0xFFE53935)),
+                      borderSide: BorderSide(color: Color(0xFF1E88E5)),
                     ),
                   ),
                   validator: (value) {
@@ -318,7 +321,7 @@ class WritePage extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Obx(() => Icon(Icons.location_on, color: controller.address.value.isNotEmpty ? Color(0xFFE53935) : Colors.grey[400])),
+                      Obx(() => Icon(Icons.location_on, color: controller.address.value.isNotEmpty ? Color(0xFF1E88E5) : Colors.grey[400])),
                       SizedBox(width: 12),
                       Expanded(
                         child: Obx(() => Text(

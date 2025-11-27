@@ -29,7 +29,7 @@ class ReviewWritePage extends StatelessWidget {
           flexibleSpace: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF6A11CB), Color(0xFFE53935)],
+              colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -98,7 +98,7 @@ class ReviewWritePage extends StatelessWidget {
                 child: Obx(() => ElevatedButton(
                   onPressed: controller.isLoading.value ? null : controller.submitReview,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFE53935),
+                    backgroundColor: Color(0xFF1E88E5),
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

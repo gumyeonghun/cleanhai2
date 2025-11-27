@@ -21,7 +21,9 @@ class ProfileController extends GetxController {
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
   final TextEditingController cleaningDetailsController = TextEditingController(); // For owners
+  final Rx<DateTime?> birthDate = Rx<DateTime?>(null);
 
   // Availability
   final RxList<String> availableDays = <String>[].obs;
@@ -43,6 +45,7 @@ class ProfileController extends GetxController {
   void onClose() {
     nameController.dispose();
     phoneController.dispose();
+    addressController.dispose();
     cleaningDetailsController.dispose();
     super.onClose();
   }
@@ -57,7 +60,9 @@ class ProfileController extends GetxController {
       if (userProfile != null) {
         nameController.text = userProfile.userName ?? '';
         phoneController.text = userProfile.phoneNumber ?? '';
+        addressController.text = userProfile.address ?? '';
         cleaningDetailsController.text = userProfile.cleaningDetails ?? '';
+        birthDate.value = userProfile.birthDate;
         
         availableDays.assignAll(userProfile.availableDays ?? []);
         if (userProfile.availableStartTime != null) {
@@ -109,6 +114,19 @@ class ProfileController extends GetxController {
     }
   }
 
+  Future<void> selectBirthDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: birthDate.value ?? DateTime.now().subtract(Duration(days: 365 * 20)),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      locale: const Locale('ko', 'KR'),
+    );
+    if (picked != null) {
+      birthDate.value = picked;
+    }
+  }
+
   // 편집 모드 토글
   void toggleEditMode() {
     if (isEditing.value) {
@@ -117,7 +135,9 @@ class ProfileController extends GetxController {
       if (user != null) {
         nameController.text = user.userName ?? '';
         phoneController.text = user.phoneNumber ?? '';
+        addressController.text = user.address ?? '';
         cleaningDetailsController.text = user.cleaningDetails ?? '';
+        birthDate.value = user.birthDate;
         selectedImage.value = null;
         
         availableDays.assignAll(user.availableDays ?? []);
@@ -164,7 +184,7 @@ class ProfileController extends GetxController {
       final updatedUser = UserModel(
         id: user.id,
         email: user.email,
-        address: user.address,
+        address: addressController.text,
         latitude: user.latitude,
         longitude: user.longitude,
         userType: user.userType,
@@ -176,6 +196,7 @@ class ProfileController extends GetxController {
         availableEndTime: endTime.value != null ? _formatTime(endTime.value!) : null,
         isAutoRegisterEnabled: isAutoRegisterEnabled.value,
         cleaningDetails: cleaningDetailsController.text,
+        birthDate: birthDate.value,
       );
 
       await _repository.updateUserProfile(updatedUser);
@@ -316,6 +337,7 @@ class ProfileController extends GetxController {
 
           await _repository.updateUserProfile(updatedUser);
           userModel.value = updatedUser;
+          addressController.text = result.address; // Sync controller
           
           Get.snackbar('알림', '주소가 업데이트되었습니다');
         }
@@ -325,6 +347,9 @@ class ProfileController extends GetxController {
 
   Future<void> logout() async {
     await _auth.signOut();
-    Get.offAll(() => LoginSignupPage()); // Navigate to login page after sign out
+    // 모든 GetX 컨트롤러 삭제
+    Get.deleteAll(force: true);
+    // 모든 페이지 스택 제거하고 로그인 페이지로 이동
+    Get.offAll(() => LoginSignupPage(), predicate: (_) => false);
   }
 }

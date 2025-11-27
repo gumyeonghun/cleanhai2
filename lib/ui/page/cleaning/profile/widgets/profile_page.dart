@@ -32,7 +32,7 @@ class ProfilePage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFE53935),
+                color: Color(0xFF1E88E5),
               ),
             ),
           )),
@@ -59,7 +59,7 @@ class ProfilePage extends StatelessWidget {
                     child: Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Color(0xFFE53935), width: 3),
+                        border: Border.all(color: Color(0xFF1E88E5), width: 3),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
@@ -91,7 +91,7 @@ class ProfilePage extends StatelessWidget {
                         child: Container(
                           padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Color(0xFFE53935),
+                            color: Color(0xFF1E88E5),
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                           ),
@@ -121,13 +121,13 @@ class ProfilePage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: userModel?.userType == 'staff' 
                       ? Colors.green.withValues(alpha: 0.1) 
-                      : Color(0xFFE53935).withValues(alpha: 0.1),
+                      : Color(0xFF1E88E5).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  userModel?.userType == 'staff' ? '청소 전문가' : '청소 의뢰자',
+                  userModel?.userType == 'staff' ? '청소 전문가' : '청소 의뢰인',
                   style: TextStyle(
-                    color: userModel?.userType == 'staff' ? Colors.green[700] : Color(0xFFE53935),
+                    color: userModel?.userType == 'staff' ? Colors.green[700] : Color(0xFF1E88E5),
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -174,6 +174,17 @@ class ProfilePage extends StatelessWidget {
                             isEditing: controller.isEditing.value,
                             controller: controller.phoneController,
                             keyboardType: TextInputType.phone,
+                          ),
+                          Divider(height: 30),
+                          _buildDateRow(
+                            context: context,
+                            icon: Icons.calendar_today_outlined,
+                            label: '생년월일',
+                            value: controller.birthDate.value != null 
+                                ? "${controller.birthDate.value!.year}-${controller.birthDate.value!.month.toString().padLeft(2, '0')}-${controller.birthDate.value!.day.toString().padLeft(2, '0')}"
+                                : '생년월일을 입력해주세요',
+                            isEditing: controller.isEditing.value,
+                            onTap: () => controller.selectBirthDate(context),
                           ),
                         ],
                       ),
@@ -232,12 +243,12 @@ class ProfilePage extends StatelessWidget {
                               onPressed: controller.updateAddress,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.grey[50],
-                                foregroundColor: Color(0xFFE53935),
+                                foregroundColor: Color(0xFF1E88E5),
                                 elevation: 0,
                                 padding: EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(color: Color(0xFFE53935).withValues(alpha: 0.3)),
+                                  side: BorderSide(color: Color(0xFF1E88E5).withValues(alpha: 0.3)),
                                 ),
                               ),
                               child: Text(
@@ -287,9 +298,9 @@ class ProfilePage extends StatelessWidget {
                                     onSelected: controller.isEditing.value 
                                         ? (selected) => controller.toggleDay(day)
                                         : null,
-                                    selectedColor: Color(0xFFE53935).withValues(alpha: 0.2),
+                                    selectedColor: Color(0xFF1E88E5).withValues(alpha: 0.2),
                                     labelStyle: TextStyle(
-                                      color: isSelected ? Color(0xFFE53935) : Colors.black,
+                                      color: isSelected ? Color(0xFF1E88E5) : Colors.black,
                                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                     ),
                                     backgroundColor: Colors.grey[100],
@@ -402,7 +413,7 @@ class ProfilePage extends StatelessWidget {
                                   onChanged: controller.isEditing.value 
                                       ? (value) => controller.isAutoRegisterEnabled.value = value
                                       : null,
-                                  activeThumbColor: Color(0xFFE53935),
+                                  activeThumbColor: Color(0xFF1E88E5),
                                 )),
                               ],
                             ),
@@ -507,6 +518,52 @@ class ProfilePage extends StatelessWidget {
                         color: value.contains('입력해주세요') ? Colors.grey[400] : Colors.black87,
                       ),
                     ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateRow({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String value,
+    required bool isEditing,
+    required VoidCallback onTap,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.grey[500], size: 22),
+        SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+              ),
+              SizedBox(height: 4),
+              GestureDetector(
+                onTap: isEditing ? onTap : null,
+                child: Container(
+                  color: Colors.transparent,
+                  width: double.infinity,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: value.contains('입력해주세요') ? Colors.grey[400] : Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

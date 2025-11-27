@@ -35,11 +35,13 @@ class WriteController extends GetxController {
   final String? initialType;
   final CleaningRequest? existingRequest;
   final CleaningStaff? existingStaff;
+  final String? targetStaffId; // For direct requests
 
   WriteController({
     this.initialType,
     this.existingRequest,
     this.existingStaff,
+    this.targetStaffId,
   });
 
   @override
@@ -199,6 +201,7 @@ class WriteController extends GetxController {
             latitude: latitude.value == 0.0 ? null : latitude.value,
             longitude: longitude.value == 0.0 ? null : longitude.value,
             updatedAt: now,
+            targetStaffId: targetStaffId, // Keep or update targetStaffId
           );
           await _repository.updateCleaningRequest(updatedRequest);
         } else {
@@ -216,6 +219,7 @@ class WriteController extends GetxController {
             longitude: longitude.value == 0.0 ? null : longitude.value,
             createdAt: now,
             updatedAt: now,
+            targetStaffId: targetStaffId, // Set targetStaffId
           );
           await _repository.createCleaningRequest(request);
         }

@@ -11,13 +11,13 @@ class PaymentSelectionPage extends StatelessWidget {
   final String customerEmail;
 
   const PaymentSelectionPage({
-    Key? key,
+    super.key,
     required this.applicant,
     required this.price,
     required this.orderName,
     required this.orderId,
     required this.customerEmail,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +31,7 @@ class PaymentSelectionPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('결제하기'),
-        backgroundColor: Color(0xFFE53935),
+        backgroundColor: Color(0xFF1E88E5),
         foregroundColor: Colors.white,
       ),
       body: SafeArea(
@@ -106,7 +106,7 @@ class PaymentSelectionPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFE53935),
+                  color: Color(0xFF1E88E5),
                 ),
               ),
               Spacer(),
@@ -118,7 +118,7 @@ class PaymentSelectionPage extends StatelessWidget {
                     controller.processPayment(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFE53935),
+                    backgroundColor: Color(0xFF1E88E5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

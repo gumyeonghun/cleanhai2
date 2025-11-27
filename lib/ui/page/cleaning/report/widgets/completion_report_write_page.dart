@@ -29,7 +29,7 @@ class CompletionReportWritePage extends StatelessWidget {
           flexibleSpace: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF6A11CB), Color(0xFFE53935)],
+              colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -108,8 +108,8 @@ class CompletionReportWritePage extends StatelessWidget {
                   ),
                   TextButton.icon(
                     onPressed: controller.pickImages,
-                    icon: Icon(Icons.add_photo_alternate, color: Color(0xFFE53935)),
-                    label: Text('사진 추가', style: TextStyle(color: Color(0xFFE53935))),
+                    icon: Icon(Icons.add_photo_alternate, color: Color(0xFF1E88E5)),
+                    label: Text('사진 추가', style: TextStyle(color: Color(0xFF1E88E5))),
                   ),
                 ],
               ),

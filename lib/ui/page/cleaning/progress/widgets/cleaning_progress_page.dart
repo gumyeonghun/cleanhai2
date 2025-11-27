@@ -38,7 +38,7 @@ class CleaningProgressPage extends StatelessWidget {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF6A11CB), Color(0xFFE53935)],
+              colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -274,8 +274,8 @@ class CleaningProgressPage extends StatelessWidget {
                     label: Text('메모 추가'),
                     style: OutlinedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 16),
-                      foregroundColor: Color(0xFFE53935),
-                      side: BorderSide(color: Color(0xFFE53935)),
+                      foregroundColor: Color(0xFF1E88E5),
+                      side: BorderSide(color: Color(0xFF1E88E5)),
                     ),
                   ),
                 ),
@@ -320,7 +320,7 @@ class CleaningProgressPage extends StatelessWidget {
                   label: Text(hasReport ? '완료 보고서 수정' : '완료 보고서 작성', 
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFE53935),
+                    backgroundColor: Color(0xFF1E88E5),
                     padding: EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
@@ -346,7 +346,7 @@ class CleaningProgressPage extends StatelessWidget {
                      label: Text(hasReview ? '리뷰 수정' : '리뷰 작성하기', 
                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                      style: ElevatedButton.styleFrom(
-                       backgroundColor: Color(0xFFE53935),
+                       backgroundColor: Color(0xFF1E88E5),
                        padding: EdgeInsets.symmetric(vertical: 16),
                      ),
                    ),
@@ -380,7 +380,7 @@ class CleaningProgressPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: controller.addNote,
-            style: ElevatedButton.styleFrom(backgroundColor: Color(0xFFE53935)),
+            style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF1E88E5)),
             child: Text('추가', style: TextStyle(color: Colors.white)),
           ),
         ],

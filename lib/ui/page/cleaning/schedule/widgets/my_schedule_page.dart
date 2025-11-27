@@ -29,7 +29,7 @@ class MySchedulePage extends StatelessWidget {
           flexibleSpace: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF6A11CB), Color(0xFFE53935)],
+              colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -176,14 +176,14 @@ class MySchedulePage extends StatelessWidget {
             SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.attach_money, size: 20, color: Color(0xFFE53935)),
+                Icon(Icons.attach_money, size: 20, color: Color(0xFF1E88E5)),
                 SizedBox(width: 8),
                 Text(
                   '${NumberFormat('#,###').format(int.tryParse(request.price ?? '0') ?? 0)}원',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFE53935),
+                    color: Color(0xFF1E88E5),
                   ),
                 ),
               ],
@@ -216,8 +216,8 @@ class MySchedulePage extends StatelessWidget {
                   icon: Icon(Icons.assignment_turned_in_outlined, size: 18),
                   label: Text('진행 상황 확인'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Color(0xFFE53935),
-                    side: BorderSide(color: Color(0xFFE53935)),
+                    foregroundColor: Color(0xFF1E88E5),
+                    side: BorderSide(color: Color(0xFF1E88E5)),
                     padding: EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),

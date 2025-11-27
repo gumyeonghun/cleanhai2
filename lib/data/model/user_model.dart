@@ -16,6 +16,7 @@ class UserModel {
   final String? availableEndTime;
   final bool isAutoRegisterEnabled;
   final String? cleaningDetails; // For owners: Room info, etc.
+  final DateTime? birthDate;
 
   UserModel({
     required this.id,
@@ -32,6 +33,7 @@ class UserModel {
     this.availableEndTime,
     this.isAutoRegisterEnabled = false,
     this.cleaningDetails,
+    this.birthDate,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -51,6 +53,7 @@ class UserModel {
       availableEndTime: data['availableEndTime'],
       isAutoRegisterEnabled: data['isAutoRegisterEnabled'] ?? false,
       cleaningDetails: data['cleaningDetails'],
+      birthDate: data['birthDate'] != null ? (data['birthDate'] as Timestamp).toDate() : null,
     );
   }
 
@@ -69,6 +72,7 @@ class UserModel {
       'availableEndTime': availableEndTime,
       'isAutoRegisterEnabled': isAutoRegisterEnabled,
       'cleaningDetails': cleaningDetails,
+      'birthDate': birthDate != null ? Timestamp.fromDate(birthDate!) : null,
     };
   }
 }

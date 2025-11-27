@@ -61,7 +61,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+              colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -152,7 +152,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+                      colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),

@@ -183,15 +183,70 @@ class DetailController extends GetxController {
           applicantId,
           paymentKey: result['paymentKey'],
           orderId: result['orderId'],
+          paymentStatus: 'completed',
         );
 
+        // Update status to 'accepted'
+        await _repository.updateCleaningStatus(currentRequest.value!.id, 'accepted');
+
         Get.back(); // Close loading
-        Get.snackbar('성공', '매칭이 완료되었습니다');
+        
+        // 의뢰인에게 알림
+        Get.snackbar(
+          '매칭 완료!',
+          '${applicantProfile.userName ?? "청소 전문가"}님과 매칭되었습니다.\n청소 일정을 확인해주세요.',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: Duration(seconds: 5),
+          snackPosition: SnackPosition.TOP,
+          icon: Icon(Icons.check_circle, color: Colors.white),
+        );
+        
         _loadRequestData();
       } catch (e) {
         Get.back(); // Close loading
         Get.snackbar('오류', '매칭 처리 중 오류가 발생했습니다: $e');
       }
+    }
+  }
+
+  // Staff accepts a direct request
+  Future<void> acceptRequest() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      // Just set the acceptedApplicantId, payment comes later by owner
+      await _repository.acceptApplicant(
+        currentRequest.value!.id,
+        user.uid,
+        paymentStatus: 'pending',
+      );
+      await _loadRequestData();
+      Get.snackbar('수락 완료', '의뢰를 수락했습니다. 의뢰인의 결제를 기다려주세요.');
+    } catch (e) {
+      Get.snackbar('오류', '수락 실패: $e');
+    }
+  }
+
+  // Owner pays for a request (after staff accepted)
+  Future<void> processPayment() async {
+    if (currentRequest.value?.acceptedApplicantId == null) return;
+    
+    final staffProfile = await getUserProfile(currentRequest.value!.acceptedApplicantId!);
+    if (staffProfile == null) return;
+
+    await acceptApplicant(currentRequest.value!.acceptedApplicantId!, staffProfile);
+  }
+
+  // Staff starts cleaning
+  Future<void> startCleaning() async {
+    try {
+      await _repository.updateCleaningStatus(currentRequest.value!.id, 'in_progress');
+      await _loadRequestData();
+      Get.snackbar('청소 시작', '청소가 시작되었습니다. 안전하게 진행해주세요.');
+    } catch (e) {
+      Get.snackbar('오류', '상태 변경 실패: $e');
     }
   }
 

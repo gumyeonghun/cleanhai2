@@ -44,7 +44,7 @@ class MainPage extends StatelessWidget {
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
-          selectedItemColor: Color(0xFF2575FC),
+          selectedItemColor: Color(0xFF1E88E5),
           unselectedItemColor: Colors.grey[400],
           showUnselectedLabels: true,
           iconSize: 26,

@@ -32,10 +32,6 @@ class DetailPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         actions: [
-          Text(
-            '대화하기',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-          ),
           _iconButton(Icons.message, () async {
             final myUser = FirebaseAuth.instance.currentUser;
             if (myUser == null) return;
@@ -148,13 +144,13 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color(0xFFE53935).withValues(alpha: 0.1),
+                        color: Color(0xFF1E88E5).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Color(0xFFE53935).withValues(alpha: 0.3)),
+                        border: Border.all(color: Color(0xFF1E88E5).withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.payments, color: Color(0xFFE53935)),
+                          Icon(Icons.payments, color: Color(0xFF1E88E5)),
                           SizedBox(width: 12),
                           Text(
                             '청소 금액: ',
@@ -169,7 +165,7 @@ class DetailPage extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFFE53935),
+                              color: Color(0xFF1E88E5),
                             ),
                           ),
                         ],
@@ -186,27 +182,165 @@ class DetailPage extends StatelessWidget {
                   // 청소 신청 버튼 (청소 의뢰이고, 작성자가 아닐 때)
                   if (currentRequest != null && !isAuthor && currentUser != null) ...[
                     SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: hasApplied ? null : controller.applyForJob,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: hasApplied ? Colors.grey : Color(0xFFE53935),
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    // Direct Request Acceptance (Staff)
+                    if (currentRequest.targetStaffId == currentUser.uid && currentRequest.status == 'pending') ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: controller.acceptRequest,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF1E88E5),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          hasApplied ? '신청 완료' : '청소 신청하기',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                          child: Text(
+                            '의뢰 수락하기',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ] else if (currentRequest.status == 'accepted' && currentRequest.acceptedApplicantId == currentUser.uid) ...[
+                      // Start Cleaning (Staff)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: controller.startCleaning,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF1E88E5),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            '청소 시작하기',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else if (currentRequest.status == 'in_progress' && currentRequest.acceptedApplicantId == currentUser.uid) ...[
+                       Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green),
+                        ),
+                        child: Text(
+                          '청소 진행중',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      // Normal Application
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: hasApplied ? null : controller.applyForJob,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: hasApplied ? Colors.grey : Color(0xFF1E88E5),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            hasApplied ? '신청 완료' : '청소 신청하기',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+
+                  // Owner Actions for Direct Request
+                  if (currentRequest != null && isAuthor && currentUser != null) ...[
+                     if (currentRequest.targetStaffId != null && 
+                         currentRequest.acceptedApplicantId != null && 
+                         currentRequest.paymentStatus != 'completed') ...[
+                        SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: controller.processPayment,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF1E88E5),
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              '결제하기',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                     ] else if (currentRequest.status == 'accepted') ...[
+                        SizedBox(height: 24),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Color(0xFF1E88E5)),
+                          ),
+                          child: Text(
+                            '매칭 완료 (청소 대기중)',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E88E5),
+                            ),
+                          ),
+                        ),
+                     ] else if (currentRequest.status == 'in_progress') ...[
+                        SizedBox(height: 24),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green),
+                          ),
+                          child: Text(
+                            '청소 진행중',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ),
+                     ],
                   ],
                   
                   // 신청자 목록 (작성자일 때만)
@@ -234,10 +368,10 @@ class DetailPage extends StatelessWidget {
                             margin: EdgeInsets.only(bottom: 8),
                             padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isAccepted ? Color(0xFFE53935).withValues(alpha: 0.1) : Colors.grey[100],
+                              color: isAccepted ? Color(0xFF1E88E5).withValues(alpha: 0.1) : Colors.grey[100],
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isAccepted ? Color(0xFFE53935) : Colors.grey[300]!,
+                                color: isAccepted ? Color(0xFF1E88E5) : Colors.grey[300]!,
                               ),
                             ),
                             child: Row(
@@ -251,7 +385,7 @@ class DetailPage extends StatelessWidget {
                                         // Profile icon (no photo in UserModel)
                                         CircleAvatar(
                                           radius: 20,
-                                          backgroundColor: isAccepted ? Color(0xFFE53935) : Colors.grey[400],
+                                          backgroundColor: isAccepted ? Color(0xFF1E88E5) : Colors.grey[400],
                                           child: Icon(
                                             isAccepted ? Icons.check_circle : Icons.person,
                                             color: Colors.white,
@@ -314,7 +448,7 @@ class DetailPage extends StatelessWidget {
                                   ElevatedButton(
                                     onPressed: () => controller.acceptApplicant(applicantId, userProfile),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Color(0xFFE53935),
+                                      backgroundColor: Color(0xFF1E88E5),
                                       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
@@ -329,7 +463,7 @@ class DetailPage extends StatelessWidget {
                                   Container(
                                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: Color(0xFFE53935),
+                                      color: Color(0xFF1E88E5),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
@@ -384,7 +518,7 @@ class DetailPage extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: Color(0xFFE53935),
+                    backgroundColor: Color(0xFF1E88E5),
                     child: Icon(
                       Icons.person,
                       color: Colors.white,
@@ -406,7 +540,7 @@ class DetailPage extends StatelessWidget {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          userProfile?.userType == 'staff' ? '청소 전문가' : '청소 의뢰자',
+                          userProfile?.userType == 'staff' ? '청소 전문가' : '청소 의뢰인',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -452,7 +586,7 @@ class DetailPage extends StatelessWidget {
                 _buildProfileRow(
                   icon: Icons.badge,
                   label: '회원 유형',
-                  value: userProfile.userType == 'staff' ? '청소 전문가' : '청소 의뢰자',
+                  value: userProfile.userType == 'staff' ? '청소 전문가' : '청소 의뢰인',
                 ),
               ] else ...[
                 Center(
@@ -477,7 +611,7 @@ class DetailPage extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () => Get.back(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFE53935),
+                    backgroundColor: Color(0xFF1E88E5),
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -511,7 +645,7 @@ class DetailPage extends StatelessWidget {
         Icon(
           icon,
           size: 20,
-          color: Color(0xFFE53935),
+          color: Color(0xFF1E88E5),
         ),
         SizedBox(width: 12),
         Expanded(

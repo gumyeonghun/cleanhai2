@@ -23,18 +23,26 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: '청소5분대기조',
       theme: ThemeData(
+        scaffoldBackgroundColor: Colors.white,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xFF2575FC),
-          brightness: Brightness.light
+          seedColor: Color(0xFF1E88E5), // Trustworthy Blue
+          primary: Color(0xFF1E88E5),
+          secondary: Color(0xFF64B5F6),
+          surface: Colors.white,
+          brightness: Brightness.light,
         ),
         appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFF1E88E5),
+          foregroundColor: Colors.white,
+          elevation: 0,
           titleTextStyle: TextStyle(
             fontSize: 20,
             color: Colors.white,
             fontWeight: FontWeight.bold
           ),
         ),
-        primarySwatch: Colors.blue
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
       ),
       home: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),

@@ -28,6 +28,7 @@ class CleaningRequest {
   final DateTime? completedAt;
   final CompletionReport? completionReport;
   final Review? review;
+  final String? targetStaffId; // For direct requests
 
   CleaningRequest({
     required this.id,
@@ -54,6 +55,7 @@ class CleaningRequest {
     this.completedAt,
     this.completionReport,
     this.review,
+    this.targetStaffId,
   });
 
   // Firestore에서 데이터를 가져올 때 사용
@@ -84,6 +86,7 @@ class CleaningRequest {
       completedAt: data['completedAt'] != null ? (data['completedAt'] as Timestamp).toDate() : null,
       completionReport: data['completionReport'] != null ? CompletionReport.fromMap(data['completionReport']) : null,
       review: data['review'] != null ? Review.fromMap(data['review']) : null,
+      targetStaffId: data['targetStaffId'],
     );
   }
 
@@ -113,6 +116,7 @@ class CleaningRequest {
       'completedAt': completedAt != null ? Timestamp.fromDate(completedAt!) : null,
       'completionReport': completionReport?.toMap(),
       'review': review?.toMap(),
+      'targetStaffId': targetStaffId,
     };
   }
 
@@ -142,6 +146,7 @@ class CleaningRequest {
     DateTime? completedAt,
     CompletionReport? completionReport,
     Review? review,
+    String? targetStaffId,
   }) {
     return CleaningRequest(
       id: id ?? this.id,
@@ -168,6 +173,7 @@ class CleaningRequest {
       completedAt: completedAt ?? this.completedAt,
       completionReport: completionReport ?? this.completionReport,
       review: review ?? this.review,
+      targetStaffId: targetStaffId ?? this.targetStaffId,
     );
   }
 }

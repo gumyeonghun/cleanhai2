@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'dart:convert';
 
 /// Simple Payment Service using WebView
 /// This is a simplified version for demonstration
@@ -62,7 +60,7 @@ class IamportPaymentService {
                 'message': '테스트 결제가 완료되었습니다.',
               }),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFE53935),
+                backgroundColor: Color(0xFF1E88E5),
                 foregroundColor: Colors.white,
               ),
               child: Text('결제하기 (테스트)'),

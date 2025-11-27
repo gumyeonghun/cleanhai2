@@ -343,6 +343,37 @@ class CleaningRepository {
     return null;
   }
 
+  /// 청소 전문가의 평점 통계 가져오기
+  Future<Map<String, dynamic>> getStaffRatingStats(String staffId) async {
+    try {
+      // 해당 전문가가 완료한 청소 의뢰 중 리뷰가 있는 것들 가져오기
+      final snapshot = await _cleaningRequestsRef
+          .where('acceptedApplicantId', isEqualTo: staffId)
+          .get();
+      
+      final reviews = snapshot.docs
+          .map((doc) => CleaningRequest.fromFirestore(doc))
+          .where((request) => request.review != null)
+          .map((request) => request.review!)
+          .toList();
+      
+      if (reviews.isEmpty) {
+        return {'averageRating': 0.0, 'reviewCount': 0};
+      }
+      
+      final totalRating = reviews.fold<double>(0.0, (sum, review) => sum + review.rating);
+      final averageRating = totalRating / reviews.length;
+      
+      return {
+        'averageRating': averageRating,
+        'reviewCount': reviews.length,
+      };
+    } catch (e) {
+      debugPrint('평점 통계 가져오기 실패: $e');
+      return {'averageRating': 0.0, 'reviewCount': 0};
+    }
+  }
+
   Future<void> updateUserProfile(UserModel user) async {
     await _usersRef.doc(user.id).set(user.toFirestore(), SetOptions(merge: true));
   }

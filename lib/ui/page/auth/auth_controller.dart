@@ -19,6 +19,16 @@ class AuthController extends GetxController {
   String userName = '';
   String userEmail = '';
   String userPassword = '';
+  String confirmPassword = '';
+  String userAddress = '';
+  final Rx<DateTime?> userBirthDate = Rx<DateTime?>(null);
+
+  // Getter for isLoading (alias for showSpinner)
+  RxBool get isLoading => showSpinner;
+
+  void toggleScreen(bool isSignup) {
+    isSignupScreen.value = isSignup;
+  }
 
   void toggleScreenType() {
     isSignupScreen.value = !isSignupScreen.value;
@@ -28,11 +38,39 @@ class AuthController extends GetxController {
     userType.value = type;
   }
 
+  void setBirthDate(DateTime date) {
+    userBirthDate.value = date;
+  }
+
+  // Alias for submitForm
+  Future<void> submit() async {
+    await submitForm();
+  }
+
   Future<void> submitForm() async {
     final isValid = formKey.currentState!.validate();
     if (!isValid) return;
     
     formKey.currentState!.save();
+    
+    if (isSignupScreen.value) {
+      if (userPassword != confirmPassword) {
+        Get.snackbar('오류', '비밀번호가 일치하지 않습니다.', 
+          backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+      if (userAddress.isEmpty) {
+        Get.snackbar('오류', '주소를 입력해주세요.', 
+          backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+      if (userBirthDate.value == null) {
+        Get.snackbar('오류', '생년월일을 선택해주세요.', 
+          backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+    }
+    
     showSpinner.value = true;
 
     try {
@@ -49,6 +87,9 @@ class AuthController extends GetxController {
           'userName': userName,
           'email': userEmail,
           'userType': userType.value,
+          'address': userAddress,
+          'birthDate': Timestamp.fromDate(userBirthDate.value!),
+          'createdAt': FieldValue.serverTimestamp(),
         });
 
         if (newUser.user != null) {

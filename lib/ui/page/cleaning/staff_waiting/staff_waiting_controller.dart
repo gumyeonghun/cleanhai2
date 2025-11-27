@@ -12,6 +12,10 @@ class StaffWaitingController extends GetxController {
   
   final RxList<CleaningStaff> waitingStaff = <CleaningStaff>[].obs;
   final RxBool isLoading = true.obs;
+  final RxString searchQuery = ''.obs;
+  
+  // 각 staff의 평점 정보 저장 (staffId -> {averageRating, reviewCount})
+  final RxMap<String, Map<String, dynamic>> staffRatings = <String, Map<String, dynamic>>{}.obs;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
@@ -31,17 +35,34 @@ class StaffWaitingController extends GetxController {
     }
   }
 
+  void updateSearchQuery(String query) {
+    searchQuery.value = query;
+  }
+
   List<CleaningStaff> get sortedStaff {
+    var staff = waitingStaff;
+    
+    // 검색어 필터링
+    if (searchQuery.value.isNotEmpty) {
+      staff = staff.where((s) {
+        final query = searchQuery.value.toLowerCase();
+        return s.authorName.toLowerCase().contains(query) ||
+               s.title.toLowerCase().contains(query) ||
+               s.content.toLowerCase().contains(query) ||
+               (s.address?.toLowerCase().contains(query) ?? false);
+      }).toList().obs;
+    }
+    
     if (currentUser.value == null || 
         currentUser.value!.latitude == null || 
         currentUser.value!.longitude == null) {
-      return waitingStaff;
+      return staff;
     }
 
     final userLat = currentUser.value!.latitude!;
     final userLng = currentUser.value!.longitude!;
 
-    final sortedList = List<CleaningStaff>.from(waitingStaff);
+    final sortedList = List<CleaningStaff>.from(staff);
     sortedList.sort((a, b) {
       if (a.latitude == null || a.longitude == null) return 1;
       if (b.latitude == null || b.longitude == null) return -1;
@@ -60,6 +81,12 @@ class StaffWaitingController extends GetxController {
     try {
       final staff = await _repository.getWaitingStaff();
       waitingStaff.assignAll(staff);
+      
+      // 각 staff의 평점 정보 로드
+      for (var s in staff) {
+        final stats = await _repository.getStaffRatingStats(s.authorId);
+        staffRatings[s.authorId] = stats;
+      }
     } catch (e) {
       debugPrint('Error loading waiting staff: $e');
     } finally {
