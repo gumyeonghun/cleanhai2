@@ -10,8 +10,14 @@ class CleaningStaff {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? address;
+  final String? detailAddress;
   final double? latitude;
   final double? longitude;
+  final List<String>? availableDays; // For auto-registered staff
+  final bool isAutoRegistered; // Flag for auto-registered staff
+  final String? cleaningType; // Cleaning specialty
+  final String? cleaningPrice; // Base cleaning price
+  final String? additionalOptionCost; // Additional option costs
 
   CleaningStaff({
     required this.id,
@@ -21,10 +27,16 @@ class CleaningStaff {
     required this.content,
     this.imageUrl,
     this.address,
+    this.detailAddress,
     this.latitude,
     this.longitude,
     required this.createdAt,
     required this.updatedAt,
+    this.availableDays,
+    this.isAutoRegistered = false,
+    this.cleaningType,
+    this.cleaningPrice,
+    this.additionalOptionCost,
   });
 
   // Firestore에서 데이터를 가져올 때 사용
@@ -38,10 +50,16 @@ class CleaningStaff {
       content: data['content'] ?? '',
       imageUrl: data['imageUrl'],
       address: data['address'],
+      detailAddress: data['detailAddress'],
       latitude: data['latitude'],
       longitude: data['longitude'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      availableDays: data['availableDays'] != null ? List<String>.from(data['availableDays']) : null,
+      isAutoRegistered: data['isAutoRegistered'] ?? false,
+      cleaningType: data['cleaningType'],
+      cleaningPrice: data['cleaningPrice'],
+      additionalOptionCost: data['additionalOptionCost'],
     );
   }
 
@@ -54,10 +72,16 @@ class CleaningStaff {
       'content': content,
       'imageUrl': imageUrl,
       'address': address,
+      'detailAddress': detailAddress,
       'latitude': latitude,
       'longitude': longitude,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'availableDays': availableDays,
+      'isAutoRegistered': isAutoRegistered,
+      'cleaningType': cleaningType,
+      'cleaningPrice': cleaningPrice,
+      'additionalOptionCost': additionalOptionCost,
     };
   }
 
@@ -70,10 +94,16 @@ class CleaningStaff {
     String? content,
     String? imageUrl,
     String? address,
+    String? detailAddress,
     double? latitude,
     double? longitude,
     DateTime? createdAt,
     DateTime? updatedAt,
+    List<String>? availableDays,
+    bool? isAutoRegistered,
+    String? cleaningType,
+    String? cleaningPrice,
+    String? additionalOptionCost,
   }) {
     return CleaningStaff(
       id: id ?? this.id,
@@ -83,10 +113,16 @@ class CleaningStaff {
       content: content ?? this.content,
       imageUrl: imageUrl ?? this.imageUrl,
       address: address ?? this.address,
+      detailAddress: detailAddress ?? this.detailAddress,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      availableDays: availableDays ?? this.availableDays,
+      isAutoRegistered: isAutoRegistered ?? this.isAutoRegistered,
+      cleaningType: cleaningType ?? this.cleaningType,
+      cleaningPrice: cleaningPrice ?? this.cleaningPrice,
+      additionalOptionCost: additionalOptionCost ?? this.additionalOptionCost,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:cleanhai2/data/model/cleaning_request.dart';
+import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import '../my_schedule_controller.dart';
 import '../../detail/widgets/detail_page.dart';
 import '../../progress/widgets/cleaning_progress_page.dart';
@@ -16,7 +17,7 @@ class MySchedulePage extends StatelessWidget {
     final myUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
@@ -44,6 +45,7 @@ class MySchedulePage extends StatelessWidget {
             tabs: [
               Tab(text: '내 의뢰'),
               Tab(text: '내 신청'),
+              Tab(text: '내 대기'),
             ],
           ),
         ),
@@ -58,6 +60,8 @@ class MySchedulePage extends StatelessWidget {
               _buildMyRequestsTab(controller, myUid),
               // 내 신청 탭
               _buildMyApplicationsTab(controller, myUid),
+              // 내 대기 탭
+              _buildMyWaitingTab(controller, myUid),
             ],
           );
         }),
@@ -77,7 +81,7 @@ class MySchedulePage extends StatelessWidget {
               Icon(Icons.assignment_outlined, size: 60, color: Colors.grey[300]),
               SizedBox(height: 16),
               Text(
-                '수락된 청소 의뢰가 없습니다',
+                '등록된 청소 의뢰가 없습니다',
                 style: TextStyle(color: Colors.grey[500], fontSize: 16),
               ),
             ],
@@ -128,6 +132,242 @@ class MySchedulePage extends StatelessWidget {
       );
     });
   }
+
+  Widget _buildMyWaitingTab(MyScheduleController controller, String myUid) {
+    return Obx(() {
+      final waitingProfile = controller.myWaitingProfile.value;
+
+      if (waitingProfile == null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person_search, size: 60, color: Colors.grey[300]),
+              SizedBox(height: 16),
+              Text(
+                '등록된 대기 프로필이 없습니다',
+                style: TextStyle(color: Colors.grey[500], fontSize: 16),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        onRefresh: controller.refresh,
+        child: ListView(
+          padding: EdgeInsets.all(20),
+          children: [
+            _waitingProfileCard(waitingProfile),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _waitingProfileCard(CleaningStaff profile) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.person,
+                  size: 30,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile.authorName,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '대기중',
+                        style: TextStyle(
+                          color: Colors.green[700],
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          Divider(),
+          SizedBox(height: 16),
+          if (profile.cleaningType != null) ...[
+            Row(
+              children: [
+                Icon(Icons.cleaning_services, size: 20, color: Color(0xFF1E88E5)),
+                SizedBox(width: 8),
+                Text(
+                  '청소 종류',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Text(
+              profile.cleaningType!,
+              style: TextStyle(fontSize: 16, color: Colors.black87),
+            ),
+            SizedBox(height: 16),
+          ],
+          Row(
+            children: [
+              Icon(Icons.title, size: 20, color: Color(0xFF1E88E5)),
+              SizedBox(width: 8),
+              Text(
+                '제목',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            profile.title,
+            style: TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Icon(Icons.description, size: 20, color: Color(0xFF1E88E5)),
+              SizedBox(width: 8),
+              Text(
+                '내용',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            profile.content,
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+          ),
+          if (profile.address != null) ...[
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(Icons.location_on_outlined, size: 20, color: Color(0xFF1E88E5)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    profile.address!,
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (profile.availableDays != null && profile.availableDays!.isNotEmpty) ...[
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(Icons.calendar_today, size: 20, color: Color(0xFF1E88E5)),
+                SizedBox(width: 8),
+                Text(
+                  '가능한 요일',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: profile.availableDays!.map((day) {
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    day,
+                    style: TextStyle(
+                      color: Color(0xFF1E88E5),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+          SizedBox(height: 16),
+          Row(
+            children: [
+              Icon(Icons.access_time, size: 20, color: Colors.grey[500]),
+              SizedBox(width: 8),
+              Text(
+                '등록일: ${DateFormat('yyyy.MM.dd HH:mm').format(profile.createdAt)}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _requestCard(CleaningRequest request, String myUid, bool isMyRequest) {
     final isAccepted = request.acceptedApplicantId != null;
@@ -234,10 +474,15 @@ class MySchedulePage extends StatelessWidget {
     Color textColor;
 
     if (isMyRequest) {
-      // 내 의뢰 탭: 항상 수락됨
-      text = '수락됨';
-      bgColor = Colors.green.withValues(alpha: 0.1);
-      textColor = Colors.green[700]!;
+      if (isAccepted) {
+        text = '수락됨';
+        bgColor = Colors.green.withValues(alpha: 0.1);
+        textColor = Colors.green[700]!;
+      } else {
+        text = '대기중';
+        bgColor = Colors.orange.withValues(alpha: 0.1);
+        textColor = Colors.orange[700]!;
+      }
     } else {
       // 내 신청 탭
       if (isAcceptedByMe) {

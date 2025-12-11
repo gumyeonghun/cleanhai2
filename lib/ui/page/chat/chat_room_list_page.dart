@@ -79,52 +79,84 @@ class ChatRoomListPage extends StatelessWidget {
     final otherUserName = room.getOtherUserName(myUid);
     final formattedTime = _formatTime(room.lastMessageTime);
 
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      leading: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Dismissible(
+      key: Key(room.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: EdgeInsets.only(right: 20),
+        color: Colors.red,
+        child: Icon(Icons.delete, color: Colors.white),
+      ),
+      confirmDismiss: (direction) async {
+        return await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('채팅방 나가기'),
+            content: Text('정말 채팅방을 나가시겠습니까?\n대화 내용이 모두 삭제됩니다.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text('취소', style: TextStyle(color: Colors.grey)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text('나가기', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          Icons.person,
-          size: 28,
-          color: Colors.white,
-        ),
-      ),
-      title: Text(
-        otherUserName,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-      ),
-      subtitle: Text(
-        room.lastMessage.isEmpty ? '채팅을 시작하세요' : room.lastMessage,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey[600],
-        ),
-      ),
-      trailing: Text(
-        formattedTime,
-        style: TextStyle(
-          fontSize: 12,
-          color: Colors.grey[400],
-        ),
-      ),
-      onTap: () {
-        Get.to(() => ChatRoomPage(chatRoom: room));
+        );
       },
+      onDismissed: (direction) {
+        Get.find<ChatRoomListController>().deleteChatRoom(room.id);
+      },
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.person,
+            size: 28,
+            color: Colors.white,
+          ),
+        ),
+        title: Text(
+          otherUserName,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          room.lastMessage.isEmpty ? '채팅을 시작하세요' : room.lastMessage,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+        ),
+        trailing: Text(
+          formattedTime,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[400],
+          ),
+        ),
+        onTap: () {
+          Get.to(() => ChatRoomPage(chatRoom: room));
+        },
+      ),
     );
   }
 

@@ -1,10 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 import '../model/chat_room.dart';
 import '../model/chat_message.dart';
 
 class ChatRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   CollectionReference get _chatRoomsRef => _firestore.collection('chat_rooms');
 
@@ -98,6 +101,23 @@ class ChatRepository {
           .update({'isRead': true});
     } catch (e) {
       debugPrint('Error marking message as read: $e');
+    }
+  }
+
+  /// 채팅 이미지 업로드
+  Future<String?> uploadChatImage(File imageFile, String chatRoomId) async {
+    try {
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      Reference ref = _storage.ref().child('chat_images/$chatRoomId/$fileName');
+      
+      UploadTask uploadTask = ref.putFile(imageFile);
+      TaskSnapshot snapshot = await uploadTask;
+      
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      debugPrint('채팅 이미지 업로드 실패: $e');
+      return null;
     }
   }
 

@@ -21,6 +21,21 @@ class StaffWaitingController extends GetxController {
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
   final RxBool isFabExpanded = false.obs;
 
+  // Cleaning type filter
+  final RxString selectedCleaningTypeFilter = '전체청소'.obs;
+  static const List<String> cleaningTypeFilters = [
+    '전체청소',
+    '숙박업소청소',
+    '사무실청소',
+    '건물청소',
+    '가게청소',
+    '출장손세차',
+    '특수청소',
+    '입주청소',
+    '가정집청소',
+    '기타',
+  ];
+
   @override
   void onInit() {
     super.onInit();
@@ -40,8 +55,25 @@ class StaffWaitingController extends GetxController {
   }
 
   List<CleaningStaff> get sortedStaff {
-    var staff = waitingStaff;
+    List<CleaningStaff> staff = waitingStaff;
     
+    // 청소 종류 필터링 (CleaningStaff 모델에 cleaningType 필드가 있다고 가정하거나, title/content에서 검색)
+    // 현재 CleaningStaff 모델에는 cleaningType 필드가 명시적으로 보이지 않지만, 
+    // 이전 대화 맥락상 프로필에 청소 종류를 설정하는 기능이 있었음.
+    // 만약 cleaningType 필드가 없다면 title이나 content에 포함되어 있는지로 임시 필터링.
+    // 하지만 정확한 필터링을 위해 CleaningStaff 모델 확인이 필요할 수 있음.
+    // 일단 title/content 기반으로 필터링 구현.
+    if (selectedCleaningTypeFilter.value != '전체청소') {
+      staff = staff.where((s) {
+        // CleaningStaff 모델에 cleaningType이 있으면 그것으로 비교, 없으면 title/content 검색
+        if (s.cleaningType != null && s.cleaningType!.isNotEmpty) {
+          return s.cleaningType == selectedCleaningTypeFilter.value;
+        }
+        return s.title.contains(selectedCleaningTypeFilter.value) || 
+               s.content.contains(selectedCleaningTypeFilter.value);
+      }).toList();
+    }
+
     // 검색어 필터링
     if (searchQuery.value.isNotEmpty) {
       staff = staff.where((s) {
@@ -50,8 +82,28 @@ class StaffWaitingController extends GetxController {
                s.title.toLowerCase().contains(query) ||
                s.content.toLowerCase().contains(query) ||
                (s.address?.toLowerCase().contains(query) ?? false);
-      }).toList().obs;
+      }).toList();
     }
+    
+    // 자동 등록된 전문가는 오늘 요일에 해당하는 것만 표시
+    final today = DateTime.now();
+    final dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    final todayDayName = dayNames[today.weekday % 7];
+    final myUid = _auth.currentUser?.uid;
+    
+    staff = staff.where((s) {
+      // 내 프로필은 항상 표시 (확인용)
+      if (s.authorId == myUid) return true;
+
+      // 자동 등록이 아니면 항상 표시
+      if (!s.isAutoRegistered) return true;
+      
+      // 자동 등록이지만 availableDays가 없으면 표시하지 않음
+      if (s.availableDays == null || s.availableDays!.isEmpty) return false;
+      
+      // 오늘 요일이 포함되어 있으면 표시
+      return s.availableDays!.contains(todayDayName);
+    }).toList();
     
     if (currentUser.value == null || 
         currentUser.value!.latitude == null || 
@@ -63,6 +115,17 @@ class StaffWaitingController extends GetxController {
     final userLng = currentUser.value!.longitude!;
 
     final sortedList = List<CleaningStaff>.from(staff);
+    
+    // 전체청소일 때는 시간순 (최신순) 정렬
+    if (selectedCleaningTypeFilter.value == '전체청소') {
+      sortedList.sort((a, b) {
+        if (a.createdAt == null || b.createdAt == null) return 0;
+        return b.createdAt!.compareTo(a.createdAt!);
+      });
+      return sortedList;
+    }
+
+    // 그 외에는 거리순 정렬
     sortedList.sort((a, b) {
       if (a.latitude == null || a.longitude == null) return 1;
       if (b.latitude == null || b.longitude == null) return -1;
@@ -76,27 +139,32 @@ class StaffWaitingController extends GetxController {
     return sortedList;
   }
 
-  Future<void> loadWaitingStaff() async {
+  void loadWaitingStaff() {
     isLoading.value = true;
     try {
-      final staff = await _repository.getWaitingStaff();
-      waitingStaff.assignAll(staff);
-      
-      // 각 staff의 평점 정보 로드
-      for (var s in staff) {
-        final stats = await _repository.getStaffRatingStats(s.authorId);
-        staffRatings[s.authorId] = stats;
-      }
+      // Use stream for real-time updates
+      _repository.getCleaningStaffs().listen((staff) {
+        waitingStaff.assignAll(staff);
+        
+        // Load rating stats for each staff
+        for (var s in staff) {
+          _repository.getStaffRatingStats(s.authorId).then((stats) {
+            staffRatings[s.authorId] = stats;
+          });
+        }
+        
+        isLoading.value = false;
+      });
     } catch (e) {
       debugPrint('Error loading waiting staff: $e');
-    } finally {
       isLoading.value = false;
     }
   }
 
   @override
   Future<void> refresh() async {
-    await loadWaitingStaff();
+    // Stream automatically updates, just trigger a reload
+    loadWaitingStaff();
   }
 
   void toggleFab() {

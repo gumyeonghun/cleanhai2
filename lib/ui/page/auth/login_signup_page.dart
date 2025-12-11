@@ -35,7 +35,7 @@ class LoginSignupPage extends StatelessWidget {
                       SizedBox(height: 20),
                       // Logo/Title
                       Text(
-                        '청소5분대기조',
+                        '청소혁명가',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -44,7 +44,7 @@ class LoginSignupPage extends StatelessWidget {
                       ),
                       SizedBox(height: 10),
                       Text(
-                        '깨끗한 공간, 편리한 매칭',
+                        '합리적인 가격, 편리한 매칭, 믿을 수 있는 청소서비스',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.white.withValues(alpha: 0.9),
@@ -65,7 +65,8 @@ class LoginSignupPage extends StatelessWidget {
                           _buildTabButton(
                             title: '회원가입',
                             isSelected: controller.isSignupScreen.value,
-                            onTap: () => controller.toggleScreen(true),
+                            onTap: () =>
+                                controller.toggleScreen(true),
                           ),
                         ],
                       )),
@@ -104,6 +105,23 @@ class LoginSignupPage extends StatelessWidget {
                                   },
                                   onSaved: (value) => controller.userName = value!,
                                   onChanged: (value) => controller.userName = value,
+                                ),
+                                SizedBox(height: 16),
+
+                                // Phone Number Field
+                                _buildTextField(
+                                  key: ValueKey('phoneNumber'),
+                                  hintText: '전화번호',
+                                  icon: Icons.phone_outlined,
+                                  keyboardType: TextInputType.phone,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return '전화번호를 입력해 주세요';
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (value) => controller.phoneNumber = value!,
+                                  onChanged: (value) => controller.phoneNumber = value,
                                 ),
                                 SizedBox(height: 16),
                               ],
@@ -164,35 +182,49 @@ class LoginSignupPage extends StatelessWidget {
                                 ),
                                 SizedBox(height: 16),
 
-                                // Address Button
-                                GestureDetector(
-                                  onTap: controller.updateAddress,
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[50],
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.grey[200]!),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.home_outlined, color: Colors.grey[400], size: 20),
-                                        SizedBox(width: 12),
-                                        Expanded(
-                                          child: Obx(() => Text(
-                                            controller.userAddress.value.isEmpty ? '주소 검색' : controller.userAddress.value,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: controller.userAddress.value.isEmpty ? Colors.grey[400] : Colors.black87,
-                                            ),
-                                          )),
-                                        ),
-                                        Icon(Icons.search, color: Colors.grey[400], size: 20),
-                                      ],
+                                  // Address Button
+                                  GestureDetector(
+                                    onTap: controller.updateAddress,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[50],
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.grey[200]!),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.home_outlined, color: Colors.grey[400], size: 20),
+                                          SizedBox(width: 12),
+                                          Expanded(
+                                            child: Obx(() => Text(
+                                              controller.userAddress.value.isEmpty ? '주소 검색' : controller.userAddress.value,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: controller.userAddress.value.isEmpty ? Colors.grey[400] : Colors.black87,
+                                              ),
+                                            )),
+                                          ),
+                                          Icon(Icons.search, color: Colors.grey[400], size: 20),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                                SizedBox(height: 16),
+                                  SizedBox(height: 16),
+
+                                  // Detailed Address Field
+                                  _buildTextField(
+                                    key: ValueKey('detailAddress'),
+                                    hintText: '상세주소 (예: 101호)',
+                                    icon: Icons.add_location_outlined,
+                                    validator: (value) {
+                                      // Optional field, but good to have
+                                      return null;
+                                    },
+                                    onSaved: (value) => controller.detailAddress.value = value ?? '',
+                                    onChanged: (value) => controller.detailAddress.value = value,
+                                  ),
+                                  SizedBox(height: 16),
 
                                 // Birth Date
                                 GestureDetector(
@@ -333,8 +365,10 @@ class LoginSignupPage extends StatelessWidget {
                                 SizedBox(
                                   width: double.infinity,
                                   child: OutlinedButton.icon(
-                                    onPressed: () {
-                                      controller.signInWithGoogle();
+                                    onPressed: () async {
+                                      //구글 전면광고
+                                      // await Get.find<InterstitialAdController>().showAd();
+                                      await controller.signInWithGoogle();
                                     },
                                     icon: Icon(Icons.add, size: 18),
                                     label: Text('Google로 계속하기'),

@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../profile_controller.dart';
+import 'staff_settlement_page.dart';
+import 'owner_payment_history_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -16,7 +18,7 @@ class ProfilePage extends StatelessWidget {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text('내 프로필', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.black,
+        centerTitle: true,
         elevation: 0,
         actions: [
           Obx(() => TextButton(
@@ -32,12 +34,21 @@ class ProfilePage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E88E5),
+                color: Colors.white,
               ),
             ),
           )),
           SizedBox(width: 16),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
@@ -236,6 +247,30 @@ class ProfilePage extends StatelessWidget {
                               color: Colors.black87,
                             ),
                           ),
+                          SizedBox(height: 8),
+                          // Detailed Address
+                          controller.isEditing.value
+                              ? TextField(
+                                  controller: controller.detailAddressController,
+                                  decoration: InputDecoration(
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                    border: InputBorder.none,
+                                    hintText: '상세주소 입력 (예: 101호)',
+                                    hintStyle: TextStyle(color: Colors.grey[400]),
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                )
+                              : Text(
+                                  userModel?.detailAddress ?? '',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
                           SizedBox(height: 20),
                           SizedBox(
                             width: double.infinity,
@@ -261,9 +296,147 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ),
                     
+                    if (userModel?.userType == 'staff') ...[
+                      SizedBox(height: 30),
+                      _buildSectionTitle('정산 관리'),
+                      SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              Get.to(() => StaffSettlementPage());
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF1E88E5)),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '정산 내역 및 완료 목록',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          '완료한 청소와 예상 정산금을 확인하세요',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[500],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    
+                    if (userModel?.userType == 'owner') ...[
+                      SizedBox(height: 30),
+                      _buildSectionTitle('지불 관리'),
+                      SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              Get.to(() => OwnerPaymentHistoryPage());
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.payment_outlined, color: Color(0xFF1E88E5)),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '지불 내역 및 완료 목록',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          '완료된 청소와 지불한 금액을 확인하세요',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[500],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    
                     if (userModel?.userType == 'staff' || userModel?.userType == 'owner') ...[
                       SizedBox(height: 30),
-                      _buildSectionTitle(userModel?.userType == 'staff' ? '근무 설정' : '청소 설정'),
+                      _buildSectionTitle(userModel?.userType == 'staff' ? '근무예약설정' : '청소예약설정'),
                       SizedBox(height: 16),
                       Container(
                         width: double.infinity,
@@ -371,7 +544,49 @@ class ProfilePage extends StatelessWidget {
                               ],
                             ),
                             
-                            if (userModel?.userType == 'owner') ...[
+                            if (userModel?.userType == 'owner' || userModel?.userType == 'staff') ...[
+                              SizedBox(height: 20),
+                              Text(
+                                userModel?.userType == 'staff' ? '전문 분야' : '청소 종류',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 10),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: controller.isEditing.value ? Colors.grey[50] : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: controller.isEditing.value ? Border.all(color: Colors.grey[200]!) : null,
+                                ),
+                                child: Obx(() => DropdownButtonFormField<String>(
+                                  key: ValueKey(controller.selectedCleaningType.value),
+                                  initialValue: controller.selectedCleaningType.value,
+                                  decoration: InputDecoration(
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    border: InputBorder.none,
+                                    enabled: controller.isEditing.value,
+                                  ),
+                                  icon: controller.isEditing.value ? Icon(Icons.arrow_drop_down) : SizedBox.shrink(),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                  items: ProfileController.cleaningTypes.map((String type) {
+                                    return DropdownMenuItem<String>(
+                                      value: type,
+                                      child: Text(type),
+                                    );
+                                  }).toList(),
+                                  onChanged: controller.isEditing.value 
+                                      ? (String? newValue) {
+                                          if (newValue != null) {
+                                            controller.selectedCleaningType.value = newValue;
+                                          }
+                                        }
+                                      : null,
+                                )),
+                              ),
+                              
                               SizedBox(height: 20),
                               Text(
                                 '상세 정보 (호실 등)',
@@ -399,6 +614,145 @@ class ProfilePage extends StatelessWidget {
                                 ),
                               ),
                             ],
+
+                            if (userModel?.userType == 'staff') ...[
+                              SizedBox(height: 20),
+                              Text(
+                                '청소 금액',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 10),
+                              TextFormField(
+                                controller: controller.cleaningPriceController,
+                                enabled: controller.isEditing.value,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  hintText: '예: 50,000원',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: controller.isEditing.value ? Colors.grey[50] : Colors.transparent,
+                                  contentPadding: EdgeInsets.all(16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                              
+                              SizedBox(height: 20),
+                              Text(
+                                '추가옵션 비용',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 10),
+                              TextFormField(
+                                controller: controller.additionalOptionCostController,
+                                enabled: controller.isEditing.value,
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  hintText: '예: 창문청소 +10,000원\n베란다청소 +15,000원',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: controller.isEditing.value ? Colors.grey[50] : Colors.transparent,
+                                  contentPadding: EdgeInsets.all(16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            if (userModel?.userType == 'owner') ...[
+                              SizedBox(height: 20),
+                              Text(
+                                '청소도구위치',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 10),
+                              TextFormField(
+                                controller: controller.cleaningToolLocationController,
+                                enabled: controller.isEditing.value,
+                                decoration: InputDecoration(
+                                  hintText: '예: 베란다 창고',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: controller.isEditing.value ? Colors.grey[50] : Colors.transparent,
+                                  contentPadding: EdgeInsets.all(16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                              
+                              SizedBox(height: 20),
+                              Text(
+                                '청소시 주의사항',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 10),
+                              TextFormField(
+                                controller: controller.cleaningPrecautionsController,
+                                enabled: controller.isEditing.value,
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  hintText: '예: 강아지가 있으니 조심해주세요',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: controller.isEditing.value ? Colors.grey[50] : Colors.transparent,
+                                  contentPadding: EdgeInsets.all(16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            SizedBox(height: 20),
+                            Text(
+                              '자동 등록 제목',
+                              style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 10),
+                            TextFormField(
+                              controller: controller.autoRegisterTitleController,
+                              enabled: controller.isEditing.value,
+                              decoration: InputDecoration(
+                                hintText: userModel?.userType == 'staff' 
+                                    ? '예: 청소 가능합니다' 
+                                    : '예: ${userModel?.userName ?? ''}님의 청소 의뢰',
+                                hintStyle: TextStyle(color: Colors.grey[400]),
+                                filled: true,
+                                fillColor: controller.isEditing.value ? Colors.grey[50] : Colors.transparent,
+                                contentPadding: EdgeInsets.all(16),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                ),
+                              ),
+                            ),
 
                             SizedBox(height: 20),
                             Row(
@@ -428,12 +782,131 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ],
                     
+                    if (userModel?.userType == 'staff') ...[
+                      SizedBox(height: 30),
+                      _buildSectionTitle('청소 후기'),
+                      SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Obx(() {
+                          final stats = controller.staffRatingStats;
+                          final reviews = controller.staffReviews;
+                          final averageRating = stats['averageRating'] ?? 0.0;
+                          final reviewCount = stats['reviewCount'] ?? 0;
+                          
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Rating summary
+                              Row(
+                                children: [
+                                  Icon(Icons.star, color: Colors.amber, size: 32),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    averageRating.toStringAsFixed(1),
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    '($reviewCount개의 후기)',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              
+                              if (reviews.isNotEmpty) ...[
+                                SizedBox(height: 20),
+                                Divider(),
+                                SizedBox(height: 16),
+                                
+                                // Reviews list
+                                ...reviews.map((review) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(bottom: 16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            ...List.generate(5, (index) {
+                                              return Icon(
+                                                index < review.rating ? Icons.star : Icons.star_border,
+                                                color: Colors.amber,
+                                                size: 16,
+                                              );
+                                            }),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              '${review.createdAt.year}-${review.createdAt.month.toString().padLeft(2, '0')}-${review.createdAt.day.toString().padLeft(2, '0')}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey[500],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: 8),
+                                        Text(
+                                          review.comment,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.black87,
+                                          ),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (reviews.indexOf(review) < reviews.length - 1)
+                                          Padding(
+                                            padding: EdgeInsets.only(top: 16),
+                                            child: Divider(height: 1),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ] else if (reviewCount == 0) ...[
+                                SizedBox(height: 20),
+                                Center(
+                                  child: Text(
+                                    '아직 후기가 없습니다',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          );
+                        }),
+                      ),
+                    ],
+                    
                     SizedBox(height: 32),
                     
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: controller.logout,
+                        onPressed: (){controller.logout();},
                         icon: Icon(Icons.logout_rounded, size: 20),
                         label: Text('로그아웃'),
                         style: ElevatedButton.styleFrom(

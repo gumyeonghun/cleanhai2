@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:cleanhai2/data/model/user_model.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import 'package:cleanhai2/data/model/cleaning_request.dart';
+import 'package:cleanhai2/data/model/review.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
 import '../../auth/login_signup_page.dart';
 
@@ -22,7 +23,13 @@ class ProfileController extends GetxController {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
+  final TextEditingController detailAddressController = TextEditingController();
   final TextEditingController cleaningDetailsController = TextEditingController(); // For owners
+  final TextEditingController cleaningToolLocationController = TextEditingController(); // For owners
+  final TextEditingController cleaningPrecautionsController = TextEditingController(); // For owners
+  final TextEditingController cleaningPriceController = TextEditingController(); // For staff
+  final TextEditingController additionalOptionCostController = TextEditingController(); // For staff
+  final TextEditingController autoRegisterTitleController = TextEditingController(); // For auto-registration title
   final Rx<DateTime?> birthDate = Rx<DateTime?>(null);
 
   // Availability
@@ -30,10 +37,28 @@ class ProfileController extends GetxController {
   final Rx<TimeOfDay?> startTime = Rx<TimeOfDay?>(null);
   final Rx<TimeOfDay?> endTime = Rx<TimeOfDay?>(null);
   final RxBool isAutoRegisterEnabled = false.obs;
+  
+  // Cleaning Type
+  final RxString selectedCleaningType = '숙박업소청소'.obs;
+  static const List<String> cleaningTypes = [
+    '숙박업소청소',
+    '사무실청소',
+    '건물청소',
+    '가게청소',
+    '출장손세차',
+    '특수청소',
+    '입주청소',
+    '가정집청소',
+    '기타',
+  ];
 
   // 프로필 이미지
   final Rx<File?> selectedImage = Rx<File?>(null);
   final ImagePicker _picker = ImagePicker();
+
+  // Staff reviews and ratings
+  final RxMap<String, dynamic> staffRatingStats = <String, dynamic>{}.obs;
+  final RxList<Review> staffReviews = <Review>[].obs;
 
   @override
   void onInit() {
@@ -46,7 +71,13 @@ class ProfileController extends GetxController {
     nameController.dispose();
     phoneController.dispose();
     addressController.dispose();
+    detailAddressController.dispose();
     cleaningDetailsController.dispose();
+    cleaningToolLocationController.dispose();
+    cleaningPrecautionsController.dispose();
+    cleaningPriceController.dispose();
+    additionalOptionCostController.dispose();
+    autoRegisterTitleController.dispose();
     super.onClose();
   }
 
@@ -61,7 +92,13 @@ class ProfileController extends GetxController {
         nameController.text = userProfile.userName ?? '';
         phoneController.text = userProfile.phoneNumber ?? '';
         addressController.text = userProfile.address ?? '';
+        detailAddressController.text = userProfile.detailAddress ?? '';
         cleaningDetailsController.text = userProfile.cleaningDetails ?? '';
+        cleaningToolLocationController.text = userProfile.cleaningToolLocation ?? '';
+        cleaningPrecautionsController.text = userProfile.cleaningPrecautions ?? '';
+        cleaningPriceController.text = userProfile.cleaningPrice ?? '';
+        additionalOptionCostController.text = userProfile.additionalOptionCost ?? '';
+        autoRegisterTitleController.text = userProfile.autoRegisterTitle ?? '';
         birthDate.value = userProfile.birthDate;
         
         availableDays.assignAll(userProfile.availableDays ?? []);
@@ -71,10 +108,34 @@ class ProfileController extends GetxController {
         if (userProfile.availableEndTime != null) {
           endTime.value = _parseTime(userProfile.availableEndTime!);
         }
+
         isAutoRegisterEnabled.value = userProfile.isAutoRegisterEnabled;
+        selectedCleaningType.value = userProfile.preferredCleaningType ?? '숙박업소청소';
+        
+        // Load staff reviews if user is staff
+        if (userProfile.userType == 'staff') {
+          loadStaffReviews();
+        }
       }
     }
     isLoading.value = false;
+  }
+
+  Future<void> loadStaffReviews() async {
+    final user = userModel.value;
+    if (user != null && user.userType == 'staff') {
+      try {
+        // Get rating stats
+        final stats = await _repository.getStaffRatingStats(user.id);
+        staffRatingStats.value = stats;
+        
+        // Get all completed requests with reviews
+        final requests = await _repository.getCompletedRequestsWithReviews(user.id);
+        staffReviews.assignAll(requests.map((r) => r.review!).toList());
+      } catch (e) {
+        debugPrint('Failed to load staff reviews: $e');
+      }
+    }
   }
 
   TimeOfDay? _parseTime(String timeStr) {
@@ -136,7 +197,13 @@ class ProfileController extends GetxController {
         nameController.text = user.userName ?? '';
         phoneController.text = user.phoneNumber ?? '';
         addressController.text = user.address ?? '';
+        detailAddressController.text = user.detailAddress ?? '';
         cleaningDetailsController.text = user.cleaningDetails ?? '';
+        cleaningToolLocationController.text = user.cleaningToolLocation ?? '';
+        cleaningPrecautionsController.text = user.cleaningPrecautions ?? '';
+        cleaningPriceController.text = user.cleaningPrice ?? '';
+        additionalOptionCostController.text = user.additionalOptionCost ?? '';
+        autoRegisterTitleController.text = user.autoRegisterTitle ?? '';
         birthDate.value = user.birthDate;
         selectedImage.value = null;
         
@@ -154,6 +221,7 @@ class ProfileController extends GetxController {
         }
         
         isAutoRegisterEnabled.value = user.isAutoRegisterEnabled;
+        selectedCleaningType.value = user.preferredCleaningType ?? '숙박업소청소';
       }
     }
     isEditing.value = !isEditing.value;
@@ -185,6 +253,7 @@ class ProfileController extends GetxController {
         id: user.id,
         email: user.email,
         address: addressController.text,
+        detailAddress: detailAddressController.text,
         latitude: user.latitude,
         longitude: user.longitude,
         userType: user.userType,
@@ -196,6 +265,12 @@ class ProfileController extends GetxController {
         availableEndTime: endTime.value != null ? _formatTime(endTime.value!) : null,
         isAutoRegisterEnabled: isAutoRegisterEnabled.value,
         cleaningDetails: cleaningDetailsController.text,
+        preferredCleaningType: selectedCleaningType.value,
+        cleaningToolLocation: cleaningToolLocationController.text,
+        cleaningPrecautions: cleaningPrecautionsController.text,
+        cleaningPrice: cleaningPriceController.text,
+        additionalOptionCost: additionalOptionCostController.text,
+        autoRegisterTitle: autoRegisterTitleController.text,
         birthDate: birthDate.value,
       );
 
@@ -204,28 +279,66 @@ class ProfileController extends GetxController {
       
       // Sync Logic
       if (user.userType == 'staff') {
-        // ... (Staff Logic - Unchanged) ...
+        debugPrint('=== 청소 전문가 자동 등록 시작 ===');
+        debugPrint('자동 등록 활성화: ${isAutoRegisterEnabled.value}');
+        
+        final existingStaff = await _repository.getCleaningStaffByAuthorId(user.id);
+        debugPrint('기존 스태프 정보: ${existingStaff != null ? "있음 (ID: ${existingStaff.id}, 자동등록: ${existingStaff.isAutoRegistered})" : "없음"}');
+        
+        final availabilityStr = '근무가능일시: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}';
+
         if (isAutoRegisterEnabled.value) {
-          final existingStaff = await _repository.getCleaningStaffByAuthorId(user.id);
-          final availabilityStr = '근무 가능: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}';
-          
+          debugPrint('자동 등록 활성화 상태 처리 중...');
+          // 자동 등록 활성화 상태
           if (existingStaff != null) {
-            final updatedStaff = existingStaff.copyWith(
-              authorName: updatedUser.userName ?? '',
-              imageUrl: updatedUser.profileImageUrl,
-              address: updatedUser.address,
-              latitude: updatedUser.latitude,
-              longitude: updatedUser.longitude,
-              content: availabilityStr,
-              updatedAt: DateTime.now(),
-            );
-            await _repository.updateCleaningStaff(updatedStaff);
+            if (existingStaff.isAutoRegistered) {
+              debugPrint('기존 자동 등록 스태프 업데이트 중...');
+              // 기존 자동 등록된 스태프 -> 전체 정보 업데이트
+              final updatedStaff = existingStaff.copyWith(
+                authorName: updatedUser.userName ?? '',
+                title: autoRegisterTitleController.text.isNotEmpty 
+                    ? autoRegisterTitleController.text 
+                    : existingStaff.title,
+                imageUrl: updatedUser.profileImageUrl,
+                address: updatedUser.address,
+                latitude: updatedUser.latitude,
+                longitude: updatedUser.longitude,
+                content: availabilityStr,
+                updatedAt: DateTime.now(),
+                availableDays: availableDays.toList(),
+                isAutoRegistered: true,
+                cleaningType: selectedCleaningType.value,
+                cleaningPrice: cleaningPriceController.text,
+                additionalOptionCost: additionalOptionCostController.text,
+              );
+              await _repository.updateCleaningStaff(updatedStaff);
+              debugPrint('자동 등록 스태프 업데이트 완료');
+            } else {
+              debugPrint('기존 수동 등록 스태프 프로필 정보만 동기화 중...');
+              // 기존 수동 등록된 스태프 -> 프로필 정보(이름, 사진, 주소)만 동기화
+              final updatedStaff = existingStaff.copyWith(
+                authorName: updatedUser.userName ?? '',
+                imageUrl: updatedUser.profileImageUrl,
+                address: updatedUser.address,
+                latitude: updatedUser.latitude,
+                longitude: updatedUser.longitude,
+                updatedAt: DateTime.now(),
+                cleaningPrice: cleaningPriceController.text,
+                additionalOptionCost: additionalOptionCostController.text,
+              );
+              await _repository.updateCleaningStaff(updatedStaff);
+              debugPrint('수동 등록 스태프 동기화 완료');
+            }
           } else {
+            debugPrint('새로운 자동 등록 스태프 생성 중...');
+            // 스태프 정보 없음 -> 새로 자동 등록 생성
             final newStaff = CleaningStaff(
               id: '',
               authorId: user.id,
               authorName: updatedUser.userName ?? '',
-              title: '청소 가능합니다',
+              title: autoRegisterTitleController.text.isNotEmpty 
+                  ? autoRegisterTitleController.text 
+                  : '청소 가능합니다',
               content: availabilityStr,
               imageUrl: updatedUser.profileImageUrl,
               address: updatedUser.address,
@@ -233,39 +346,94 @@ class ProfileController extends GetxController {
               longitude: updatedUser.longitude,
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
+              availableDays: availableDays.toList(),
+              isAutoRegistered: true,
+              cleaningType: selectedCleaningType.value,
+              cleaningPrice: cleaningPriceController.text,
+              additionalOptionCost: additionalOptionCostController.text,
             );
             await _repository.createCleaningStaff(newStaff);
+            debugPrint('새 자동 등록 스태프 생성 완료');
           }
         } else {
-          await _repository.deleteCleaningStaffByAuthorId(user.id);
+          debugPrint('자동 등록 비활성화 상태 처리 중...');
+          // 자동 등록 비활성화 상태
+          if (existingStaff != null) {
+            if (existingStaff.isAutoRegistered) {
+              debugPrint('자동 등록 스태프 삭제 중...');
+              // 자동 등록된 스태프라면 삭제
+              await _repository.deleteCleaningStaff(existingStaff.id);
+              debugPrint('자동 등록 스태프 삭제 완료');
+            } else {
+              debugPrint('수동 등록 스태프 프로필 정보만 동기화 중...');
+              // 수동 등록된 스태프라면 -> 프로필 정보(이름, 사진, 주소)만 동기화
+              final updatedStaff = existingStaff.copyWith(
+                authorName: updatedUser.userName ?? '',
+                imageUrl: updatedUser.profileImageUrl,
+                address: updatedUser.address,
+                latitude: updatedUser.latitude,
+                longitude: updatedUser.longitude,
+                updatedAt: DateTime.now(),
+                cleaningPrice: cleaningPriceController.text,
+                additionalOptionCost: additionalOptionCostController.text,
+              );
+              await _repository.updateCleaningStaff(updatedStaff);
+              debugPrint('수동 등록 스태프 동기화 완료');
+            }
+          }
         }
+        debugPrint('=== 청소 전문가 자동 등록 완료 ===');
       } else if (user.userType == 'owner') {
         // Owner Logic
+        final existingRequest = await _repository.getCleaningRequestByAuthorId(user.id);
+        
+        // 수정 가능한 상태인지 확인 (pending 상태일 때만 수정 가능)
+        bool isEditable = existingRequest != null && existingRequest.status == 'pending';
+        
+        final contentStr = '청소 필요 요일: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}\n상세: ${cleaningDetailsController.text}${cleaningToolLocationController.text.isNotEmpty ? '\n청소도구위치: ${cleaningToolLocationController.text}' : ''}${cleaningPrecautionsController.text.isNotEmpty ? '\n주의사항: ${cleaningPrecautionsController.text}' : ''}';
+
         if (isAutoRegisterEnabled.value) {
-          final existingRequest = await _repository.getCleaningRequestByAuthorId(user.id);
-          
-          final contentStr = '청소 필요 요일: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}\n상세: ${cleaningDetailsController.text}';
-          
-          if (existingRequest != null && existingRequest.status == 'pending') {
-            // Update existing pending request
+          if (isEditable && existingRequest!.isAutoRegistered) {
+            // 기존 대기중인 자동 등록 의뢰 -> 전체 정보 업데이트
+            final updatedRequest = existingRequest.copyWith(
+              authorName: updatedUser.userName ?? '',
+              title: autoRegisterTitleController.text.isNotEmpty 
+                  ? autoRegisterTitleController.text 
+                  : existingRequest.title,
+              imageUrl: updatedUser.profileImageUrl,
+              address: updatedUser.address,
+              latitude: updatedUser.latitude,
+              longitude: updatedUser.longitude,
+              content: contentStr,
+              updatedAt: DateTime.now(),
+              availableDays: availableDays.toList(),
+              isAutoRegistered: true,
+              cleaningType: selectedCleaningType.value,
+              cleaningToolLocation: cleaningToolLocationController.text,
+              precautions: cleaningPrecautionsController.text,
+            );
+            await _repository.updateCleaningRequest(updatedRequest);
+          } else if (isEditable && !existingRequest!.isAutoRegistered) {
+            // 기존 대기중인 수동 등록 의뢰 -> 프로필 정보(이름, 사진, 주소)만 동기화
             final updatedRequest = existingRequest.copyWith(
               authorName: updatedUser.userName ?? '',
               imageUrl: updatedUser.profileImageUrl,
               address: updatedUser.address,
               latitude: updatedUser.latitude,
               longitude: updatedUser.longitude,
-              title: '${updatedUser.userName}님의 청소 의뢰',
-              content: contentStr,
               updatedAt: DateTime.now(),
             );
             await _repository.updateCleaningRequest(updatedRequest);
-          } else if (existingRequest == null || existingRequest.status != 'pending') {
-            // Create new request if no pending request exists
+          } else {
+            // 대기중인 의뢰가 없거나(완료/진행중 포함) -> 새로 자동 등록 생성
+            // 단, 이미 진행중/완료된 의뢰가 있어도 새로운 의뢰를 생성함 (다음 청소 건)
             final newRequest = CleaningRequest(
               id: '',
               authorId: user.id,
               authorName: updatedUser.userName ?? '',
-              title: '${updatedUser.userName}님의 청소 의뢰',
+              title: autoRegisterTitleController.text.isNotEmpty 
+                  ? autoRegisterTitleController.text 
+                  : '${updatedUser.userName}님의 청소 의뢰',
               content: contentStr,
               price: '협의', // Default price
               imageUrl: updatedUser.profileImageUrl,
@@ -275,12 +443,31 @@ class ProfileController extends GetxController {
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
               status: 'pending',
+              availableDays: availableDays.toList(),
+              isAutoRegistered: true,
+              cleaningType: selectedCleaningType.value,
+              cleaningToolLocation: cleaningToolLocationController.text,
+              precautions: cleaningPrecautionsController.text,
             );
             await _repository.createCleaningRequest(newRequest);
           }
         } else {
-          // Delete pending request if exists
-          await _repository.deleteCleaningRequestByAuthorId(user.id);
+          // 자동 등록 비활성화 상태
+          if (isEditable && existingRequest!.isAutoRegistered) {
+            // 대기중인 자동 등록 의뢰라면 삭제
+            await _repository.deleteCleaningRequest(existingRequest.id);
+          } else if (isEditable && !existingRequest!.isAutoRegistered) {
+            // 대기중인 수동 등록 의뢰라면 -> 프로필 정보(이름, 사진, 주소)만 동기화
+            final updatedRequest = existingRequest.copyWith(
+              authorName: updatedUser.userName ?? '',
+              imageUrl: updatedUser.profileImageUrl,
+              address: updatedUser.address,
+              latitude: updatedUser.latitude,
+              longitude: updatedUser.longitude,
+              updatedAt: DateTime.now(),
+            );
+            await _repository.updateCleaningRequest(updatedRequest);
+          }
         }
       }
       
@@ -333,6 +520,8 @@ class ProfileController extends GetxController {
             availableEndTime: user.availableEndTime,
             isAutoRegisterEnabled: user.isAutoRegisterEnabled,
             cleaningDetails: user.cleaningDetails,
+            preferredCleaningType: user.preferredCleaningType,
+            birthDate: user.birthDate,
           );
 
           await _repository.updateUserProfile(updatedUser);
@@ -351,5 +540,6 @@ class ProfileController extends GetxController {
     Get.deleteAll(force: true);
     // 모든 페이지 스택 제거하고 로그인 페이지로 이동
     Get.offAll(() => LoginSignupPage(), predicate: (_) => false);
+
   }
 }

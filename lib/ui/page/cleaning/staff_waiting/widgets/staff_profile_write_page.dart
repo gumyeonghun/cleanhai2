@@ -175,6 +175,44 @@ class StaffProfileWritePage extends StatelessWidget {
                 ),
                 SizedBox(height: 24),
 
+                // 전문 분야
+                Text(
+                  '전문 분야',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Obx(() => Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: DropdownButtonFormField<String>(
+                    value: controller.selectedCleaningType.value,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: InputBorder.none,
+                    ),
+                    icon: Icon(Icons.arrow_drop_down, color: Color(0xFF1E88E5)),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                    items: StaffProfileWriteController.cleaningTypes.map((String type) {
+                      return DropdownMenuItem<String>(
+                        value: type,
+                        child: Text(type),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        controller.selectedCleaningType.value = newValue;
+                      }
+                    },
+                  ),
+                )),
+                SizedBox(height: 24),
+
                 // 주소 정보 (읽기 전용)
                 Obx(() {
                   final user = controller.currentUser.value;
@@ -218,6 +256,54 @@ class StaffProfileWritePage extends StatelessWidget {
                   }
                   return SizedBox.shrink();
                 }),
+
+                // 청소 금액
+                Text(
+                  '청소 금액',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                TextFormField(
+                  controller: controller.cleaningPriceController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: '예: 50,000원',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Color(0xFF1E88E5), width: 2),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                // 추가옵션 비용
+                Text(
+                  '추가옵션 비용',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                TextFormField(
+                  controller: controller.additionalOptionCostController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: '예: 창문청소 +10,000원\n베란다청소 +15,000원',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Color(0xFF1E88E5), width: 2),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24),
 
                 // 등록 버튼
                 SizedBox(

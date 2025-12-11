@@ -1,6 +1,7 @@
 import 'package:cleanhai2/firebase_options.dart';
 import 'package:cleanhai2/ui/page/main/widgets/main_page.dart';
 import 'package:cleanhai2/ui/page/auth/login_signup_page.dart';
+import 'package:cleanhai2/ui2/global_controller/interstitial_ad_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Get.put(InterstitialAdController());
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform
   );
@@ -31,7 +33,7 @@ class MyApp extends StatelessWidget {
         Locale('ko', 'KR'),
         Locale('en', 'US'),
       ],
-      title: '청소5분대기조',
+      title: '청소혁명가',
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         colorScheme: ColorScheme.fromSeed(

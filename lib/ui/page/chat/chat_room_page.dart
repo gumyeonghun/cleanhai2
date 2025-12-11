@@ -41,7 +41,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     setState(() {
       _userEnterMessage = '';
     });
-    FocusScope.of(context).unfocus();
+    if (mounted) {
+      FocusScope.of(context).unfocus();
+    }
   }
 
   @override
@@ -108,6 +110,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     message.text,
                     isMe,
                     message.senderName,
+                    messageType: message.messageType,
+                    imageUrl: message.imageUrl,
                   );
                 },
               );
@@ -129,41 +133,75 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    maxLines: null,
-                    controller: _textController,
-                    decoration: InputDecoration(
-                      hintText: '메시지를 입력해 주세요',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                // Upload progress indicator
+                Obx(() {
+                  if (controller.isUploadingImage.value) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            '이미지 업로드 중...',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return SizedBox.shrink();
+                }),
+                Row(
+                  children: [
+                    // Image button
+                    IconButton(
+                      onPressed: controller.pickAndSendImage,
+                      icon: Icon(Icons.image, color: Color(0xFF1E88E5)),
+                      tooltip: '이미지 전송',
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        _userEnterMessage = value;
-                      });
-                    },
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        maxLines: null,
+                        controller: _textController,
+                        decoration: InputDecoration(
+                          hintText: '메시지를 입력해 주세요',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _userEnterMessage = value;
+                          });
+                        },
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
                     ),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    onPressed: _userEnterMessage.trim().isEmpty ? null : _sendMessage,
-                    icon: Icon(Icons.send),
-                    color: Colors.white,
-                    disabledColor: Colors.white.withValues(alpha: 0.5),
-                  ),
+                    SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        onPressed: _userEnterMessage.trim().isEmpty ? null : _sendMessage,
+                        icon: Icon(Icons.send),
+                        color: Colors.white,
+                        disabledColor: Colors.white.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

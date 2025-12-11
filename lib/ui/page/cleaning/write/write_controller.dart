@@ -17,6 +17,10 @@ class WriteController extends GetxController {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
+  final TextEditingController detailAddressController = TextEditingController();
+  final TextEditingController requesterNameController = TextEditingController();
+  final TextEditingController cleaningToolLocationController = TextEditingController();
+  final TextEditingController precautionsController = TextEditingController();
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   // Observables
@@ -30,6 +34,19 @@ class WriteController extends GetxController {
   final RxDouble latitude = 0.0.obs;
   final RxDouble longitude = 0.0.obs;
   final RxString userType = ''.obs;
+  final RxString selectedCleaningType = '숙박업소청소'.obs;
+
+  static const List<String> cleaningTypes = [
+    '숙박업소청소',
+    '사무실청소',
+    '건물청소',
+    '가게청소',
+    '출장손세차',
+    '특수청소',
+    '입주청소',
+    '가정집청소',
+    '기타',
+  ];
 
   // Constructor arguments
   final String? initialType;
@@ -55,6 +72,10 @@ class WriteController extends GetxController {
     titleController.dispose();
     contentController.dispose();
     priceController.dispose();
+    detailAddressController.dispose();
+    requesterNameController.dispose();
+    cleaningToolLocationController.dispose();
+    precautionsController.dispose();
     super.onClose();
   }
 
@@ -69,19 +90,26 @@ class WriteController extends GetxController {
       titleController.text = existingRequest!.title;
       contentController.text = existingRequest!.content;
       priceController.text = existingRequest!.price ?? '';
+      detailAddressController.text = existingRequest!.detailAddress ?? '';
       existingImageUrl.value = existingRequest!.imageUrl ?? '';
       address.value = existingRequest!.address ?? '';
       latitude.value = existingRequest!.latitude ?? 0.0;
       longitude.value = existingRequest!.longitude ?? 0.0;
+      selectedCleaningType.value = existingRequest!.cleaningType ?? '숙박업소청소';
+      requesterNameController.text = existingRequest!.requesterName ?? '';
+      cleaningToolLocationController.text = existingRequest!.cleaningToolLocation ?? '';
+      precautionsController.text = existingRequest!.precautions ?? '';
     } else if (existingStaff != null) {
       isEditMode.value = true;
       selectedType.value = 'staff';
       titleController.text = existingStaff!.title;
       contentController.text = existingStaff!.content;
+      detailAddressController.text = existingStaff!.detailAddress ?? '';
       existingImageUrl.value = existingStaff!.imageUrl ?? '';
       address.value = existingStaff!.address ?? '';
       latitude.value = existingStaff!.latitude ?? 0.0;
       longitude.value = existingStaff!.longitude ?? 0.0;
+      selectedCleaningType.value = existingStaff!.cleaningType ?? '숙박업소청소';
     }
 
     _loadUserType();
@@ -198,10 +226,15 @@ class WriteController extends GetxController {
             price: priceController.text.trim(),
             imageUrl: imageUrl,
             address: address.value.isEmpty ? null : address.value,
+            detailAddress: detailAddressController.text,
             latitude: latitude.value == 0.0 ? null : latitude.value,
             longitude: longitude.value == 0.0 ? null : longitude.value,
             updatedAt: now,
-            targetStaffId: targetStaffId, // Keep or update targetStaffId
+            targetStaffId: targetStaffId,
+            cleaningType: selectedCleaningType.value,
+            requesterName: requesterNameController.text.trim(),
+            cleaningToolLocation: cleaningToolLocationController.text.trim(),
+            precautions: precautionsController.text.trim(),
           );
           await _repository.updateCleaningRequest(updatedRequest);
         } else {
@@ -215,11 +248,16 @@ class WriteController extends GetxController {
             price: priceController.text.trim(),
             imageUrl: imageUrl,
             address: address.value.isEmpty ? null : address.value,
+            detailAddress: detailAddressController.text,
             latitude: latitude.value == 0.0 ? null : latitude.value,
             longitude: longitude.value == 0.0 ? null : longitude.value,
             createdAt: now,
             updatedAt: now,
-            targetStaffId: targetStaffId, // Set targetStaffId
+            targetStaffId: targetStaffId,
+            cleaningType: selectedCleaningType.value,
+            requesterName: requesterNameController.text.trim(),
+            cleaningToolLocation: cleaningToolLocationController.text.trim(),
+            precautions: precautionsController.text.trim(),
           );
           await _repository.createCleaningRequest(request);
         }
@@ -231,9 +269,11 @@ class WriteController extends GetxController {
             content: contentController.text.trim(),
             imageUrl: imageUrl,
             address: address.value.isEmpty ? null : address.value,
+            detailAddress: detailAddressController.text,
             latitude: latitude.value == 0.0 ? null : latitude.value,
             longitude: longitude.value == 0.0 ? null : longitude.value,
             updatedAt: now,
+            cleaningType: selectedCleaningType.value,
           );
           await _repository.updateCleaningStaff(updatedStaff);
         } else {
@@ -246,10 +286,12 @@ class WriteController extends GetxController {
             content: contentController.text.trim(),
             imageUrl: imageUrl,
             address: address.value.isEmpty ? null : address.value,
+            detailAddress: detailAddressController.text,
             latitude: latitude.value == 0.0 ? null : latitude.value,
             longitude: longitude.value == 0.0 ? null : longitude.value,
             createdAt: now,
             updatedAt: now,
+            cleaningType: selectedCleaningType.value,
           );
           await _repository.createCleaningStaff(staff);
         }

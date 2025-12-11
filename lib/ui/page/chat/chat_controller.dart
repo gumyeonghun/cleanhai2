@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class ChatController extends GetxController {
   final FirebaseAuth _authentication = FirebaseAuth.instance;
@@ -18,7 +19,7 @@ class ChatController extends GetxController {
         loggedUser.value = user;
       }
     } catch (e) {
-      print(e);
+      debugPrint('Error getting current user: $e');
     }
   }
 }

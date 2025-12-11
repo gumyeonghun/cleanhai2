@@ -17,6 +17,8 @@ class IamportPaymentService {
       // In production, you would integrate with actual payment gateway
       await Future.delayed(Duration(seconds: 1));
       
+      if (!context.mounted) return null;
+
       final result = await showDialog<Map<String, dynamic>>(
         context: context,
         barrierDismissible: false,

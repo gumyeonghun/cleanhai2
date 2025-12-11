@@ -7,6 +7,8 @@ class ChatMessage {
   final String senderName;
   final DateTime timestamp;
   final bool isRead;
+  final String messageType; // 'text' or 'image'
+  final String? imageUrl; // Image URL for image messages
 
   ChatMessage({
     required this.id,
@@ -15,6 +17,8 @@ class ChatMessage {
     required this.senderName,
     required this.timestamp,
     this.isRead = false,
+    this.messageType = 'text',
+    this.imageUrl,
   });
 
   factory ChatMessage.fromFirestore(DocumentSnapshot doc) {
@@ -26,6 +30,8 @@ class ChatMessage {
       senderName: data['senderName'] ?? '',
       timestamp: (data['timestamp'] as Timestamp).toDate(),
       isRead: data['isRead'] ?? false,
+      messageType: data['messageType'] ?? 'text',
+      imageUrl: data['imageUrl'],
     );
   }
 
@@ -36,6 +42,8 @@ class ChatMessage {
       'senderName': senderName,
       'timestamp': Timestamp.fromDate(timestamp),
       'isRead': isRead,
+      'messageType': messageType,
+      'imageUrl': imageUrl,
     };
   }
 }

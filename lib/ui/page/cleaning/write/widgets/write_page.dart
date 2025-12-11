@@ -154,6 +154,59 @@ class WritePage extends StatelessWidget {
                 return SizedBox.shrink();
               }),
               
+              // 청소 종류 선택 (청소 의뢰 또는 청소 대기일 때)
+              Obx(() {
+                if (controller.selectedType.value == 'request' || controller.selectedType.value == 'staff') {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        controller.selectedType.value == 'staff' ? '전문 분야' : '청소 종류',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          initialValue: controller.selectedCleaningType.value,
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            border: InputBorder.none,
+                          ),
+                          items: WriteController.cleaningTypes.map((String type) {
+                            return DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(type),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              controller.selectedCleaningType.value = newValue;
+                            }
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return '청소 종류를 선택해 주세요';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                    ],
+                  );
+                }
+                return SizedBox.shrink();
+              }),
+              
               // 제목
               Text(
                 '제목',
@@ -195,6 +248,51 @@ class WritePage extends StatelessWidget {
               )),
               
               SizedBox(height: 24),
+
+              // 청소 의뢰인 이름 (청소 의뢰일 때만)
+              Obx(() {
+                if (controller.selectedType.value == 'request') {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '청소 의뢰인 이름',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      TextFormField(
+                        controller: controller.requesterNameController,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(
+                          hintText: '예: 홍길동',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[200]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Color(0xFF1E88E5)),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                    ],
+                  );
+                }
+                return SizedBox.shrink();
+              }),
 
               // 금액 (청소 의뢰일 때만)
               Obx(() {
@@ -299,6 +397,86 @@ class WritePage extends StatelessWidget {
               
               SizedBox(height: 24),
 
+              // 청소 도구 위치 및 주의사항 (청소 의뢰일 때만)
+              Obx(() {
+                if (controller.selectedType.value == 'request') {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '청소 도구 위치',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      TextFormField(
+                        controller: controller.cleaningToolLocationController,
+                        textInputAction: TextInputAction.next,
+                        decoration: InputDecoration(
+                          hintText: '예: 베란다 창고',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[200]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Color(0xFF1E88E5)),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+
+                      Text(
+                        '청소시 주의사항',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      TextFormField(
+                        controller: controller.precautionsController,
+                        textInputAction: TextInputAction.done,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          hintText: '예: 강아지가 있으니 조심해주세요',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[200]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Color(0xFF1E88E5)),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                    ],
+                  );
+                }
+                return SizedBox.shrink();
+              }),
+
               // 주소 선택
               Text(
                 '위치',
@@ -334,6 +512,30 @@ class WritePage extends StatelessWidget {
                       ),
                       Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
                     ],
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 8),
+              TextFormField(
+                controller: controller.detailAddressController,
+                decoration: InputDecoration(
+                  hintText: '상세주소 (예: 101동 101호)',
+                  hintStyle: TextStyle(color: Colors.grey[400]),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[200]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Color(0xFF1E88E5)),
                   ),
                 ),
               ),

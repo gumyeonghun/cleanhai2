@@ -14,10 +14,21 @@ class StaffProfileWriteController extends GetxController {
   
   final titleController = TextEditingController();
   final contentController = TextEditingController();
+  final cleaningPriceController = TextEditingController();
+  final additionalOptionCostController = TextEditingController();
   
   final RxBool isLoading = false.obs;
   final Rx<XFile?> selectedImage = Rx<XFile?>(null);
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
+  final RxString selectedCleaningType = '숙박업소청소'.obs;
+  
+  static const List<String> cleaningTypes = [
+    '숙박업소청소',
+    '가정집청소',
+    '사무실청소',
+    '상가청소',
+    '기타청소',
+  ];
   
   final formKey = GlobalKey<FormState>();
 
@@ -36,8 +47,15 @@ class StaffProfileWriteController extends GetxController {
       if (currentUser.value != null) {
         titleController.text = '청소 가능합니다';
         
-        final availabilityStr = '근무 가능: ${currentUser.value!.availableDays?.join(', ') ?? '미설정'}\n시간: ${currentUser.value!.availableStartTime ?? ''} ~ ${currentUser.value!.availableEndTime ?? ''}';
+        final availabilityStr = '근무가능일시: ${currentUser.value!.availableDays?.join(', ') ?? '미설정'}\n시간: ${currentUser.value!.availableStartTime ?? ''} ~ ${currentUser.value!.availableEndTime ?? ''}';
         contentController.text = availabilityStr;
+        
+        // Load pricing from user profile
+        cleaningPriceController.text = currentUser.value!.cleaningPrice ?? '';
+        additionalOptionCostController.text = currentUser.value!.additionalOptionCost ?? '';
+        
+        // Load cleaning type from user profile
+        selectedCleaningType.value = currentUser.value!.preferredCleaningType ?? '숙박업소청소';
       }
     }
   }
@@ -115,6 +133,9 @@ class StaffProfileWriteController extends GetxController {
         longitude: user.longitude,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        cleaningType: selectedCleaningType.value,
+        cleaningPrice: cleaningPriceController.text.trim(),
+        additionalOptionCost: additionalOptionCostController.text.trim(),
       );
 
       await _repository.createCleaningStaff(newStaff);
@@ -134,6 +155,8 @@ class StaffProfileWriteController extends GetxController {
   void onClose() {
     titleController.dispose();
     contentController.dispose();
+    cleaningPriceController.dispose();
+    additionalOptionCostController.dispose();
     super.onClose();
   }
 }

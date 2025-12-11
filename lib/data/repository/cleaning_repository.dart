@@ -8,6 +8,8 @@ import '../model/user_model.dart';
 import '../model/progress_note.dart';
 import '../model/completion_report.dart';
 import '../model/review.dart';
+import '../model/cleaning_knowhow.dart';
+import '../model/cleaning_recommendation.dart';
 
 class CleaningRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -26,10 +28,11 @@ class CleaningRepository {
     await _cleaningRequestsRef.add(request.toFirestore());
   }
 
-  /// 청소 의뢰 목록 스트림 (최신순)
+  /// 청소 의뢰 목록 스트림 (최신순, 최대 50개)
   Stream<List<CleaningRequest>> getCleaningRequests() {
     return _cleaningRequestsRef
         .orderBy('createdAt', descending: true)
+        .limit(50)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -102,10 +105,51 @@ class CleaningRepository {
     });
   }
 
+  /// 내가 의뢰한 모든 청소 (대기중 + 수락됨)
+  Stream<List<CleaningRequest>> getAllMyRequestsAsOwner(String userId) {
+    return _cleaningRequestsRef
+        .where('authorId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CleaningRequest.fromFirestore(doc))
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    });
+  }
+
+  /// 내가 의뢰하고 완료된 청소 (의뢰인 입장 - 지불 내역용)
+  Stream<List<CleaningRequest>> getMyCompletedRequestsAsOwner(String userId) {
+    return _cleaningRequestsRef
+        .where('authorId', isEqualTo: userId)
+        .where('status', isEqualTo: 'completed')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CleaningRequest.fromFirestore(doc))
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    });
+  }
+
   /// 내가 수락된 청소 의뢰들 (청소 직원 입장)
   Stream<List<CleaningRequest>> getMyAcceptedRequestsAsStaff(String userId) {
     return _cleaningRequestsRef
         .where('acceptedApplicantId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CleaningRequest.fromFirestore(doc))
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    });
+  }
+
+  /// 내가 완료한 청소 의뢰들 (청소 직원 입장 - 정산용)
+  Stream<List<CleaningRequest>> getMyCompletedRequestsAsStaff(String userId) {
+    return _cleaningRequestsRef
+        .where('acceptedApplicantId', isEqualTo: userId)
+        .where('status', isEqualTo: 'completed')
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -224,10 +268,11 @@ class CleaningRepository {
     await _cleaningStaffsRef.add(staff.toFirestore());
   }
 
-  /// 청소 대기 목록 스트림 (최신순)
+  /// 청소 대기 목록 스트림 (최신순, 최대 50개)
   Stream<List<CleaningStaff>> getCleaningStaffs() {
     return _cleaningStaffsRef
         .orderBy('createdAt', descending: true)
+        .limit(50)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
@@ -260,6 +305,7 @@ class CleaningRepository {
     try {
       final snapshot = await _cleaningStaffsRef
           .orderBy('createdAt', descending: true)
+          .limit(50)
           .get();
 
       return snapshot.docs
@@ -302,6 +348,19 @@ class CleaningRepository {
     } catch (e) {
       debugPrint('Error deleting staff by author id: $e');
     }
+  }
+
+  /// 내 대기 프로필 스트림
+  Stream<CleaningStaff?> getMyWaitingProfileStream(String userId) {
+    return _cleaningStaffsRef
+        .where('authorId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isNotEmpty) {
+        return CleaningStaff.fromFirestore(snapshot.docs.first);
+      }
+      return null;
+    });
   }
 
   // ==================== 이미지 업로드 ====================
@@ -361,7 +420,7 @@ class CleaningRepository {
         return {'averageRating': 0.0, 'reviewCount': 0};
       }
       
-      final totalRating = reviews.fold<double>(0.0, (sum, review) => sum + review.rating);
+      final totalRating = reviews.fold<double>(0.0, (total, review) => total + review.rating);
       final averageRating = totalRating / reviews.length;
       
       return {
@@ -374,8 +433,83 @@ class CleaningRepository {
     }
   }
 
+  /// 청소 전문가의 완료된 청소 요청 중 리뷰가 있는 것들 가져오기
+  Future<List<CleaningRequest>> getCompletedRequestsWithReviews(String staffId) async {
+    try {
+      final snapshot = await _cleaningRequestsRef
+          .where('acceptedApplicantId', isEqualTo: staffId)
+          .where('status', isEqualTo: 'completed')
+          .orderBy('completedAt', descending: true)
+          .limit(20)
+          .get();
+      
+      return snapshot.docs
+          .map((doc) => CleaningRequest.fromFirestore(doc))
+          .where((request) => request.review != null)
+          .toList();
+    } catch (e) {
+      debugPrint('리뷰 가져오기 실패: $e');
+      return [];
+    }
+  }
+
   Future<void> updateUserProfile(UserModel user) async {
     await _usersRef.doc(user.id).set(user.toFirestore(), SetOptions(merge: true));
+  }
+  // ==================== 청소 노하우 관련 메서드 ====================
+
+  CollectionReference get _cleaningKnowhowsRef =>
+      _firestore.collection('cleaning_knowhows');
+
+  /// 청소 노하우 생성
+  Future<void> createKnowhow(CleaningKnowhow knowhow) async {
+    await _cleaningKnowhowsRef.add(knowhow.toFirestore());
+  }
+
+  /// 청소 노하우 목록 스트림 (최신순, 최대 50개)
+  Stream<List<CleaningKnowhow>> getKnowhows() {
+    return _cleaningKnowhowsRef
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CleaningKnowhow.fromFirestore(doc))
+          .toList();
+    });
+  }
+
+  /// 청소 노하우 삭제
+  Future<void> deleteKnowhow(String id) async {
+    await _cleaningKnowhowsRef.doc(id).delete();
+  }
+
+  // ==================== 청소 추천(우리동네청소) 관련 메서드 ====================
+
+  CollectionReference get _cleaningRecommendationsRef =>
+      _firestore.collection('cleaning_recommendations');
+
+  /// 청소 추천 생성
+  Future<void> createRecommendation(CleaningRecommendation recommendation) async {
+    await _cleaningRecommendationsRef.add(recommendation.toFirestore());
+  }
+
+  /// 청소 추천 목록 스트림 (최신순, 최대 50개)
+  Stream<List<CleaningRecommendation>> getRecommendations() {
+    return _cleaningRecommendationsRef
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CleaningRecommendation.fromFirestore(doc))
+          .toList();
+    });
+  }
+
+  /// 청소 추천 삭제
+  Future<void> deleteRecommendation(String id) async {
+    await _cleaningRecommendationsRef.doc(id).delete();
   }
 }
 

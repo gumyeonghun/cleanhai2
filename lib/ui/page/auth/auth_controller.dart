@@ -13,16 +13,18 @@ class AuthController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final RxBool showSpinner = false.obs;
-  final RxBool isSignupScreen = true.obs;
+  final RxBool isSignupScreen = false.obs;
   final RxString userType = 'owner'.obs; // 'owner' or 'staff'
   
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   
   String userName = '';
   String userEmail = '';
+  String phoneNumber = '';
   String userPassword = '';
   String confirmPassword = '';
   final RxString userAddress = ''.obs;
+  final RxString detailAddress = ''.obs;
   double? userLatitude;
   double? userLongitude;
   final Rx<DateTime?> userBirthDate = Rx<DateTime?>(null);
@@ -90,8 +92,10 @@ class AuthController extends GetxController {
         await _firestore.collection('users').doc(newUser.user!.uid).set({
           'userName': userName,
           'email': userEmail,
+          'phoneNumber': phoneNumber,
           'userType': userType.value,
           'address': userAddress.value,
+          'detailAddress': detailAddress.value,
           'latitude': userLatitude,
           'longitude': userLongitude,
           'birthDate': Timestamp.fromDate(userBirthDate.value!),
@@ -285,8 +289,6 @@ class AuthController extends GetxController {
         userAddress.value = result.address;
         userLatitude = lat;
         userLongitude = lng;
-        
-        Get.back();
       },
     ));
   }

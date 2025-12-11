@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cleanhai2/data/model/cleaning_request.dart';
+import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
 
 class MyScheduleController extends GetxController {
@@ -10,6 +11,7 @@ class MyScheduleController extends GetxController {
 
   final RxList<CleaningRequest> myAcceptedRequests = <CleaningRequest>[].obs;
   final RxList<CleaningRequest> myAppliedRequests = <CleaningRequest>[].obs;
+  final Rx<CleaningStaff?> myWaitingProfile = Rx<CleaningStaff?>(null);
   final RxBool isLoading = true.obs;
   
   // 이전에 확인한 요청 ID들을 저장
@@ -28,8 +30,8 @@ class MyScheduleController extends GetxController {
       return;
     }
 
-    // 의뢰자: 내가 의뢰한 것 중 수락된 것
-    _repository.getMyAcceptedRequestsAsOwner(user.uid).listen((requests) {
+    // 의뢰자: 내가 의뢰한 모든 것 (대기중 + 수락됨)
+    _repository.getAllMyRequestsAsOwner(user.uid).listen((requests) {
       myAcceptedRequests.assignAll(requests);
     });
 
@@ -64,6 +66,11 @@ class MyScheduleController extends GetxController {
       
       myAppliedRequests.assignAll(requests);
       isLoading.value = false;
+    });
+
+    // 청소 직원: 내 대기 프로필 (청소 대기 목록에 등록한 것)
+    _repository.getMyWaitingProfileStream(user.uid).listen((profile) {
+      myWaitingProfile.value = profile;
     });
   }
 

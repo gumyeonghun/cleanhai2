@@ -15,6 +15,7 @@ class DetailController extends GetxController {
   final Rx<CleaningRequest?> currentRequest = Rx<CleaningRequest?>(null);
   final Rx<CleaningStaff?> currentStaff = Rx<CleaningStaff?>(null);
   final RxBool isLoading = false.obs;
+  final RxString currentUserType = ''.obs;
 
   // Constructor arguments
   final CleaningRequest? initialRequest;
@@ -27,8 +28,19 @@ class DetailController extends GetxController {
     super.onInit();
     currentRequest.value = initialRequest;
     currentStaff.value = initialStaff;
+    _loadCurrentUser();
     if (initialRequest != null) {
       _loadRequestData();
+    }
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userDoc = await _repository.getUserProfile(user.uid);
+      if (userDoc != null) {
+        currentUserType.value = userDoc.userType;
+      }
     }
   }
 
@@ -80,6 +92,18 @@ class DetailController extends GetxController {
 
   String? get price {
     if (currentRequest.value != null) return currentRequest.value!.price;
+    if (currentStaff.value != null) return currentStaff.value!.cleaningPrice;
+    return null;
+  }
+
+  String? get additionalOptionCost {
+    if (currentStaff.value != null) return currentStaff.value!.additionalOptionCost;
+    return null;
+  }
+
+  String? get cleaningType {
+    if (currentRequest.value != null) return currentRequest.value!.cleaningType;
+    if (currentStaff.value != null) return currentStaff.value!.cleaningType;
     return null;
   }
 
@@ -241,12 +265,27 @@ class DetailController extends GetxController {
 
   // Staff starts cleaning
   Future<void> startCleaning() async {
+    debugPrint('청소 시작하기 버튼 클릭됨');
+    
+    if (currentRequest.value == null) {
+      Get.snackbar('오류', '청소 요청 정보를 찾을 수 없습니다');
+      debugPrint('currentRequest is null');
+      return;
+    }
+    
+    debugPrint('Request ID: ${currentRequest.value!.id}');
+    debugPrint('Current Status: ${currentRequest.value!.status}');
+    
     try {
       await _repository.updateCleaningStatus(currentRequest.value!.id, 'in_progress');
       await _loadRequestData();
-      Get.snackbar('청소 시작', '청소가 시작되었습니다. 안전하게 진행해주세요.');
+      Get.snackbar('청소 시작', '청소가 시작되었습니다. 안전하게 진행해주세요.',
+        backgroundColor: Colors.green, colorText: Colors.white);
+      debugPrint('청소 상태가 in_progress로 변경됨');
     } catch (e) {
-      Get.snackbar('오류', '상태 변경 실패: $e');
+      debugPrint('청소 시작 오류: $e');
+      Get.snackbar('오류', '상태 변경 실패: $e',
+        backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 

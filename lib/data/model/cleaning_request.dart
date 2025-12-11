@@ -13,6 +13,7 @@ class CleaningRequest {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? address;
+  final String? detailAddress;
   final double? latitude;
   final double? longitude;
   final String? price;
@@ -29,6 +30,12 @@ class CleaningRequest {
   final CompletionReport? completionReport;
   final Review? review;
   final String? targetStaffId; // For direct requests
+  final List<String>? availableDays; // For auto-registered requests
+  final bool isAutoRegistered; // Flag for auto-registered requests
+  final String? cleaningType; // Cleaning type
+  final String? requesterName;
+  final String? cleaningToolLocation;
+  final String? precautions;
 
   CleaningRequest({
     required this.id,
@@ -38,6 +45,7 @@ class CleaningRequest {
     required this.content,
     this.imageUrl,
     this.address,
+    this.detailAddress,
     this.latitude,
     this.longitude,
     required this.createdAt,
@@ -56,6 +64,12 @@ class CleaningRequest {
     this.completionReport,
     this.review,
     this.targetStaffId,
+    this.availableDays,
+    this.isAutoRegistered = false,
+    this.cleaningType,
+    this.requesterName,
+    this.cleaningToolLocation,
+    this.precautions,
   });
 
   // Firestore에서 데이터를 가져올 때 사용
@@ -69,6 +83,7 @@ class CleaningRequest {
       content: data['content'] ?? '',
       imageUrl: data['imageUrl'],
       address: data['address'],
+      detailAddress: data['detailAddress'],
       latitude: data['latitude'],
       longitude: data['longitude'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
@@ -87,6 +102,12 @@ class CleaningRequest {
       completionReport: data['completionReport'] != null ? CompletionReport.fromMap(data['completionReport']) : null,
       review: data['review'] != null ? Review.fromMap(data['review']) : null,
       targetStaffId: data['targetStaffId'],
+      availableDays: data['availableDays'] != null ? List<String>.from(data['availableDays']) : null,
+      isAutoRegistered: data['isAutoRegistered'] ?? false,
+      cleaningType: data['cleaningType'],
+      requesterName: data['requesterName'],
+      cleaningToolLocation: data['cleaningToolLocation'],
+      precautions: data['precautions'],
     );
   }
 
@@ -99,6 +120,7 @@ class CleaningRequest {
       'content': content,
       'imageUrl': imageUrl,
       'address': address,
+      'detailAddress': detailAddress,
       'latitude': latitude,
       'longitude': longitude,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -117,6 +139,12 @@ class CleaningRequest {
       'completionReport': completionReport?.toMap(),
       'review': review?.toMap(),
       'targetStaffId': targetStaffId,
+      'availableDays': availableDays,
+      'isAutoRegistered': isAutoRegistered,
+      'cleaningType': cleaningType,
+      'requesterName': requesterName,
+      'cleaningToolLocation': cleaningToolLocation,
+      'precautions': precautions,
     };
   }
 
@@ -129,6 +157,7 @@ class CleaningRequest {
     String? content,
     String? imageUrl,
     String? address,
+    String? detailAddress,
     double? latitude,
     double? longitude,
     DateTime? createdAt,
@@ -147,6 +176,12 @@ class CleaningRequest {
     CompletionReport? completionReport,
     Review? review,
     String? targetStaffId,
+    List<String>? availableDays,
+    bool? isAutoRegistered,
+    String? cleaningType,
+    String? requesterName,
+    String? cleaningToolLocation,
+    String? precautions,
   }) {
     return CleaningRequest(
       id: id ?? this.id,
@@ -156,6 +191,7 @@ class CleaningRequest {
       content: content ?? this.content,
       imageUrl: imageUrl ?? this.imageUrl,
       address: address ?? this.address,
+      detailAddress: detailAddress ?? this.detailAddress,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       createdAt: createdAt ?? this.createdAt,
@@ -174,6 +210,12 @@ class CleaningRequest {
       completionReport: completionReport ?? this.completionReport,
       review: review ?? this.review,
       targetStaffId: targetStaffId ?? this.targetStaffId,
+      availableDays: availableDays ?? this.availableDays,
+      isAutoRegistered: isAutoRegistered ?? this.isAutoRegistered,
+      cleaningType: cleaningType ?? this.cleaningType,
+      requesterName: requesterName ?? this.requesterName,
+      cleaningToolLocation: cleaningToolLocation ?? this.cleaningToolLocation,
+      precautions: precautions ?? this.precautions,
     );
   }
 }
