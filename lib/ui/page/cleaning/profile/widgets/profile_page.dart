@@ -724,6 +724,33 @@ class ProfilePage extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                              
+                              SizedBox(height: 20),
+                              Text(
+                                '청소 금액',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 10),
+                              TextFormField(
+                                controller: controller.cleaningPriceController,
+                                enabled: controller.isEditing.value,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  hintText: '예: 50000',
+                                  hintStyle: TextStyle(color: Colors.grey[400]),
+                                  filled: true,
+                                  fillColor: controller.isEditing.value ? Colors.grey[50] : Colors.transparent,
+                                  contentPadding: EdgeInsets.all(16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: controller.isEditing.value ? BorderSide(color: Colors.grey[200]!) : BorderSide.none,
+                                  ),
+                                ),
+                              ),
                             ],
 
                             SizedBox(height: 20),

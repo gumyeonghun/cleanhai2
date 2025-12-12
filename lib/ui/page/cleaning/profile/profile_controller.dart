@@ -411,6 +411,7 @@ class ProfileController extends GetxController {
               cleaningType: selectedCleaningType.value,
               cleaningToolLocation: cleaningToolLocationController.text,
               precautions: cleaningPrecautionsController.text,
+              price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의',
             );
             await _repository.updateCleaningRequest(updatedRequest);
           } else if (isEditable && !existingRequest!.isAutoRegistered) {
@@ -435,7 +436,7 @@ class ProfileController extends GetxController {
                   ? autoRegisterTitleController.text 
                   : '${updatedUser.userName}님의 청소 의뢰',
               content: contentStr,
-              price: '협의', // Default price
+              price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의', // Default price
               imageUrl: updatedUser.profileImageUrl,
               address: updatedUser.address,
               latitude: updatedUser.latitude,

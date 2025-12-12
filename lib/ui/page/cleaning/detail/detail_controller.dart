@@ -253,14 +253,196 @@ class DetailController extends GetxController {
     }
   }
 
-  // Owner pays for a request (after staff accepted)
+  // Owner pays for a request (after staff accepted) - TEST VERSION
   Future<void> processPayment() async {
-    if (currentRequest.value?.acceptedApplicantId == null) return;
+    debugPrint('🔵 processPayment 시작 (테스트 버전)');
     
-    final staffProfile = await getUserProfile(currentRequest.value!.acceptedApplicantId!);
-    if (staffProfile == null) return;
+    if (currentRequest.value == null) {
+      debugPrint('❌ currentRequest is null');
+      Get.snackbar('오류', '청소 요청 정보를 찾을 수 없습니다.',
+        backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    
+    debugPrint('Request ID: ${currentRequest.value!.id}');
+    debugPrint('Accepted Applicant ID: ${currentRequest.value?.acceptedApplicantId}');
+    
+    if (currentRequest.value?.acceptedApplicantId == null) {
+      debugPrint('❌ acceptedApplicantId is null');
+      Get.snackbar('오류', '수락된 신청자가 없습니다.',
+        backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    
+    try {
+      // Show loading indicator
+      Get.dialog(
+        Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+      
+      debugPrint('🔍 신청자 프로필 조회 중: ${currentRequest.value!.acceptedApplicantId}');
+      final staffProfile = await getUserProfile(currentRequest.value!.acceptedApplicantId!);
+      
+      // Close loading
+      Get.back();
+      
+      if (staffProfile == null) {
+        debugPrint('❌ staffProfile is null');
+        Get.snackbar('오류', '신청자 정보를 불러올 수 없습니다.',
+          backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+      
+      debugPrint('✅ 신청자 프로필 조회 성공: ${staffProfile.userName}');
+      
+      // Validate price
+      debugPrint('💰 Price 값 확인: "$price"');
+      if (price == null || price!.isEmpty || price == '0' || price == '0원') {
+        debugPrint('❌ 유효하지 않은 가격: $price');
+        Get.snackbar(
+          '오류',
+          '청소 금액이 설정되지 않았습니다.\n청소 의뢰를 다시 작성해주세요.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: Duration(seconds: 5),
+        );
+        return;
+      }
+      
+      // Show test payment confirmation dialog
+      final confirmed = await Get.dialog<bool>(
+        AlertDialog(
+          title: Text('결제 확인 (테스트)'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('청소 전문가: ${staffProfile.userName ?? "알 수 없음"}'),
+              SizedBox(height: 8),
+              Text('청소 금액: ${price ?? "0"}원'),
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '테스트 모드입니다\n실제 결제는 진행되지 않습니다',
+                        style: TextStyle(fontSize: 12, color: Colors.orange[800]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: Text('취소', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Get.back(result: true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF1E88E5),
+                foregroundColor: Colors.white,
+              ),
+              child: Text('결제하기 (테스트)'),
+            ),
+          ],
+        ),
+      );
 
-    await acceptApplicant(currentRequest.value!.acceptedApplicantId!, staffProfile);
+      if (confirmed == true) {
+        debugPrint('🔵 테스트 결제 진행 중...');
+        
+        // Show loading
+        Get.dialog(
+          Center(child: CircularProgressIndicator()),
+          barrierDismissible: false,
+        );
+        
+        // Process payment with test data
+        final testPaymentKey = 'test_payment_${DateTime.now().millisecondsSinceEpoch}';
+        final testOrderId = 'test_order_${DateTime.now().millisecondsSinceEpoch}';
+        
+        debugPrint('💳 결제 데이터:');
+        debugPrint('  - Request ID: ${currentRequest.value!.id}');
+        debugPrint('  - Applicant ID: ${currentRequest.value!.acceptedApplicantId}');
+        debugPrint('  - Payment Key: $testPaymentKey');
+        debugPrint('  - Order ID: $testOrderId');
+        
+        try {
+          debugPrint('🔵 acceptApplicant 호출 중...');
+          await _repository.acceptApplicant(
+            currentRequest.value!.id,
+            currentRequest.value!.acceptedApplicantId!,
+            paymentKey: testPaymentKey,
+            orderId: testOrderId,
+            paymentStatus: 'completed',
+          );
+          debugPrint('✅ acceptApplicant 완료');
+
+          debugPrint('🔵 청소 상태 업데이트 중...');
+          // Update status to 'accepted'
+          await _repository.updateCleaningStatus(currentRequest.value!.id, 'accepted');
+          debugPrint('✅ 청소 상태 업데이트 완료');
+
+          Get.back(); // Close loading
+          
+          // Show success message
+          Get.snackbar(
+            '결제 완료! (테스트)',
+            '${staffProfile.userName ?? "청소 전문가"}님과 매칭되었습니다.\n청소 일정을 확인해주세요.',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            duration: Duration(seconds: 5),
+            snackPosition: SnackPosition.TOP,
+            icon: Icon(Icons.check_circle, color: Colors.white),
+          );
+          
+          debugPrint('✅ 테스트 결제 완료');
+          await _loadRequestData();
+          debugPrint('✅ 데이터 리로드 완료');
+        } catch (innerError, stackTrace) {
+          debugPrint('❌ 결제 처리 중 내부 에러: $innerError');
+          debugPrint('스택 트레이스:\n$stackTrace');
+          Get.back(); // Close loading
+          Get.snackbar(
+            '결제 실패',
+            '결제 처리 중 오류가 발생했습니다.\n에러: $innerError',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: Duration(seconds: 5),
+          );
+          rethrow;
+        }
+      } else {
+        debugPrint('⚠️ 사용자가 결제를 취소함');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ processPayment 오류: $e');
+      debugPrint('스택 트레이스:\n$stackTrace');
+      // Close loading if still open
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
+      Get.snackbar(
+        '오류',
+        '결제 처리 중 오류가 발생했습니다.\n에러: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: Duration(seconds: 5),
+      );
+    }
   }
 
   // Staff starts cleaning

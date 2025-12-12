@@ -64,17 +64,26 @@ class ChatRepository {
     String chatRoomId,
     ChatMessage message,
   ) async {
-    final chatRoomRef = _chatRoomsRef.doc(chatRoomId);
-    final messagesRef = chatRoomRef.collection('messages');
+    try {
+      final chatRoomRef = _chatRoomsRef.doc(chatRoomId);
+      final messagesRef = chatRoomRef.collection('messages');
 
-    // 메시지 추가
-    await messagesRef.add(message.toFirestore());
+      // 메시지 추가
+      await messagesRef.add(message.toFirestore());
+      debugPrint('✅ 메시지 추가 성공: $chatRoomId');
 
-    // 채팅방의 마지막 메시지 업데이트
-    await chatRoomRef.update({
-      'lastMessage': message.text,
-      'lastMessageTime': Timestamp.fromDate(message.timestamp),
-    });
+      // 채팅방의 마지막 메시지 업데이트
+      // set with merge:true를 사용하여 문서가 없을 경우에도 생성되도록 함
+      await chatRoomRef.set({
+        'lastMessage': message.text,
+        'lastMessageTime': Timestamp.fromDate(message.timestamp),
+      }, SetOptions(merge: true));
+      
+      debugPrint('✅ 채팅방 업데이트 성공: $chatRoomId, lastMessage: ${message.text}');
+    } catch (e) {
+      debugPrint('❌ 메시지 전송 실패: $e');
+      rethrow; // 에러를 상위로 전파하여 UI에서 처리할 수 있도록 함
+    }
   }
 
   /// 메시지 목록 조회

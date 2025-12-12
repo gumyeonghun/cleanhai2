@@ -34,19 +34,29 @@ class ChatRoomController extends GetxController {
     final user = _auth.currentUser;
     if (user == null || text.trim().isEmpty) return;
 
-    // 사용자 이름 가져오기
-    final userName = chatRoom.participantNames[user.uid] ?? '알 수 없음';
+    try {
+      // 사용자 이름 가져오기
+      final userName = chatRoom.participantNames[user.uid] ?? '알 수 없음';
 
-    final message = ChatMessage(
-      id: '',
-      text: text.trim(),
-      senderId: user.uid,
-      senderName: userName,
-      timestamp: DateTime.now(),
-      isRead: false,
-    );
+      final message = ChatMessage(
+        id: '',
+        text: text.trim(),
+        senderId: user.uid,
+        senderName: userName,
+        timestamp: DateTime.now(),
+        isRead: false,
+      );
 
-    await _repository.sendMessage(chatRoom.id, message);
+      await _repository.sendMessage(chatRoom.id, message);
+    } catch (e) {
+      debugPrint('메시지 전송 오류: $e');
+      Get.snackbar(
+        '오류',
+        '메시지 전송에 실패했습니다.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   Future<void> pickAndSendImage() async {
