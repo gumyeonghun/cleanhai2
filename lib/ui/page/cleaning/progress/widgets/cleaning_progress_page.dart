@@ -6,6 +6,7 @@ import 'package:cleanhai2/data/model/completion_report.dart';
 import 'package:cleanhai2/data/model/review.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../../report/widgets/completion_report_write_page.dart';
+import '../../report/widgets/completion_report_view_page.dart';
 import '../../review/widgets/review_write_page.dart';
 import '../cleaning_progress_controller.dart';
 
@@ -312,18 +313,31 @@ class CleaningProgressPage extends StatelessWidget {
             else if (status == 'completed')
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Get.to(() => CompletionReportWritePage(requestId: request.id));
-                  },
-                  icon: Icon(Icons.assignment, color: Colors.white),
-                  label: Text(hasReport ? '완료 보고서 수정' : '완료 보고서 작성', 
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF1E88E5),
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
+                child: hasReport
+                    ? OutlinedButton.icon(
+                        onPressed: () {
+                          Get.to(() => CompletionReportViewPage(report: request.completionReport!));
+                        },
+                        icon: Icon(Icons.assignment_turned_in, color: Color(0xFF1E88E5)),
+                        label: Text('완료 보고서 보기',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E88E5))),
+                        style: OutlinedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(color: Color(0xFF1E88E5)),
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: () {
+                          Get.to(() => CompletionReportWritePage(requestId: request.id));
+                        },
+                        icon: Icon(Icons.assignment, color: Colors.white),
+                        label: Text('완료 보고서 작성',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF1E88E5),
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
               ),
           ] else ...[
             // 의뢰자 (고객)

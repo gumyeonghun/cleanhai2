@@ -143,6 +143,22 @@ class DetailPage extends StatelessWidget {
                     authorName,
                     style: TextStyle(fontSize: 15),
                   ),
+                  Obx(() {
+                    if (controller.authorProfile.value != null && 
+                        controller.authorProfile.value!.email.isNotEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          controller.authorProfile.value!.email,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      );
+                    }
+                    return SizedBox.shrink();
+                  }),
                   SizedBox(height: 5),
                   Text(
                     DateFormat('yyyy.MM.dd HH:mm').format(createdAt),
@@ -155,9 +171,9 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                        color: Color(0xFF1E88E5).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Color(0xFF1E88E5).withValues(alpha: 0.3)),
+                        border: Border.all(color: Color(0xFF1E88E5).withOpacity(0.3)),
                       ),
                       child: Row(
                         children: [
@@ -198,9 +214,9 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
+                        color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                        border: Border.all(color: Colors.green.withOpacity(0.3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,9 +254,9 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                        color: Color(0xFF1E88E5).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Color(0xFF1E88E5).withValues(alpha: 0.3)),
+                        border: Border.all(color: Color(0xFF1E88E5).withOpacity(0.3)),
                       ),
                       child: Row(
                         children: [
@@ -361,27 +377,46 @@ class DetailPage extends StatelessWidget {
                     SizedBox(height: 24),
                     // Direct Request Acceptance (Staff)
                     if (currentRequest.targetStaffId == currentUser.uid && currentRequest.status == 'pending') ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: controller.acceptRequest,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF1E88E5),
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                      if (currentRequest.acceptedApplicantId == currentUser.uid)
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            '의뢰 수락하기',
+                            '결제대기중',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        )
+                      else
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: controller.acceptRequest,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF1E88E5),
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              '의뢰 수락하기',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
-                      ),
                     ] else if (currentRequest.status == 'accepted' && currentRequest.acceptedApplicantId == currentUser.uid) ...[
                       // Start Cleaning (Staff)
                       SizedBox(
@@ -411,7 +446,7 @@ class DetailPage extends StatelessWidget {
                         padding: EdgeInsets.symmetric(vertical: 16),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.1),
+                          color: Colors.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.green),
                         ),
@@ -485,7 +520,7 @@ class DetailPage extends StatelessWidget {
                           padding: EdgeInsets.symmetric(vertical: 16),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                            color: Color(0xFF1E88E5).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Color(0xFF1E88E5)),
                           ),
@@ -505,7 +540,7 @@ class DetailPage extends StatelessWidget {
                           padding: EdgeInsets.symmetric(vertical: 16),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
+                            color: Colors.green.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.green),
                           ),
@@ -552,32 +587,77 @@ class DetailPage extends StatelessWidget {
                        currentUser != null && 
                        controller.currentUserType.value == 'owner') ...[
                       SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Get.to(() => WritePage(
-                              type: 'request',
-                              targetStaffId: controller.currentStaff.value!.authorId,
-                            ));
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF1E88E5),
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      Obx(() {
+                        final existingStatus = controller.existingRequestStatus.value;
+                        if (existingStatus.isNotEmpty) {
+                          String statusText = '';
+                          Color statusColor = Colors.grey;
+                          
+                          switch (existingStatus) {
+                            case 'pending':
+                              statusText = '의뢰 대기중 (결제 전)';
+                              statusColor = Colors.orange;
+                              break;
+                            case 'accepted':
+                              statusText = '매칭 완료 - 결제 대기중';
+                              statusColor = Colors.green;
+                              break;
+                            case 'in_progress':
+                              statusText = '청소 진행중';
+                              statusColor = Colors.blue;
+                              break;
+                            default:
+                              statusText = '의뢰 진행중';
+                              statusColor = Colors.grey;
+                          }
+                          
+                          return Container(
+                             width: double.infinity,
+                             padding: EdgeInsets.symmetric(vertical: 16),
+                             alignment: Alignment.center,
+                             decoration: BoxDecoration(
+                               color: statusColor.withOpacity(0.1),
+                               borderRadius: BorderRadius.circular(12),
+                               border: Border.all(color: statusColor),
+                             ),
+                             child: Text(
+                               statusText,
+                               style: TextStyle(
+                                 fontSize: 16,
+                                 fontWeight: FontWeight.bold,
+                                 color: statusColor,
+                               ),
+                             ),
+                           );
+                        } else {
+                          return SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Get.to(() => WritePage(
+                                  type: 'request',
+                                  targetStaffId: controller.currentStaff.value!.authorId,
+                                ));
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF1E88E5),
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                '청소 의뢰하기',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            '청소 의뢰하기',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
+                          );
+                        }
+                      }),
                    ],
                   
                    // 신청자 목록 (작성자일 때만)
@@ -591,6 +671,22 @@ class DetailPage extends StatelessWidget {
                         color: Colors.grey[800],
                       ),
                     ),
+                  Obx(() {
+                    if (controller.authorProfile.value != null && 
+                        controller.authorProfile.value!.email.isNotEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          controller.authorProfile.value!.email,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      );
+                    }
+                    return SizedBox.shrink();
+                  }),
                     SizedBox(height: 12),
                     ...(currentRequest.applicants.map((applicantId) {
                       final isAccepted = currentRequest.acceptedApplicantId == applicantId;
@@ -605,7 +701,7 @@ class DetailPage extends StatelessWidget {
                             margin: EdgeInsets.only(bottom: 8),
                             padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isAccepted ? Color(0xFF1E88E5).withValues(alpha: 0.1) : Colors.grey[100],
+                              color: isAccepted ? Color(0xFF1E88E5).withOpacity(0.1) : Colors.grey[100],
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isAccepted ? Color(0xFF1E88E5) : Colors.grey[300]!,

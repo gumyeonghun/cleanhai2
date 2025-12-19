@@ -16,6 +16,9 @@ class StaffWaitingController extends GetxController {
   
   // 각 staff의 평점 정보 저장 (staffId -> {averageRating, reviewCount})
   final RxMap<String, Map<String, dynamic>> staffRatings = <String, Map<String, dynamic>>{}.obs;
+  
+  // 내가 신청한 의뢰 상태 저장 (targetStaffId -> status)
+  final RxMap<String, String> myRequestStatus = <String, String>{}.obs;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
@@ -41,12 +44,34 @@ class StaffWaitingController extends GetxController {
     super.onInit();
     loadUserProfile();
     loadWaitingStaff();
+    loadMyRequests();
   }
 
   Future<void> loadUserProfile() async {
     final user = _auth.currentUser;
     if (user != null) {
       currentUser.value = await _repository.getUserProfile(user.uid);
+    }
+  }
+
+  void loadMyRequests() {
+    final user = _auth.currentUser;
+    if (user != null) {
+      _repository.getAllMyRequestsAsOwner(user.uid).listen((requests) {
+        final statusMap = <String, String>{};
+        for (var request in requests) {
+          if (request.targetStaffId != null && request.targetStaffId!.isNotEmpty) {
+            // 이미 상태가 있거나 더 중요한 상태(진행중 > 수락됨 > 대기중)라면 업데이트
+            // 여기서는 간단하게 가장 최신의 요청 상태를 우선시하거나,
+            // 특정 상태 우선순위를 둘 수 있음. 
+            // 일단 완료된 것은 제외하고 진행중/수락됨/대기중을 표시한다고 가정.
+            if (request.status != 'completed') {
+               statusMap[request.targetStaffId!] = request.status;
+            }
+          }
+        }
+        myRequestStatus.assignAll(statusMap);
+      });
     }
   }
 
@@ -119,8 +144,8 @@ class StaffWaitingController extends GetxController {
     // 전체청소일 때는 시간순 (최신순) 정렬
     if (selectedCleaningTypeFilter.value == '전체청소') {
       sortedList.sort((a, b) {
-        if (a.createdAt == null || b.createdAt == null) return 0;
-        return b.createdAt!.compareTo(a.createdAt!);
+        // if (a.createdAt == null || b.createdAt == null) return 0; // Removed unnecessary check
+        return b.createdAt.compareTo(a.createdAt);
       });
       return sortedList;
     }

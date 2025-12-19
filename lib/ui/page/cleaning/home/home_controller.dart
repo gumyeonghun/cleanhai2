@@ -29,11 +29,23 @@ class CleaningController extends GetxController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
 
+  // Optimized: Cache the sorted list to avoid re-calculation on every build
+  final RxList<CleaningRequest> sortedRequests = <CleaningRequest>[].obs;
+
   @override
   void onInit() {
     super.onInit();
     loadUserProfile();
     bindCleaningRequests();
+    
+    // Optimize: Update sorted list only when dependencies change
+    // Using `debounce` for search query to avoid too many updates while typing
+    debounce(searchQuery, (_) => _updateSortedRequests(), time: Duration(milliseconds: 300));
+    
+    // Using `ever` for other changes
+    ever(cleaningRequests, (_) => _updateSortedRequests());
+    ever(selectedCleaningTypeFilter, (_) => _updateSortedRequests());
+    ever(currentUser, (_) => _updateSortedRequests());
   }
 
   Future<void> loadUserProfile() async {
@@ -51,7 +63,7 @@ class CleaningController extends GetxController {
     searchQuery.value = query;
   }
 
-  List<CleaningRequest> get sortedRequests {
+  void _updateSortedRequests() {
     List<CleaningRequest> requests = cleaningRequests;
     
     // Cleaning Type Filter (Body)
@@ -72,27 +84,11 @@ class CleaningController extends GetxController {
           
           if (!matchesQuery) return false;
 
-          // Visibility Filter
-          final user = currentUser.value;
-          if (user == null) return request.targetStaffId == null; // Guest sees only public requests
-
-          // Show if:
-          // 1. It's a public request (no target)
-          // 2. I am the target staff
-          // 3. I am the author
-          return request.targetStaffId == null || 
-                 request.targetStaffId == user.id || 
-                 request.authorId == user.id;
+          return request.targetStaffId == null;
         }).toList();
       } else {
-        // 검색어가 없을 때도 필터링 적용
         requests = requests.where((request) {
-          final user = currentUser.value;
-          if (user == null) return request.targetStaffId == null;
-
-          return request.targetStaffId == null || 
-                 request.targetStaffId == user.id || 
-                 request.authorId == user.id;
+          return request.targetStaffId == null;
         }).toList();
       }
       
@@ -102,20 +98,16 @@ class CleaningController extends GetxController {
       final todayDayName = dayNames[today.weekday % 7];
       
       requests = requests.where((request) {
-        // 자동 등록이 아니면 항상 표시
         if (!request.isAutoRegistered) return true;
-        
-        // 자동 등록이지만 availableDays가 없으면 표시하지 않음
         if (request.availableDays == null || request.availableDays!.isEmpty) return false;
-        
-        // 오늘 요일이 포함되어 있으면 표시
         return request.availableDays!.contains(todayDayName);
       }).toList();
     
     if (currentUser.value == null || 
         currentUser.value!.latitude == null || 
         currentUser.value!.longitude == null) {
-      return requests;
+      sortedRequests.assignAll(requests);
+      return;
     }
 
     final userLat = currentUser.value!.latitude!;
@@ -126,26 +118,21 @@ class CleaningController extends GetxController {
     // 전체청소일 때는 시간순 (최신순) 정렬
     if (selectedCleaningTypeFilter.value == '전체') {
       sortedList.sort((a, b) {
-        if (a.createdAt == null || b.createdAt == null) return 0;
-        return b.createdAt!.compareTo(a.createdAt!);
+        return b.createdAt.compareTo(a.createdAt);
       });
-      return sortedList;
+    } else {
+      // 그 외에는 거리순 정렬
+      sortedList.sort((a, b) {
+        if (a.latitude == null || a.longitude == null) return 1;
+        if (b.latitude == null || b.longitude == null) return -1;
+
+        final distA = LocationUtils.calculateDistance(userLat, userLng, a.latitude!, a.longitude!);
+        final distB = LocationUtils.calculateDistance(userLat, userLng, b.latitude!, b.longitude!);
+
+        return distA.compareTo(distB);
+      });
     }
-
-    // 그 외에는 거리순 정렬
-    sortedList.sort((a, b) {
-      // 위치 정보가 없는 항목은 뒤로 보냄
-      if (a.latitude == null || a.longitude == null) return 1;
-      if (b.latitude == null || b.longitude == null) return -1;
-
-      final distA = LocationUtils.calculateDistance(userLat, userLng, a.latitude!, a.longitude!);
-      final distB = LocationUtils.calculateDistance(userLat, userLng, b.latitude!, b.longitude!);
-
-      return distA.compareTo(distB);
-    });
     
-    return sortedList;
+    sortedRequests.assignAll(sortedList);
   }
-
-  // Add other methods as needed for HomePage, DetailPage, etc.
 }

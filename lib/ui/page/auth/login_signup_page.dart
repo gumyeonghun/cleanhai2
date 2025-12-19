@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'auth_controller.dart';
 
 class LoginSignupPage extends StatelessWidget {
   const LoginSignupPage({super.key});
+
+  Future<void> _launchUrl(String url) async {
+    if (!await launchUrl(Uri.parse(url))) {
+      throw Exception('Could not launch $url');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -383,32 +390,102 @@ class LoginSignupPage extends StatelessWidget {
                                   ),
                                 ),
                                 
-                                SizedBox(height: 12),
+                                SizedBox(height: 15),
                                 
-                                // Apple Login Button
+                                // Kakao Login Button
+                                if (false) ...[
                                 SizedBox(
                                   width: double.infinity,
-                                  child: OutlinedButton.icon(
+                                  child: ElevatedButton.icon(
                                     onPressed: () {
-                                      controller.signInWithApple();
+                                      controller.signInWithKakao();
                                     },
-                                    icon: Icon(Icons.apple, size: 20),
-                                    label: Text('Apple로 계속하기'),
-                                    style: OutlinedButton.styleFrom(
+                                    icon: Icon(Icons.chat_bubble, size: 20, color: Color(0xFF000000)), // Kakao Icon approx
+                                    label: Text('Kakao로 계속하기', 
+                                      style: TextStyle(
+                                        color: Color(0xFF000000).withValues(alpha: 0.85),
+                                        fontWeight: FontWeight.bold,
+                                      )
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color(0xFFFEE500), // Kakao Yellow
                                       padding: EdgeInsets.symmetric(vertical: 16),
-                                      side: BorderSide(color: Colors.grey[300]!),
+                                      elevation: 0,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      foregroundColor: Colors.black87,
                                     ),
                                   ),
                                 ),
+                                
+                                SizedBox(height: 15),
+
+                                // Apple Login Button
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      controller.signInWithApple();
+                                    },
+                                    icon: Icon(Icons.apple, size: 22, color: Colors.white), 
+                                    label: Text('Apple로 계속하기', 
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      )
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.black, 
+                                      padding: EdgeInsets.symmetric(vertical: 16),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                ],
                               ],
                             ],
                           ),
                         )),
                       ),
+                      SizedBox(height: 20),
+                      // Legal Documents Links
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
+                            onPressed: () => _launchUrl('https://www.notion.so/2c67ebba614481fbb249dee089fe1890?source=copy_link'),
+                            child: Text(
+                              '서비스 이용약관',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontSize: 12,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.white.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '|',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                          ),
+                          TextButton(
+                            onPressed: () => _launchUrl('https://www.notion.so/2cd7ebba6144805f92d8c18adeab69c3?source=copy_link'),
+                            child: Text(
+                              '개인정보 처리방침',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontSize: 12,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.white.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 20),
                     ],
                   ),
                 ),

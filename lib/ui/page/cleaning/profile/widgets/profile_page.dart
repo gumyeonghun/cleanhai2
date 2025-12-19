@@ -947,7 +947,26 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(height: 40),
+                    SizedBox(height: 30),
+                    Container(
+                      alignment: Alignment.centerRight,
+                        width: double.infinity,
+                        child: TextButton(
+                          onPressed: () {
+                            controller.deleteAccount();
+                          },
+                          child: Text(
+                            '회원 탈퇴',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 14,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    SizedBox(height: 30),
                   ],
                 ),
               ),

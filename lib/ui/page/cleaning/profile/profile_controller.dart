@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kpostal/kpostal.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
 import 'package:cleanhai2/data/model/user_model.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
@@ -536,11 +537,96 @@ class ProfileController extends GetxController {
   }
 
   Future<void> logout() async {
+    try {
+      await GoogleSignIn().signOut();
+    } catch (e) {
+      debugPrint('Google Sign Out Error: $e');
+    }
     await _auth.signOut();
     // 모든 GetX 컨트롤러 삭제
     Get.deleteAll(force: true);
     // 모든 페이지 스택 제거하고 로그인 페이지로 이동
     Get.offAll(() => LoginSignupPage(), predicate: (_) => false);
+  }
 
+  /// 회원 탈퇴
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    // 1. 확인 다이얼로그
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('회원 탈퇴'),
+        content: const Text(
+          '정말 탈퇴하시겠습니까?\n'
+          '탈퇴 시 모든 계정 정보가 삭제되며 되돌릴 수 없습니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text(
+              '탈퇴',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      isLoading.value = true;
+      String uid = user.uid;
+
+      // 2. Firestore 데이터 삭제
+      // 사용자 데이터
+      await _repository.deleteUser(uid);
+      
+      // 관련 데이터(스태프 대기 명단 등)도 삭제해야 깔끔하지만, 
+      // 정책에 따라 남겨두거나 별도 배치로 지울 수도 있음.
+      // 여기서는 본인 작성 대기/의뢰 삭제 시도
+      await _repository.deleteCleaningStaffByAuthorId(uid);
+      await _repository.deleteCleaningRequestByAuthorId(uid);
+
+      // 3. Firebase Auth 계정 삭제
+      try {
+        await user.delete();
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'requires-recent-login') {
+          // 재로그인 필요
+          isLoading.value = false;
+          Get.snackbar(
+            '재로그인 필요',
+            '보안을 위해 다시 로그인한 후 탈퇴를 진행해주세요.',
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+          );
+          await logout(); // 로그아웃 처리하여 재로그인 유도
+          return;
+        }
+        rethrow;
+      }
+
+      // 4. 완료 처리
+      await Get.deleteAll(force: true);
+      Get.offAll(() => LoginSignupPage(), predicate: (_) => false);
+      Get.snackbar('알림', '회원 탈퇴가 완료되었습니다.');
+
+    } catch (e) {
+      debugPrint('회원 탈퇴 실패: $e');
+      isLoading.value = false;
+      Get.snackbar(
+        '오류',
+        '회원 탈퇴 처리에 실패했습니다: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 }

@@ -136,8 +136,9 @@ class MySchedulePage extends StatelessWidget {
   Widget _buildMyWaitingTab(MyScheduleController controller, String myUid) {
     return Obx(() {
       final waitingProfile = controller.myWaitingProfile.value;
+      final targetedRequests = controller.myTargetedRequests;
 
-      if (waitingProfile == null) {
+      if (waitingProfile == null && targetedRequests.isEmpty) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -158,7 +159,38 @@ class MySchedulePage extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.all(20),
           children: [
-            _waitingProfileCard(waitingProfile),
+            // 직접 받은 의뢰 표시
+            if (targetedRequests.isNotEmpty) ...[
+              Text(
+                '받은 청소 의뢰',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 12),
+              ...targetedRequests.map((request) => Column(
+                children: [
+                  _requestCard(request, myUid, false),
+                  SizedBox(height: 16),
+                ],
+              )),
+              Divider(height: 32, thickness: 1),
+            ],
+
+            if (waitingProfile != null) ...[
+              Text(
+                '내 대기 프로필',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 12),
+              _waitingProfileCard(waitingProfile),
+            ],
           ],
         ),
       );

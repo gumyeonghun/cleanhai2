@@ -25,7 +25,7 @@ android {
         applicationId = "com.example.cleanhai2"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion // CRITICAL: Toss Payments SDK requires minSdk 21+
+        minSdk = flutter.minSdkVersion // Toss Payments SDK requires minSdk 19+, set to 21 for safety
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

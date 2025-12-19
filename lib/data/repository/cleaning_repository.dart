@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'dart:io';
 import '../model/cleaning_request.dart';
 import '../model/cleaning_staff.dart';
@@ -74,6 +75,7 @@ class CleaningRepository {
     String? paymentKey,
     String? orderId,
     String? paymentStatus,
+    String? price,
   }) async {
     final updateData = {
       'acceptedApplicantId': applicantId,
@@ -83,6 +85,7 @@ class CleaningRepository {
     if (paymentKey != null) updateData['paymentKey'] = paymentKey;
     if (orderId != null) updateData['orderId'] = orderId;
     if (paymentStatus != null) updateData['paymentStatus'] = paymentStatus;
+    if (price != null) updateData['price'] = price;
     if (paymentStatus == 'completed') {
       updateData['paidAt'] = FieldValue.serverTimestamp();
     }
@@ -160,6 +163,7 @@ class CleaningRepository {
   }
 
   /// 내가 신청한 모든 청소 의뢰들 (청소 직원 입장 - 대기중 + 수락됨)
+  /// 내가 신청한 모든 청소 의뢰들 (청소 직원 입장 - 대기중 + 수락됨)
   Stream<List<CleaningRequest>> getMyAppliedRequestsAsStaff(String userId) {
     return _cleaningRequestsRef
         .snapshots()
@@ -167,6 +171,19 @@ class CleaningRepository {
       return snapshot.docs
           .map((doc) => CleaningRequest.fromFirestore(doc))
           .where((request) => request.applicants.contains(userId))
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    });
+  }
+
+  /// 나에게 직접 들어온 청소 의뢰들 (청소 직원 입장)
+  Stream<List<CleaningRequest>> getMyTargetedRequestsAsStaff(String userId) {
+    return _cleaningRequestsRef
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CleaningRequest.fromFirestore(doc))
+          .where((request) => request.targetStaffId == userId)
           .toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     });
@@ -456,6 +473,11 @@ class CleaningRepository {
   Future<void> updateUserProfile(UserModel user) async {
     await _usersRef.doc(user.id).set(user.toFirestore(), SetOptions(merge: true));
   }
+
+  /// 사용자 삭제
+  Future<void> deleteUser(String uid) async {
+    await _usersRef.doc(uid).delete();
+  }
   // ==================== 청소 노하우 관련 메서드 ====================
 
   CollectionReference get _cleaningKnowhowsRef =>
@@ -510,6 +532,34 @@ class CleaningRepository {
   /// 청소 추천 삭제
   Future<void> deleteRecommendation(String id) async {
     await _cleaningRecommendationsRef.doc(id).delete();
+  }
+
+
+  /// 토스 페이먼츠 결제 승인 (Cloud Functions 호출)
+  Future<Map<String, dynamic>> confirmPayment({
+    required String paymentKey,
+    required String orderId,
+    required int amount,
+  }) async {
+    try {
+      final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('confirmPayment');
+      final result = await callable.call({
+        'paymentKey': paymentKey,
+        'orderId': orderId,
+        'amount': amount,
+      });
+
+      return {
+        'success': true,
+        'data': result.data,
+      };
+    } catch (e) {
+      debugPrint('결제 승인 실패 (Cloud Functions): $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
   }
 }
 

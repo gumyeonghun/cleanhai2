@@ -230,6 +230,51 @@ class HomePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (request.status == 'accepted' || request.status == 'in_progress' || request.status == 'pending') ...[
+                      Container(
+                        margin: EdgeInsets.only(bottom: 6),
+                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: () {
+                            switch (request.status) {
+                              case 'accepted': return Colors.green.withOpacity(0.1);
+                              case 'in_progress': return Colors.blue.withOpacity(0.1);
+                              default: return Colors.orange.withOpacity(0.1);
+                            }
+                          }(),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: () {
+                              switch (request.status) {
+                                case 'accepted': return Colors.green.withOpacity(0.5);
+                                case 'in_progress': return Colors.blue.withOpacity(0.5);
+                                default: return Colors.orange.withOpacity(0.5);
+                              }
+                            }(),
+                          ),
+                        ),
+                        child: Text(
+                          () {
+                            switch (request.status) {
+                              case 'accepted': return '매칭 완료';
+                              case 'in_progress': return '청소 진행중';
+                              default: return '의뢰 대기중';
+                            }
+                          }(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: () {
+                              switch (request.status) {
+                                case 'accepted': return Colors.green;
+                                case 'in_progress': return Colors.blue;
+                                default: return Colors.orange;
+                              }
+                            }(),
+                          ),
+                        ),
+                      ),
+                    ],
                     Text(
                       request.title,
                       style: TextStyle(

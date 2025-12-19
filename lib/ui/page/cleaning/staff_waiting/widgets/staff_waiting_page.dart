@@ -240,7 +240,7 @@ class StaffWaitingPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -263,7 +263,50 @@ class StaffWaitingPage extends StatelessWidget {
                         color: Colors.black87,
                       ),
                     ),
-                    SizedBox(height: 6),
+                    Obx(() {
+                       final status = controller.myRequestStatus[staff.authorId];
+                       if (status != null && status.isNotEmpty) {
+                         String statusText = '';
+                         Color badgeColor = Colors.grey;
+                         
+                         switch (status) {
+                           case 'pending':
+                             statusText = '의뢰 대기중';
+                             badgeColor = Colors.orange;
+                             break;
+                           case 'accepted':
+                             statusText = '청소 결제대기중';
+                             badgeColor = Colors.green;
+                             break;
+                           case 'in_progress':
+                             statusText = '청소 진행중';
+                             badgeColor = Colors.blue;
+                             break;
+                         }
+                         
+                         if (statusText.isNotEmpty) {
+                           return Container(
+                             margin: EdgeInsets.only(top: 8),
+                             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                             decoration: BoxDecoration(
+                               color: badgeColor.withOpacity(0.1),
+                               borderRadius: BorderRadius.circular(8),
+                               border: Border.all(color: badgeColor.withOpacity(0.5)),
+                             ),
+                             child: Text(
+                               statusText,
+                               style: TextStyle(
+                                 color: badgeColor,
+                                 fontSize: 12,
+                                 fontWeight: FontWeight.bold,
+                               ),
+                             ),
+                           );
+                         }
+                       }
+                       return SizedBox.shrink();
+                    }),
+                    SizedBox(height: 8),
                     // Title (if present)
                     if (staff.title.isNotEmpty) ...[
                        Text(
@@ -350,7 +393,7 @@ class StaffWaitingPage extends StatelessWidget {
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                              color: Color(0xFF1E88E5).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(

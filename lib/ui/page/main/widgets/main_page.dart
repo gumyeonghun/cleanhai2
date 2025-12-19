@@ -12,7 +12,10 @@ class MainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(MainController());
+    // Avoid creating new instance if already registered
+    final controller = Get.isRegistered<MainController>()
+        ? Get.find<MainController>()
+        : Get.put(MainController());
 
     return Scaffold(
       body: Obx(() {

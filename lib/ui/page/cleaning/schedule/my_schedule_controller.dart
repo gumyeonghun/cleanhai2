@@ -11,6 +11,7 @@ class MyScheduleController extends GetxController {
 
   final RxList<CleaningRequest> myAcceptedRequests = <CleaningRequest>[].obs;
   final RxList<CleaningRequest> myAppliedRequests = <CleaningRequest>[].obs;
+  final RxList<CleaningRequest> myTargetedRequests = <CleaningRequest>[].obs;
   final Rx<CleaningStaff?> myWaitingProfile = Rx<CleaningStaff?>(null);
   final RxBool isLoading = true.obs;
   
@@ -65,7 +66,15 @@ class MyScheduleController extends GetxController {
       _previousAcceptedIds.assignAll(newAcceptedIds.toList());
       
       myAppliedRequests.assignAll(requests);
-      isLoading.value = false;
+    });
+
+    // 청소 직원: 나에게 직접 들어온 의뢰
+    _repository.getMyTargetedRequestsAsStaff(user.uid).listen((requests) {
+      myTargetedRequests.assignAll(requests);
+      // 로딩 완료 처리는 여기서 (마지막 스트림) - 간단하게 처리
+      Future.delayed(Duration(milliseconds: 500), () {
+        isLoading.value = false; 
+      });
     });
 
     // 청소 직원: 내 대기 프로필 (청소 대기 목록에 등록한 것)

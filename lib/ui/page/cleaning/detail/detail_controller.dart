@@ -12,10 +12,12 @@ class DetailController extends GetxController {
   final CleaningRepository _repository = CleaningRepository();
   
   // Observables
+  final RxBool isLoading = false.obs;
   final Rx<CleaningRequest?> currentRequest = Rx<CleaningRequest?>(null);
   final Rx<CleaningStaff?> currentStaff = Rx<CleaningStaff?>(null);
-  final RxBool isLoading = false.obs;
   final RxString currentUserType = ''.obs;
+  final Rx<UserModel?> authorProfile = Rx<UserModel?>(null);
+  final RxString existingRequestStatus = ''.obs; // New observable
 
   // Constructor arguments
   final CleaningRequest? initialRequest;
@@ -31,7 +33,10 @@ class DetailController extends GetxController {
     _loadCurrentUser();
     if (initialRequest != null) {
       _loadRequestData();
+    } else if (initialStaff != null) {
+      _checkExistingRequest();
     }
+    _loadAuthorProfile();
   }
 
   Future<void> _loadCurrentUser() async {
@@ -40,16 +45,48 @@ class DetailController extends GetxController {
       final userDoc = await _repository.getUserProfile(user.uid);
       if (userDoc != null) {
         currentUserType.value = userDoc.userType;
+        // Re-check existing request if user type is loaded late (though usually fast)
+        if (initialStaff != null) _checkExistingRequest();
       }
+    }
+  }
+  
+  void _checkExistingRequest() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && currentStaff.value != null) {
+      // Listen to my requests to see if I already requested this staff
+      _repository.getAllMyRequestsAsOwner(user.uid).listen((requests) {
+        final existing = requests.firstWhereOrNull((req) => 
+          req.targetStaffId == currentStaff.value!.authorId && 
+          req.status != 'completed'
+        );
+        if (existing != null) {
+          existingRequestStatus.value = existing.status;
+        } else {
+          existingRequestStatus.value = '';
+        }
+      });
+    }
+  }
+
+  Future<void> _loadAuthorProfile() async {
+    if (authorId.isNotEmpty) {
+      final profile = await _repository.getUserProfile(authorId);
+      authorProfile.value = profile;
     }
   }
 
   Future<void> _loadRequestData() async {
-    if (currentRequest.value != null) {
-      final updated = await _repository.getCleaningRequestById(currentRequest.value!.id);
-      if (updated != null) {
-        currentRequest.value = updated;
+    isLoading.value = true;
+    try {
+      if (currentRequest.value != null) {
+        final updated = await _repository.getCleaningRequestById(currentRequest.value!.id);
+        if (updated != null) {
+          currentRequest.value = updated;
+        }
       }
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -202,11 +239,17 @@ class DetailController extends GetxController {
       try {
         Get.dialog(Center(child: CircularProgressIndicator()), barrierDismissible: false);
         
+        // Extract payment info safely
+        // Since we treat result['data'] as dynamic, we try to access properties if possible or provide fallback
+        // Ideally Toss Widget SDK returns paymentKey/orderId in the success object
+        final paymentKey = result['data']?.paymentKey ?? 'toss_payment_${DateTime.now().millisecondsSinceEpoch}';
+        final orderId = result['data']?.orderId ?? result['orderId'] ?? Uuid().v4();
+
         await _repository.acceptApplicant(
           currentRequest.value!.id,
           applicantId,
-          paymentKey: result['paymentKey'],
-          orderId: result['orderId'],
+          paymentKey: paymentKey,
+          orderId: orderId,
           paymentStatus: 'completed',
         );
 
@@ -253,24 +296,25 @@ class DetailController extends GetxController {
     }
   }
 
-  // Owner pays for a request (after staff accepted) - TEST VERSION
+  // Owner pays for a request (after staff accepted)
   Future<void> processPayment() async {
-    debugPrint('🔵 processPayment 시작 (테스트 버전)');
+    debugPrint('🔵 processPayment 시작');
     
     if (currentRequest.value == null) {
-      debugPrint('❌ currentRequest is null');
       Get.snackbar('오류', '청소 요청 정보를 찾을 수 없습니다.',
         backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
     
-    debugPrint('Request ID: ${currentRequest.value!.id}');
-    debugPrint('Accepted Applicant ID: ${currentRequest.value?.acceptedApplicantId}');
-    
     if (currentRequest.value?.acceptedApplicantId == null) {
-      debugPrint('❌ acceptedApplicantId is null');
       Get.snackbar('오류', '수락된 신청자가 없습니다.',
         backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      Get.snackbar('알림', '로그인이 필요합니다');
       return;
     }
     
@@ -281,25 +325,19 @@ class DetailController extends GetxController {
         barrierDismissible: false,
       );
       
-      debugPrint('🔍 신청자 프로필 조회 중: ${currentRequest.value!.acceptedApplicantId}');
       final staffProfile = await getUserProfile(currentRequest.value!.acceptedApplicantId!);
       
       // Close loading
       Get.back();
       
       if (staffProfile == null) {
-        debugPrint('❌ staffProfile is null');
         Get.snackbar('오류', '신청자 정보를 불러올 수 없습니다.',
           backgroundColor: Colors.red, colorText: Colors.white);
         return;
       }
       
-      debugPrint('✅ 신청자 프로필 조회 성공: ${staffProfile.userName}');
-      
       // Validate price
-      debugPrint('💰 Price 값 확인: "$price"');
       if (price == null || price!.isEmpty || price == '0' || price == '0원') {
-        debugPrint('❌ 유효하지 않은 가격: $price');
         Get.snackbar(
           '오류',
           '청소 금액이 설정되지 않았습니다.\n청소 의뢰를 다시 작성해주세요.',
@@ -309,129 +347,124 @@ class DetailController extends GetxController {
         );
         return;
       }
-      
-      // Show test payment confirmation dialog
-      final confirmed = await Get.dialog<bool>(
-        AlertDialog(
-          title: Text('결제 확인 (테스트)'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('청소 전문가: ${staffProfile.userName ?? "알 수 없음"}'),
-              SizedBox(height: 8),
-              Text('청소 금액: ${price ?? "0"}원'),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.orange, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '테스트 모드입니다\n실제 결제는 진행되지 않습니다',
-                        style: TextStyle(fontSize: 12, color: Colors.orange[800]),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(result: false),
-              child: Text('취소', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () => Get.back(result: true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF1E88E5),
-                foregroundColor: Colors.white,
-              ),
-              child: Text('결제하기 (테스트)'),
-            ),
-          ],
-        ),
-      );
 
-      if (confirmed == true) {
-        debugPrint('🔵 테스트 결제 진행 중...');
-        
-        // Show loading
-        Get.dialog(
-          Center(child: CircularProgressIndicator()),
-          barrierDismissible: false,
-        );
-        
-        // Process payment with test data
-        final testPaymentKey = 'test_payment_${DateTime.now().millisecondsSinceEpoch}';
-        final testOrderId = 'test_order_${DateTime.now().millisecondsSinceEpoch}';
-        
-        debugPrint('💳 결제 데이터:');
-        debugPrint('  - Request ID: ${currentRequest.value!.id}');
-        debugPrint('  - Applicant ID: ${currentRequest.value!.acceptedApplicantId}');
-        debugPrint('  - Payment Key: $testPaymentKey');
-        debugPrint('  - Order ID: $testOrderId');
-        
-        try {
-          debugPrint('🔵 acceptApplicant 호출 중...');
-          await _repository.acceptApplicant(
-            currentRequest.value!.id,
-            currentRequest.value!.acceptedApplicantId!,
-            paymentKey: testPaymentKey,
-            orderId: testOrderId,
-            paymentStatus: 'completed',
-          );
-          debugPrint('✅ acceptApplicant 완료');
+      // Navigate to Payment Selection Page
+      final result = await Get.to(() => PaymentSelectionPage(
+        applicant: staffProfile,
+        price: price!,
+        orderName: title,
+        orderId: Uuid().v4(),
+        customerEmail: currentUser.email!,
+      ));
 
-          debugPrint('🔵 청소 상태 업데이트 중...');
-          // Update status to 'accepted'
-          await _repository.updateCleaningStatus(currentRequest.value!.id, 'accepted');
-          debugPrint('✅ 청소 상태 업데이트 완료');
+      if (result != null && result['success'] == true) {
+         try {
+            Get.dialog(Center(child: CircularProgressIndicator()), barrierDismissible: false);
+            
+            // Handle Free Matching
+            if (result['isFree'] == true) {
+              debugPrint('🟢 무료 매칭 진행');
+              
+              // Use a dummy or specific identifier for free matching
+              final paymentKey = 'free_match_${Uuid().v4()}';
+              final orderId = result['orderId'] ?? Uuid().v4();
 
-          Get.back(); // Close loading
-          
-          // Show success message
-          Get.snackbar(
-            '결제 완료! (테스트)',
-            '${staffProfile.userName ?? "청소 전문가"}님과 매칭되었습니다.\n청소 일정을 확인해주세요.',
-            backgroundColor: Colors.green,
-            colorText: Colors.white,
-            duration: Duration(seconds: 5),
-            snackPosition: SnackPosition.TOP,
-            icon: Icon(Icons.check_circle, color: Colors.white),
-          );
-          
-          debugPrint('✅ 테스트 결제 완료');
-          await _loadRequestData();
-          debugPrint('✅ 데이터 리로드 완료');
-        } catch (innerError, stackTrace) {
-          debugPrint('❌ 결제 처리 중 내부 에러: $innerError');
-          debugPrint('스택 트레이스:\n$stackTrace');
-          Get.back(); // Close loading
-          Get.snackbar(
-            '결제 실패',
-            '결제 처리 중 오류가 발생했습니다.\n에러: $innerError',
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
-            duration: Duration(seconds: 5),
-          );
-          rethrow;
-        }
-      } else {
-        debugPrint('⚠️ 사용자가 결제를 취소함');
+              await _repository.acceptApplicant(
+                currentRequest.value!.id,
+                currentRequest.value!.acceptedApplicantId!,
+                paymentKey: paymentKey,
+                orderId: orderId,
+                paymentStatus: 'completed', // Treat as completed payment
+              );
+
+              // Update status to 'accepted'
+              await _repository.updateCleaningStatus(currentRequest.value!.id, 'accepted');
+
+              Get.back(); // Close loading
+              
+              Get.snackbar(
+                '매칭 완료!',
+                '${staffProfile.userName ?? "청소 전문가"}님과 무료 매칭되었습니다.\n청소 일정을 확인해주세요.',
+                backgroundColor: Colors.green,
+                colorText: Colors.white,
+                duration: Duration(seconds: 5),
+                snackPosition: SnackPosition.TOP,
+                icon: Icon(Icons.check_circle, color: Colors.white),
+              );
+              
+              await _loadRequestData();
+              return;
+            }
+
+            // Payment Request Successful (Frontend)
+            // Now we MUST confirm it on server side (Cloud Functions)
+            debugPrint('🟢 결제 요청 성공, 서버 승인 진행 중...');
+            
+            // Extract data from result['data'] which is the success object from SDK
+            final successData = result['data'];
+            final paymentKey = successData.paymentKey;
+            final orderId = successData.orderId;
+            final amount = successData.amount; // Ensure this is num/int
+            
+            debugPrint('  - paymentKey: $paymentKey');
+            debugPrint('  - orderId: $orderId');
+            debugPrint('  - amount: $amount');
+
+            // Call Cloud Function via Repository
+            final confirmResult = await _repository.confirmPayment(
+              paymentKey: paymentKey,
+              orderId: orderId,
+              amount: (amount is int) ? amount : (amount as num).toInt(),
+            );
+
+            if (confirmResult['success'] == true) {
+              debugPrint('✅ 서버 승인 완료!');
+              
+              // Proceed to update local DB status
+              await _repository.acceptApplicant(
+                currentRequest.value!.id,
+                currentRequest.value!.acceptedApplicantId!,
+                paymentKey: paymentKey,
+                orderId: orderId,
+                paymentStatus: 'completed',
+              );
+
+              // Update status to 'accepted'
+              await _repository.updateCleaningStatus(currentRequest.value!.id, 'accepted');
+
+              Get.back(); // Close loading
+              
+              Get.snackbar(
+                '결제 완료!',
+                '${staffProfile.userName ?? "청소 전문가"}님과 매칭되었습니다.\n청소 일정을 확인해주세요.',
+                backgroundColor: Colors.green,
+                colorText: Colors.white,
+                duration: Duration(seconds: 5),
+                snackPosition: SnackPosition.TOP,
+                icon: Icon(Icons.check_circle, color: Colors.white),
+              );
+              
+              await _loadRequestData();
+            } else {
+              // Server confirmation failed
+              debugPrint('❌ 서버 승인 실패: ${confirmResult['error']}');
+              Get.back(); // Close loading
+              Get.snackbar(
+                '결제 승인 실패', 
+                '결제 요청은 성공했으나 최종 승인에 실패했습니다.\n${confirmResult['error']}',
+                backgroundColor: Colors.red,
+                colorText: Colors.white,
+                duration: Duration(seconds: 5),
+              );
+            }
+         } catch (e) {
+            Get.back(); // Close loading
+            Get.snackbar('오류', '결제 처리 중 오류가 발생했습니다: $e');
+         }
       }
-    } catch (e, stackTrace) {
+
+    } catch (e) {
       debugPrint('❌ processPayment 오류: $e');
-      debugPrint('스택 트레이스:\n$stackTrace');
-      // Close loading if still open
       if (Get.isDialogOpen ?? false) {
         Get.back();
       }
