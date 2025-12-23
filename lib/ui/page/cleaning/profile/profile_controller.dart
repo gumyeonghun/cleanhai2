@@ -236,6 +236,15 @@ class ProfileController extends GetxController {
     }
   }
 
+  // 요청 이미지 선택
+  final Rx<File?> selectedRequestImage = Rx<File?>(null);
+  Future<void> pickRequestImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      selectedRequestImage.value = File(image.path);
+    }
+  }
+
   // 프로필 저장
   Future<void> saveProfile() async {
     final user = userModel.value;
@@ -248,6 +257,12 @@ class ProfileController extends GetxController {
       // 새 이미지가 선택되었다면 업로드
       if (selectedImage.value != null) {
         imageUrl = await _repository.uploadImage(selectedImage.value!, 'profile');
+      }
+
+      // 새 요청 이미지가 선택되었다면 업로드
+      String? requestImageUrl = user.cleaningRequestImageUrl;
+      if (selectedRequestImage.value != null) {
+        requestImageUrl = await _repository.uploadImage(selectedRequestImage.value!, 'request');
       }
 
       final updatedUser = UserModel(
@@ -273,6 +288,7 @@ class ProfileController extends GetxController {
         additionalOptionCost: additionalOptionCostController.text,
         autoRegisterTitle: autoRegisterTitleController.text,
         birthDate: birthDate.value,
+        cleaningRequestImageUrl: requestImageUrl,
       );
 
       await _repository.updateUserProfile(updatedUser);
@@ -283,7 +299,7 @@ class ProfileController extends GetxController {
         debugPrint('=== 청소 전문가 자동 등록 시작 ===');
         debugPrint('자동 등록 활성화: ${isAutoRegisterEnabled.value}');
         
-        final existingStaff = await _repository.getCleaningStaffByAuthorId(user.id);
+        final existingStaff = await _repository.getAutoRegisteredStaffByAuthorId(user.id);
         debugPrint('기존 스태프 정보: ${existingStaff != null ? "있음 (ID: ${existingStaff.id}, 자동등록: ${existingStaff.isAutoRegistered})" : "없음"}');
         
         final availabilityStr = '근무가능일시: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}';
@@ -386,7 +402,7 @@ class ProfileController extends GetxController {
         debugPrint('=== 청소 전문가 자동 등록 완료 ===');
       } else if (user.userType == 'owner') {
         // Owner Logic
-        final existingRequest = await _repository.getCleaningRequestByAuthorId(user.id);
+        final existingRequest = await _repository.getAutoRegisteredRequestByAuthorId(user.id);
         
         // 수정 가능한 상태인지 확인 (pending 상태일 때만 수정 가능)
         bool isEditable = existingRequest != null && existingRequest.status == 'pending';
@@ -394,14 +410,14 @@ class ProfileController extends GetxController {
         final contentStr = '청소 필요 요일: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}\n상세: ${cleaningDetailsController.text}${cleaningToolLocationController.text.isNotEmpty ? '\n청소도구위치: ${cleaningToolLocationController.text}' : ''}${cleaningPrecautionsController.text.isNotEmpty ? '\n주의사항: ${cleaningPrecautionsController.text}' : ''}';
 
         if (isAutoRegisterEnabled.value) {
-          if (isEditable && existingRequest!.isAutoRegistered) {
+          if (isEditable && existingRequest.isAutoRegistered) {
             // 기존 대기중인 자동 등록 의뢰 -> 전체 정보 업데이트
             final updatedRequest = existingRequest.copyWith(
               authorName: updatedUser.userName ?? '',
               title: autoRegisterTitleController.text.isNotEmpty 
                   ? autoRegisterTitleController.text 
                   : existingRequest.title,
-              imageUrl: updatedUser.profileImageUrl,
+              imageUrl: updatedUser.cleaningRequestImageUrl ?? updatedUser.profileImageUrl,
               address: updatedUser.address,
               latitude: updatedUser.latitude,
               longitude: updatedUser.longitude,
@@ -415,7 +431,7 @@ class ProfileController extends GetxController {
               price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의',
             );
             await _repository.updateCleaningRequest(updatedRequest);
-          } else if (isEditable && !existingRequest!.isAutoRegistered) {
+          } else if (isEditable && !existingRequest.isAutoRegistered) {
             // 기존 대기중인 수동 등록 의뢰 -> 프로필 정보(이름, 사진, 주소)만 동기화
             final updatedRequest = existingRequest.copyWith(
               authorName: updatedUser.userName ?? '',
@@ -438,7 +454,7 @@ class ProfileController extends GetxController {
                   : '${updatedUser.userName}님의 청소 의뢰',
               content: contentStr,
               price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의', // Default price
-              imageUrl: updatedUser.profileImageUrl,
+              imageUrl: updatedUser.cleaningRequestImageUrl ?? updatedUser.profileImageUrl,
               address: updatedUser.address,
               latitude: updatedUser.latitude,
               longitude: updatedUser.longitude,
@@ -455,10 +471,10 @@ class ProfileController extends GetxController {
           }
         } else {
           // 자동 등록 비활성화 상태
-          if (isEditable && existingRequest!.isAutoRegistered) {
+          if (isEditable && existingRequest.isAutoRegistered) {
             // 대기중인 자동 등록 의뢰라면 삭제
             await _repository.deleteCleaningRequest(existingRequest.id);
-          } else if (isEditable && !existingRequest!.isAutoRegistered) {
+          } else if (isEditable && !existingRequest.isAutoRegistered) {
             // 대기중인 수동 등록 의뢰라면 -> 프로필 정보(이름, 사진, 주소)만 동기화
             final updatedRequest = existingRequest.copyWith(
               authorName: updatedUser.userName ?? '',
@@ -549,9 +565,85 @@ class ProfileController extends GetxController {
     Get.offAll(() => LoginSignupPage(), predicate: (_) => false);
   }
 
+  Future<void> bumpAutoRegisteredRequest() async {
+    final user = userModel.value;
+    if (user == null) return;
+    
+    // 이 기능은 우선 'owner'에게만 적용 (필요 시 staff도 확장 가능)
+    if (user.userType == 'owner' && isAutoRegisterEnabled.value) {
+      try {
+        isLoading.value = true;
+        final existingRequest = await _repository.getCleaningRequestByAuthorId(user.id);
+        
+        if (existingRequest != null && existingRequest.isAutoRegistered && existingRequest.status == 'pending') {
+          // createdAt만 현재 시간으로 업데이트하여 상단으로 "끌어올리기"
+          final updatedRequest = existingRequest.copyWith(
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          
+          await _repository.updateCleaningRequest(updatedRequest);
+          
+          Get.snackbar('성공', '청소 의뢰가 상단으로 끌어올려졌습니다!',
+            backgroundColor: Colors.green, colorText: Colors.white);
+        } else {
+           Get.snackbar('알림', '끌어올릴 수 있는 대기중인 자동 등록 의뢰가 없습니다.',
+            backgroundColor: Colors.orange, colorText: Colors.white);
+        }
+      } catch (e) {
+        debugPrint('Bump request failed: $e');
+        Get.snackbar('오류', '작업 실패: $e',
+            backgroundColor: Colors.red, colorText: Colors.white);
+      } finally {
+        isLoading.value = false;
+      }
+    } else {
+      Get.snackbar('알림', '자동 등록이 활성화된 상태에서만 가능합니다.',
+          backgroundColor: Colors.orange, colorText: Colors.white);
+    }
+  }
+
+  Future<void> bumpAutoRegisteredStaff() async {
+    final user = userModel.value;
+    if (user == null) return;
+    
+    if (user.userType == 'staff' && isAutoRegisterEnabled.value) {
+      try {
+        isLoading.value = true;
+        final existingStaff = await _repository.getAutoRegisteredStaffByAuthorId(user.id);
+        
+        if (existingStaff != null && existingStaff.isAutoRegistered) {
+          // createdAt만 현재 시간으로 업데이트하여 상단으로 "끌어올리기"
+          final updatedStaff = existingStaff.copyWith(
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          
+          await _repository.updateCleaningStaff(updatedStaff);
+          
+          Get.snackbar('성공', '프로필이 상단으로 끌어올려졌습니다!',
+            backgroundColor: Colors.green, colorText: Colors.white);
+        } else {
+           Get.snackbar('알림', '끌어올릴 수 있는 자동 등록 프로필이 없습니다.',
+            backgroundColor: Colors.orange, colorText: Colors.white);
+        }
+      } catch (e) {
+        debugPrint('Bump staff failed: $e');
+        Get.snackbar('오류', '작업 실패: $e',
+            backgroundColor: Colors.red, colorText: Colors.white);
+      } finally {
+        isLoading.value = false;
+      }
+    } else {
+       Get.snackbar('알림', '자동 등록이 활성화된 상태에서만 가능합니다.',
+          backgroundColor: Colors.orange, colorText: Colors.white);
+    }
+  }
+
   /// 회원 탈퇴
   Future<void> deleteAccount() async {
     final user = _auth.currentUser;
+
     if (user == null) return;
 
     // 1. 확인 다이얼로그

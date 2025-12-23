@@ -36,6 +36,7 @@ class CleaningRequest {
   final String? requesterName;
   final String? cleaningToolLocation;
   final String? precautions;
+  final DateTime? cleaningDate;
 
   CleaningRequest({
     required this.id,
@@ -70,6 +71,7 @@ class CleaningRequest {
     this.requesterName,
     this.cleaningToolLocation,
     this.precautions,
+    this.cleaningDate,
   });
 
   // Firestore에서 데이터를 가져올 때 사용
@@ -108,6 +110,7 @@ class CleaningRequest {
       requesterName: data['requesterName'],
       cleaningToolLocation: data['cleaningToolLocation'],
       precautions: data['precautions'],
+      cleaningDate: data['cleaningDate'] != null ? (data['cleaningDate'] as Timestamp).toDate() : null,
     );
   }
 
@@ -145,6 +148,7 @@ class CleaningRequest {
       'requesterName': requesterName,
       'cleaningToolLocation': cleaningToolLocation,
       'precautions': precautions,
+      'cleaningDate': cleaningDate != null ? Timestamp.fromDate(cleaningDate!) : null,
     };
   }
 
@@ -182,6 +186,7 @@ class CleaningRequest {
     String? requesterName,
     String? cleaningToolLocation,
     String? precautions,
+    DateTime? cleaningDate,
   }) {
     return CleaningRequest(
       id: id ?? this.id,
@@ -216,6 +221,7 @@ class CleaningRequest {
       requesterName: requesterName ?? this.requesterName,
       cleaningToolLocation: cleaningToolLocation ?? this.cleaningToolLocation,
       precautions: precautions ?? this.precautions,
+      cleaningDate: cleaningDate ?? this.cleaningDate,
     );
   }
 }

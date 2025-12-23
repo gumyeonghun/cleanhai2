@@ -393,7 +393,7 @@ class LoginSignupPage extends StatelessWidget {
                                 SizedBox(height: 15),
                                 
                                 // Kakao Login Button
-                                if (false) ...[
+                                /*
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton.icon(
@@ -417,6 +417,7 @@ class LoginSignupPage extends StatelessWidget {
                                     ),
                                   ),
                                 ),
+                                */
                                 
                                 SizedBox(height: 15),
 
@@ -444,7 +445,6 @@ class LoginSignupPage extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                ],
                               ],
                             ],
                           ),
@@ -456,7 +456,7 @@ class LoginSignupPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           TextButton(
-                            onPressed: () => _launchUrl('https://www.notion.so/2c67ebba614481fbb249dee089fe1890?source=copy_link'),
+                            onPressed: () => _launchUrl('https://short-tarragon-911.notion.site/2c67ebba614481fbb249dee089fe1890?pvs=74'),
                             child: Text(
                               '서비스 이용약관',
                               style: TextStyle(
@@ -472,7 +472,7 @@ class LoginSignupPage extends StatelessWidget {
                             style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
                           ),
                           TextButton(
-                            onPressed: () => _launchUrl('https://www.notion.so/2cd7ebba6144805f92d8c18adeab69c3?source=copy_link'),
+                            onPressed: () => _launchUrl('https://short-tarragon-911.notion.site/2cd7ebba6144805f92d8c18adeab69c3'),
                             child: Text(
                               '개인정보 처리방침',
                               style: TextStyle(

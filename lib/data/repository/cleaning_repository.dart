@@ -258,6 +258,26 @@ class CleaningRepository {
     }
   }
 
+  /// 작성자 ID로 자동 등록된 청소 의뢰 조회 (최근 1개)
+  Future<CleaningRequest?> getAutoRegisteredRequestByAuthorId(String authorId) async {
+    try {
+      final snapshot = await _cleaningRequestsRef
+          .where('authorId', isEqualTo: authorId)
+          .where('isAutoRegistered', isEqualTo: true)
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+      
+      if (snapshot.docs.isNotEmpty) {
+        return CleaningRequest.fromFirestore(snapshot.docs.first);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting auto-registered request by author id: $e');
+      return null;
+    }
+  }
+
   /// 작성자 ID로 청소 의뢰 삭제 (자동 등록된 것만 삭제하는 것이 이상적이지만, 여기서는 가장 최근 것을 삭제하거나 로직에 따라 처리)
   /// 주의: 이 메서드는 해당 사용자의 모든 의뢰를 삭제할 수 있으므로 신중해야 함.
   /// 여기서는 자동 등록 로직을 위해 'pending' 상태인 가장 최근 의뢰 1개를 삭제하도록 구현
@@ -348,6 +368,25 @@ class CleaningRepository {
       return null;
     } catch (e) {
       debugPrint('Error getting staff by author id: $e');
+      return null;
+    }
+  }
+
+  /// 작성자 ID로 자동 등록된 청소 대기 조회
+  Future<CleaningStaff?> getAutoRegisteredStaffByAuthorId(String authorId) async {
+    try {
+      final snapshot = await _cleaningStaffsRef
+          .where('authorId', isEqualTo: authorId)
+          .where('isAutoRegistered', isEqualTo: true)
+          .limit(1)
+          .get();
+      
+      if (snapshot.docs.isNotEmpty) {
+        return CleaningStaff.fromFirestore(snapshot.docs.first);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting auto-registered staff by author id: $e');
       return null;
     }
   }

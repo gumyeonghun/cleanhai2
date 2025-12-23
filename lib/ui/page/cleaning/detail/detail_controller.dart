@@ -507,4 +507,12 @@ class DetailController extends GetxController {
   Future<UserModel?> getUserProfile(String uid) {
     return _repository.getUserProfile(uid);
   }
+  Future<Map<String, dynamic>> getStaffRatingStats(String staffId) {
+    return _repository.getStaffRatingStats(staffId);
+  }
+
+  Future<List<dynamic>> getStaffRecentReviews(String staffId) async {
+    final requests = await _repository.getCompletedRequestsWithReviews(staffId);
+    return requests.map((r) => r.review!).toList();
+  }
 }

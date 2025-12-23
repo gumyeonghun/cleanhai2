@@ -43,9 +43,9 @@ class MySchedulePage extends StatelessWidget {
             unselectedLabelColor: Colors.white70,
             labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             tabs: [
-              Tab(text: '내 의뢰'),
-              Tab(text: '내 신청'),
-              Tab(text: '내 대기'),
+              Tab(text: '내 청소의뢰'),
+              Tab(text: '내 청소신청'),
+              Tab(text: '내 청소대기'),
             ],
           ),
         ),

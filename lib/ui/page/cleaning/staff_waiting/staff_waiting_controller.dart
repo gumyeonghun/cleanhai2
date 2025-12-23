@@ -110,25 +110,7 @@ class StaffWaitingController extends GetxController {
       }).toList();
     }
     
-    // 자동 등록된 전문가는 오늘 요일에 해당하는 것만 표시
-    final today = DateTime.now();
-    final dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-    final todayDayName = dayNames[today.weekday % 7];
-    final myUid = _auth.currentUser?.uid;
-    
-    staff = staff.where((s) {
-      // 내 프로필은 항상 표시 (확인용)
-      if (s.authorId == myUid) return true;
-
-      // 자동 등록이 아니면 항상 표시
-      if (!s.isAutoRegistered) return true;
-      
-      // 자동 등록이지만 availableDays가 없으면 표시하지 않음
-      if (s.availableDays == null || s.availableDays!.isEmpty) return false;
-      
-      // 오늘 요일이 포함되어 있으면 표시
-      return s.availableDays!.contains(todayDayName);
-    }).toList();
+    // Date filtering removed as per user request (Show all regardless of date)
     
     if (currentUser.value == null || 
         currentUser.value!.latitude == null || 

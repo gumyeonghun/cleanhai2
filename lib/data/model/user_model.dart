@@ -24,6 +24,7 @@ class UserModel {
   final String? additionalOptionCost; // For staff: Additional option costs
   final String? autoRegisterTitle; // For staff: Auto-register title
   final DateTime? birthDate;
+  final String? cleaningRequestImageUrl; // For owners: Image for auto-registered requests
 
   UserModel({
     required this.id,
@@ -48,6 +49,7 @@ class UserModel {
     this.additionalOptionCost,
     this.autoRegisterTitle,
     this.birthDate,
+    this.cleaningRequestImageUrl,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -75,6 +77,7 @@ class UserModel {
       additionalOptionCost: data['additionalOptionCost'],
       autoRegisterTitle: data['autoRegisterTitle'],
       birthDate: data['birthDate'] != null ? (data['birthDate'] as Timestamp).toDate() : null,
+      cleaningRequestImageUrl: data['cleaningRequestImageUrl'],
     );
   }
 
@@ -101,6 +104,7 @@ class UserModel {
       'additionalOptionCost': additionalOptionCost,
       'autoRegisterTitle': autoRegisterTitle,
       'birthDate': birthDate != null ? Timestamp.fromDate(birthDate!) : null,
+      'cleaningRequestImageUrl': cleaningRequestImageUrl,
     };
   }
 }

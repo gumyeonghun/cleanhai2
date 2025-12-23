@@ -145,7 +145,8 @@ class DetailPage extends StatelessWidget {
                   ),
                   Obx(() {
                     if (controller.authorProfile.value != null && 
-                        controller.authorProfile.value!.email.isNotEmpty) {
+                        controller.authorProfile.value!.email.isNotEmpty &&
+                        controller.authorProfile.value!.email != authorName) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 4.0),
                         child: Text(
@@ -200,6 +201,43 @@ class DetailPage extends StatelessWidget {
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF1E88E5),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  
+                  // 청소 날짜 및 시간 표시 (청소 의뢰일 때만, cleaningDate가 있을 때)
+                  if (currentRequest?.cleaningDate != null) ...[
+                    SizedBox(height: 15),
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today, color: Colors.orange),
+                          SizedBox(width: 12),
+                          Text(
+                            '청소 일시: ',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              DateFormat('yyyy년 MM월 dd일 HH:mm').format(currentRequest!.cleaningDate!),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange[700],
                               ),
                             ),
                           ),
@@ -671,22 +709,7 @@ class DetailPage extends StatelessWidget {
                         color: Colors.grey[800],
                       ),
                     ),
-                  Obx(() {
-                    if (controller.authorProfile.value != null && 
-                        controller.authorProfile.value!.email.isNotEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          controller.authorProfile.value!.email,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      );
-                    }
-                    return SizedBox.shrink();
-                  }),
+
                     SizedBox(height: 12),
                     ...(currentRequest.applicants.map((applicantId) {
                       final isAccepted = currentRequest.acceptedApplicantId == applicantId;
@@ -711,7 +734,7 @@ class DetailPage extends StatelessWidget {
                               children: [
                                 Expanded(
                                   child: GestureDetector(
-                                    onTap: () => _showApplicantProfile(context, userProfile, applicantId),
+                                    onTap: () => _showApplicantProfile(context, userProfile, applicantId, controller),
                                     behavior: HitTestBehavior.opaque,
                                     child: Row(
                                       children: [
@@ -835,7 +858,7 @@ class DetailPage extends StatelessWidget {
     );
   }
 
-  void _showApplicantProfile(BuildContext context, UserModel? userProfile, String applicantId) {
+  void _showApplicantProfile(BuildContext context, UserModel? userProfile, String applicantId, DetailController controller) {
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(
@@ -907,13 +930,95 @@ class DetailPage extends StatelessWidget {
                   SizedBox(height: 16),
                 ],
                 
-                if (userProfile.latitude != null && userProfile.longitude != null) ...[
-                  _buildProfileRow(
-                    icon: Icons.map,
-                    label: '위치',
-                    value: '위도: ${userProfile.latitude!.toStringAsFixed(4)}, 경도: ${userProfile.longitude!.toStringAsFixed(4)}',
+                if (userProfile.userType == 'staff') ...[
+                  // Staff Ratings & Reviews
+                  FutureBuilder<Map<String, dynamic>>(
+                    future: controller.getStaffRatingStats(userProfile.id),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return SizedBox.shrink();
+                      final stats = snapshot.data!;
+                      final averageRating = stats['averageRating'] ?? 0.0;
+                      final reviewCount = stats['reviewCount'] ?? 0;
+                      
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.star, color: Colors.amber, size: 24),
+                              SizedBox(width: 8),
+                               Text(
+                                (averageRating as num).toStringAsFixed(1),
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                '($reviewCount개 후기)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          
+                          // Recent Reviews
+                          FutureBuilder<List<dynamic>>(
+                            future: controller.getStaffRecentReviews(userProfile.id),
+                            builder: (context, reviewSnapshot) {
+                              if (!reviewSnapshot.hasData || reviewSnapshot.data!.isEmpty) {
+                                return Text('아직 후기가 없습니다.', style: TextStyle(color: Colors.grey));
+                              }
+                              
+                              final reviews = reviewSnapshot.data!;
+                              final recentReviews = reviews.take(3).toList();
+                              
+                              return Column(
+                                children: recentReviews.map((review) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12.0),
+                                    child: Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: List.generate(5, (index) {
+                                              return Icon(
+                                                index < review.rating ? Icons.star : Icons.star_border,
+                                                color: Colors.amber,
+                                                size: 14,
+                                              );
+                                            }),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            review.comment,
+                                            style: TextStyle(fontSize: 13),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                          SizedBox(height: 16),
+                        ],
+                      );
+                    },
                   ),
-                  SizedBox(height: 16),
                 ],
                 
                 _buildProfileRow(

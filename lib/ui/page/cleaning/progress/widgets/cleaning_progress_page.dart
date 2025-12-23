@@ -118,6 +118,11 @@ class CleaningProgressPage extends StatelessWidget {
         statusColor = Colors.orange;
         statusIcon = Icons.hourglass_empty;
         break;
+      case 'accepted':
+        statusText = '청소시작전';
+        statusColor = Colors.indigo;
+        statusIcon = Icons.inventory_2_outlined;
+        break;
       case 'in_progress':
         statusText = '청소중';
         statusColor = Colors.blue;

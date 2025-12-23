@@ -2,7 +2,7 @@ import 'package:cleanhai2/firebase_options.dart';
 import 'package:cleanhai2/ui/page/main/widgets/main_page.dart';
 import 'package:cleanhai2/ui/page/auth/login_signup_page.dart';
 import 'package:cleanhai2/ui2/global_controller/interstitial_ad_controller.dart';
-import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';

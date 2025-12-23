@@ -35,6 +35,7 @@ class WriteController extends GetxController {
   final RxDouble longitude = 0.0.obs;
   final RxString userType = ''.obs;
   final RxString selectedCleaningType = '숙박업소청소'.obs;
+  final Rx<DateTime?> selectedCleaningDate = Rx<DateTime?>(null);
 
   static const List<String> cleaningTypes = [
     '숙박업소청소',
@@ -99,6 +100,7 @@ class WriteController extends GetxController {
       requesterNameController.text = existingRequest!.requesterName ?? '';
       cleaningToolLocationController.text = existingRequest!.cleaningToolLocation ?? '';
       precautionsController.text = existingRequest!.precautions ?? '';
+      selectedCleaningDate.value = existingRequest!.cleaningDate;
     } else if (existingStaff != null) {
       isEditMode.value = true;
       selectedType.value = 'staff';
@@ -151,6 +153,33 @@ class WriteController extends GetxController {
       }
     } catch (e) {
       Get.snackbar('오류', '이미지 선택 실패: $e');
+    }
+  }
+
+  Future<void> pickCleaningDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedCleaningDate.value ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(Duration(days: 365)),
+      locale: const Locale('ko', 'KR'),
+    );
+
+    if (pickedDate != null && context.mounted) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(selectedCleaningDate.value ?? DateTime.now()),
+      );
+
+      if (pickedTime != null) {
+        selectedCleaningDate.value = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+      }
     }
   }
 
@@ -235,6 +264,7 @@ class WriteController extends GetxController {
             requesterName: requesterNameController.text.trim(),
             cleaningToolLocation: cleaningToolLocationController.text.trim(),
             precautions: precautionsController.text.trim(),
+            cleaningDate: selectedCleaningDate.value,
           );
           await _repository.updateCleaningRequest(updatedRequest);
         } else {
@@ -258,6 +288,7 @@ class WriteController extends GetxController {
             requesterName: requesterNameController.text.trim(),
             cleaningToolLocation: cleaningToolLocationController.text.trim(),
             precautions: precautionsController.text.trim(),
+            cleaningDate: selectedCleaningDate.value,
           );
           await _repository.createCleaningRequest(request);
         }

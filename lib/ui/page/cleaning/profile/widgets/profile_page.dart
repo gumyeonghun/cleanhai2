@@ -795,9 +795,55 @@ class ProfilePage extends StatelessWidget {
                                       ? (value) => controller.isAutoRegisterEnabled.value = value
                                       : null,
                                   activeThumbColor: Color(0xFF1E88E5),
-                                )),
-                              ],
+                                )
+                                )],
                             ),
+
+                            if (userModel?.userType == 'owner') ...[
+                              SizedBox(height: 20),
+                              Text(
+                                '청소 현장 사진 (자동 등록용)',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 10),
+                              GestureDetector(
+                                onTap: controller.isEditing.value ? controller.pickRequestImage : null,
+                                child: Obx(() => Container(
+                                  height: 200,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                    image: (controller.selectedRequestImage.value != null || (userModel?.cleaningRequestImageUrl != null && userModel!.cleaningRequestImageUrl!.isNotEmpty))
+                                        ? DecorationImage(
+                                            image: controller.selectedRequestImage.value != null
+                                                ? FileImage(controller.selectedRequestImage.value!)
+                                                : NetworkImage(userModel!.cleaningRequestImageUrl!) as ImageProvider,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
+                                  ),
+                                  child: (controller.selectedRequestImage.value == null && (userModel?.cleaningRequestImageUrl == null || userModel!.cleaningRequestImageUrl!.isEmpty))
+                                      ? Center(
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.add_a_photo, color: Colors.grey[400], size: 40),
+                                              SizedBox(height: 8),
+                                              Text(
+                                                '사진 추가',
+                                                style: TextStyle(color: Colors.grey[400]),
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : null,
+                                )),
+                              ),
+                            ],
+                            
+                            // Bump to Top Button removed per user request
+                            
                             Text(
                               userModel?.userType == 'staff' 
                                   ? '활성화하면 설정한 시간에 맞춰 대기 목록에 자동으로 노출됩니다.'

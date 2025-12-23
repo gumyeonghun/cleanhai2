@@ -92,16 +92,7 @@ class CleaningController extends GetxController {
         }).toList();
       }
       
-      // 자동 등록된 의뢰는 오늘 요일에 해당하는 것만 표시
-      final today = DateTime.now();
-      final dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-      final todayDayName = dayNames[today.weekday % 7];
-      
-      requests = requests.where((request) {
-        if (!request.isAutoRegistered) return true;
-        if (request.availableDays == null || request.availableDays!.isEmpty) return false;
-        return request.availableDays!.contains(todayDayName);
-      }).toList();
+
     
     if (currentUser.value == null || 
         currentUser.value!.latitude == null || 

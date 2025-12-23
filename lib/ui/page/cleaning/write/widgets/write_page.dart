@@ -346,6 +346,66 @@ class WritePage extends StatelessWidget {
                 }
                 return SizedBox.shrink();
               }),
+
+              // 청소 날짜 및 시간 (청소 의뢰일 때만)
+              Obx(() {
+                if (controller.selectedType.value == 'request') {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '청소 필요 날짜 및 시간',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: () => controller.pickCleaningDate(context),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Obx(() => Icon(
+                                Icons.calendar_today,
+                                color: controller.selectedCleaningDate.value != null
+                                    ? Color(0xFF1E88E5)
+                                    : Colors.grey[400],
+                              )),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Obx(() {
+                                  final date = controller.selectedCleaningDate.value;
+                                  return Text(
+                                    date != null
+                                        ? '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}'
+                                        : '날짜 및 시간 선택 (선택사항)',
+                                    style: TextStyle(
+                                      color: date != null ? Colors.black87 : Colors.grey[400],
+                                      fontSize: 16,
+                                    ),
+                                  );
+                                }),
+                              ),
+                              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                    ],
+                  );
+                }
+                return SizedBox.shrink();
+              }),
               
               // 내용
               Text(
