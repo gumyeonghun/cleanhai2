@@ -224,7 +224,7 @@ class DetailPage extends StatelessWidget {
                           Icon(Icons.calendar_today, color: Colors.orange),
                           SizedBox(width: 12),
                           Text(
-                            '청소 일시: ',
+                            '청소 11일시: ',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,

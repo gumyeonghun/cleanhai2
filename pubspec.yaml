@@ -56,7 +56,7 @@ dependencies:
   google_sign_in: ^6.2.1
   flutter_rating_bar: ^4.0.1
   cached_network_image: ^3.4.1
-  google_mobile_ads: ^6.0.0
+#  google_mobile_ads: ^6.0.0
   tosspayments_widget_sdk_flutter: ^2.1.2
   kakao_flutter_sdk: ^1.10.0
   sign_in_with_apple: ^7.0.1
