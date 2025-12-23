@@ -23,7 +23,7 @@ void main() async {
     // Add other async initializers here if needed
   ]);
 
-  Get.put(InterstitialAdController());
+  // Get.put(InterstitialAdController());
 
   runApp(MyApp());
 }
