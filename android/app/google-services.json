@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1081263043947:android:56e568c9f871090287482e",
+        "mobilesdk_app_id": "1:1081263043947:android:2d59bde3d1dfbafe87482e",
         "android_client_info": {
-          "package_name": "com.example.cleanhai2"
+          "package_name": "com.gongsunginternational.cleanhai"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1081263043947-utrbi1s71tbaq89juk2dnohg3hqt4amf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDkAruUGGSmCFvNGNoaaHXdngDS1vjVz-E"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1081263043947-utrbi1s71tbaq89juk2dnohg3hqt4amf.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1081263043947-19mq9v0lkjhgsvnmsmech9pthomlk2l2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cleanhai2"
+              }
+            }
+          ]
         }
       }
     }

@@ -1,4 +1,4 @@
-package com.example.cleanhai2
+package com.gongsunginternational.cleanhai
 
 import io.flutter.embedding.android.FlutterActivity
 

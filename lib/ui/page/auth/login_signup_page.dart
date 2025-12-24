@@ -42,7 +42,7 @@ class LoginSignupPage extends StatelessWidget {
                       SizedBox(height: 20),
                       // Logo/Title
                       Text(
-                        '청소혁명가',
+                        '깔끔하이',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -51,7 +51,7 @@ class LoginSignupPage extends StatelessWidget {
                       ),
                       SizedBox(height: 10),
                       Text(
-                        '합리적인 가격, 편리한 매칭, 믿을 수 있는 청소서비스',
+                        '합리적인 가격, 편리한 매칭, 믿을 수 있는 청소',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.white.withValues(alpha: 0.9),

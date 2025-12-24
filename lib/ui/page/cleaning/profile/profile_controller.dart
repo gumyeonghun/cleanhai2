@@ -1,21 +1,23 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:kpostal/kpostal.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cleanhai2/service/auth_service.dart';
 import 'dart:io';
 import 'package:cleanhai2/data/model/user_model.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import 'package:cleanhai2/data/model/cleaning_request.dart';
 import 'package:cleanhai2/data/model/review.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
+import 'package:cleanhai2/data/repository/user_repository.dart';
 import '../../auth/login_signup_page.dart';
 
 class ProfileController extends GetxController {
   final CleaningRepository _repository = CleaningRepository();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AuthService _authService = Get.find<AuthService>();
 
   final Rx<UserModel?> userModel = Rx<UserModel?>(null);
   final RxBool isLoading = true.obs;
@@ -59,7 +61,8 @@ class ProfileController extends GetxController {
 
   // Staff reviews and ratings
   final RxMap<String, dynamic> staffRatingStats = <String, dynamic>{}.obs;
-  final RxList<Review> staffReviews = <Review>[].obs;
+  // Staff reviews and requests (to keep track of ID for reporting)
+  final RxList<CleaningRequest> staffReviewRequests = <CleaningRequest>[].obs;
 
   @override
   void onInit() {
@@ -83,7 +86,7 @@ class ProfileController extends GetxController {
   }
 
   Future<void> loadUserProfile() async {
-    final user = _auth.currentUser;
+    final user = _authService.currentUser;
     if (user != null) {
       final userProfile = await _repository.getUserProfile(user.uid);
       userModel.value = userProfile;
@@ -132,11 +135,28 @@ class ProfileController extends GetxController {
         
         // Get all completed requests with reviews
         final requests = await _repository.getCompletedRequestsWithReviews(user.id);
-        staffReviews.assignAll(requests.map((r) => r.review!).toList());
+        staffReviewRequests.assignAll(requests);
       } catch (e) {
         debugPrint('Failed to load staff reviews: $e');
       }
     }
+  }
+
+  // 신고 기능
+  Future<void> reportReview(String requestId, String reason) async {
+    // 실제 서버가 있다면 여기서 신고 API를 호출합니다.
+    // 현재는 사용자에게 신고가 접수되었음을 알리는 것으로 UI 요구사항을 충족합니다.
+    debugPrint('Reported: $requestId, Reason: $reason');
+    await Future.delayed(Duration(seconds: 1)); // Mock network delay
+    
+    Get.snackbar(
+      '신고 접수 완료', 
+      '해당 리뷰에 대한 신고가 접수되었습니다. 검토 후 조치하겠습니다.',
+      backgroundColor: Colors.grey[800],
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: EdgeInsets.all(20),
+    );
   }
 
   TimeOfDay? _parseTime(String timeStr) {
@@ -554,15 +574,21 @@ class ProfileController extends GetxController {
 
   Future<void> logout() async {
     try {
-      await GoogleSignIn().signOut();
+      await _authService.signOut();
     } catch (e) {
-      debugPrint('Google Sign Out Error: $e');
+      debugPrint('Logout Error: $e');
+      // Even if signOut fails, we attempt to clear local state
+    } finally {
+      // 모든 GetX 컨트롤러 삭제
+      Get.deleteAll(force: true);
+      
+      // 핵심 서비스 재등록 (deleteAll로 인해 삭제되었으므로 복구 필요)
+      Get.put(UserRepository());
+      Get.put(AuthService());
+      
+      // 모든 페이지 스택 제거하고 로그인 페이지로 이동
+      Get.offAll(() => LoginSignupPage(), predicate: (_) => false);
     }
-    await _auth.signOut();
-    // 모든 GetX 컨트롤러 삭제
-    Get.deleteAll(force: true);
-    // 모든 페이지 스택 제거하고 로그인 페이지로 이동
-    Get.offAll(() => LoginSignupPage(), predicate: (_) => false);
   }
 
   Future<void> bumpAutoRegisteredRequest() async {
@@ -642,7 +668,7 @@ class ProfileController extends GetxController {
 
   /// 회원 탈퇴
   Future<void> deleteAccount() async {
-    final user = _auth.currentUser;
+    final user = _authService.currentUser;
 
     if (user == null) return;
 

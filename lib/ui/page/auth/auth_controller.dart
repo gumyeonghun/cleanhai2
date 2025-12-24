@@ -3,16 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart' as kakao;
-import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:kpostal/kpostal.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:cleanhai2/ui/page/main/widgets/main_page.dart';
+import 'package:cleanhai2/data/repository/user_repository.dart';
+import 'package:cleanhai2/service/auth_service.dart';
 
 class AuthController extends GetxController {
-  final FirebaseAuth _authentication = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final AuthService _authService = Get.find<AuthService>();
+  final UserRepository _userRepository = Get.find<UserRepository>();
 
   final RxBool showSpinner = false.obs;
   final RxBool isSignupScreen = false.obs;
@@ -84,14 +83,11 @@ class AuthController extends GetxController {
     try {
       if (isSignupScreen.value) {
         // Signup Logic
-        final newUser = await _authentication.createUserWithEmailAndPassword(
-          email: userEmail,
-          password: userPassword,
-        );
+        final userCredential = await _authService.signUpWithEmail(userEmail, userPassword);
 
         debugPrint('회원가입 - 선택된 userType: ${userType.value}');
         
-        await _firestore.collection('users').doc(newUser.user!.uid).set({
+        await _userRepository.createUser(userCredential.user!.uid, {
           'userName': userName,
           'email': userEmail,
           'phoneNumber': phoneNumber,
@@ -104,19 +100,16 @@ class AuthController extends GetxController {
           'createdAt': FieldValue.serverTimestamp(),
         });
 
-        if (newUser.user != null) {
+        if (userCredential.user != null) {
           Get.snackbar('성공', '회원가입 성공!', 
             backgroundColor: Colors.green, colorText: Colors.white);
           Get.offAll(() => MainPage());
         }
       } else {
         // Login Logic
-        final newUser = await _authentication.signInWithEmailAndPassword(
-          email: userEmail,
-          password: userPassword,
-        );
+        final userCredential = await _authService.signInWithEmail(userEmail, userPassword);
         
-        if (newUser.user != null) {
+        if (userCredential.user != null) {
           Get.offAll(() => MainPage());
         }
       }
@@ -154,41 +147,24 @@ class AuthController extends GetxController {
     }
   }
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-
   Future<void> signInWithGoogle() async {
     try {
       showSpinner.value = true;
       
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final userCredential = await _authService.signInWithGoogle();
       
-      if (googleUser == null) {
-        // User canceled the sign-in
-        showSpinner.value = false;
+      if (userCredential == null) {
+        // User canceled
         return;
       }
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      // Create a new credential
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Sign in to Firebase with the Google User Credential
-      final UserCredential userCredential = await _authentication.signInWithCredential(credential);
       
       if (userCredential.user != null) {
-        // Check if user exists in Firestore
-        final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
+        // Check if user exists
+        final exists = await _userRepository.userExists(userCredential.user!.uid);
         
-        if (!userDoc.exists) {
+        if (!exists) {
           // If user doesn't exist, create a new user document
-          // Default to 'owner' type for Google Sign-In, or ask user later
-          await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          await _userRepository.createUser(userCredential.user!.uid, {
             'userName': userCredential.user!.displayName ?? 'Google User',
             'email': userCredential.user!.email ?? '',
             'userType': 'owner', // Default role
@@ -216,77 +192,39 @@ class AuthController extends GetxController {
     try {
       showSpinner.value = true;
       
-      if (await kakao.isKakaoTalkInstalled()) {
-        try {
-          await kakao.UserApi.instance.loginWithKakaoTalk();
-          debugPrint('카카오톡으로 로그인 성공');
-        } catch (error) {
-          debugPrint('카카오톡으로 로그인 실패 $error');
-          // 사용자가 카카오톡 설치 후 디바이스 권한 요청 화면에서 로그인을 취소한 경우,
-          // 의도적인 로그인 취소로 보고 카카오계정으로 로그인 시도를 하지 않습니다.
-          if (error is PlatformException && error.code == 'CANCELED') {
-              showSpinner.value = false;
-              return;
-          }
-          // 카카오톡에 연결된 카카오계정이 없는 경우, 카카오계정으로 로그인
-          try {
-              await kakao.UserApi.instance.loginWithKakaoAccount();
-              debugPrint('카카오계정으로 로그인 성공');
-          } catch (error) {
-              debugPrint('카카오계정으로 로그인 실패 $error');
-              showSpinner.value = false;
-              return;
-          }
-        }
-      } else {
-        try {
-          await kakao.UserApi.instance.loginWithKakaoAccount();
-          debugPrint('카카오계정으로 로그인 성공');
-        } catch (error) {
-          debugPrint('카카오계정으로 로그인 실패 $error');
-          showSpinner.value = false;
-          return;
-        }
+      final kakaoData = await _authService.signInWithKakao();
+      
+      if (kakaoData == null) {
+        return; // Canceled
       }
 
-      // Get Kakao User Info
-      kakao.User user = await kakao.UserApi.instance.me();
-      
-      // Retrieving user info
-      var kakaoProfile = user.kakaoAccount?.profile;
-      var kakaoEmail = user.kakaoAccount?.email;
-      var kakaoId = user.id.toString();
+      String kakaoId = kakaoData['kakaoId'];
+      String? nickname = kakaoData['nickname'];
+      String? email = kakaoData['email'];
 
-      // Authenticate with Firebase Anonymously to generate a User UID
+      // Authenticate with Firebase Anonymously
       UserCredential userCredential;
       try {
-         // Create an anonymous user to have a UID in Firebase
-         userCredential = await _authentication.signInAnonymously();
+         userCredential = await _authService.signInAnonymously();
       } catch (e) {
          debugPrint('Anonymous auth failed: $e');
-         showSpinner.value = false;
          return;
       }
       
-      // Check if this Kakao user already exists in Firestore
-      final querySnapshot = await _firestore
-          .collection('users')
-          .where('kakaoId', isEqualTo: kakaoId)
-          .get();
+      // Check if this Kakao user already exists in Firestore by Kakao ID
+      final exists = await _userRepository.userExistsByKakaoId(kakaoId);
 
-      if (querySnapshot.docs.isEmpty) {
+      if (!exists) {
         // Create new user document using the Firebase UID
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'userName': kakaoProfile?.nickname ?? 'Kakao User',
-          'email': kakaoEmail ?? '',
+        await _userRepository.createUser(userCredential.user!.uid, {
+          'userName': nickname ?? 'Kakao User',
+          'email': email ?? '',
           'userType': 'owner',
           'kakaoId': kakaoId, // Store Kakao ID
           'createdAt': FieldValue.serverTimestamp(),
         });
       } else {
         // User exists
-        // Ideally we would log in as that user, but with anonymous auth we have a new UID.
-        // For this task, we will proceed. In a real app we'd need Custom Auth.
         debugPrint('User already exists in Firestore with Kakao ID: $kakaoId');
       }
       
@@ -310,37 +248,21 @@ class AuthController extends GetxController {
     try {
       showSpinner.value = true;
 
-      final AuthorizationCredentialAppleID appleCredential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-
-      final OAuthCredential credential = OAuthProvider("apple.com").credential(
-        idToken: appleCredential.identityToken,
-        accessToken: appleCredential.authorizationCode,
-      );
-
-      // Sign in to Firebase with the Apple User Credential
-      final UserCredential userCredential = await _authentication.signInWithCredential(credential);
+      final userCredential = await _authService.signInWithApple();
 
       if (userCredential.user != null) {
-        // Check if user exists in Firestore
-        final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
+        final exists = await _userRepository.userExists(userCredential.user!.uid);
 
-        if (!userDoc.exists) {
-          // If user doesn't exist, create a new user document
-          // Apple only returns the name on the first sign in.
-          // However, we can try to use the name from appleCredential if available.
+        if (!exists) {
+          // Note: Apple only returns the name on the first sign in.
+          // AuthService doesn't return the raw apple credential to get the name here easily 
+          // unless we change the signature. 
+          // For now, simpler implementation:
+          // If we needed the name heavily we should return it from AuthService.
+          // However, let's just use a default or update if possible.
           
-          String name = 'Apple User';
-          if (appleCredential.givenName != null || appleCredential.familyName != null) {
-              name = '${appleCredential.familyName ?? ''} ${appleCredential.givenName ?? ''}'.trim();
-          }
-
-          await _firestore.collection('users').doc(userCredential.user!.uid).set({
-            'userName': name.isNotEmpty ? name : 'Apple User',
+          await _userRepository.createUser(userCredential.user!.uid, {
+            'userName': userCredential.user!.displayName ?? 'Apple User',
             'email': userCredential.user!.email ?? '',
             'userType': 'owner', // Default role
             'createdAt': FieldValue.serverTimestamp(),

@@ -875,7 +875,7 @@ class ProfilePage extends StatelessWidget {
                         ),
                         child: Obx(() {
                           final stats = controller.staffRatingStats;
-                          final reviews = controller.staffReviews;
+                          final reviewsRequests = controller.staffReviewRequests;
                           final averageRating = stats['averageRating'] ?? 0.0;
                           final reviewCount = stats['reviewCount'] ?? 0;
                           
@@ -906,34 +906,84 @@ class ProfilePage extends StatelessWidget {
                                 ],
                               ),
                               
-                              if (reviews.isNotEmpty) ...[
+                              if (reviewsRequests.isNotEmpty) ...[
                                 SizedBox(height: 20),
                                 Divider(),
                                 SizedBox(height: 16),
                                 
                                 // Reviews list
-                                ...reviews.map((review) {
+                                ...reviewsRequests.map((request) {
+                                  final review = request.review!;
                                   return Padding(
                                     padding: EdgeInsets.only(bottom: 16),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            ...List.generate(5, (index) {
-                                              return Icon(
-                                                index < review.rating ? Icons.star : Icons.star_border,
-                                                color: Colors.amber,
-                                                size: 16,
-                                              );
-                                            }),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              '${review.createdAt.year}-${review.createdAt.month.toString().padLeft(2, '0')}-${review.createdAt.day.toString().padLeft(2, '0')}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[500],
-                                              ),
+                                            Row(
+                                              children: [
+                                                ...List.generate(5, (index) {
+                                                  return Icon(
+                                                    index < review.rating ? Icons.star : Icons.star_border,
+                                                    color: Colors.amber,
+                                                    size: 16,
+                                                  );
+                                                }),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  '${review.createdAt.year}-${review.createdAt.month.toString().padLeft(2, '0')}-${review.createdAt.day.toString().padLeft(2, '0')}',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey[500],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            // Report Button
+                                            PopupMenuButton<String>(
+                                              icon: Icon(Icons.more_horiz, size: 20, color: Colors.grey[400]),
+                                              onSelected: (value) {
+                                                if (value == 'report') {
+                                                  // Show Report Dialog
+                                                  Get.dialog(
+                                                    AlertDialog(
+                                                      title: Text('리뷰 신고하기'),
+                                                      content: Column(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text('신고 사유를 선택해주세요:'),
+                                                          SizedBox(height: 10),
+                                                          _buildReportOption(controller, request.id, '부적절한 내용'),
+                                                          _buildReportOption(controller, request.id, '스팸/홍보성'),
+                                                          _buildReportOption(controller, request.id, '욕설/비방'),
+                                                          _buildReportOption(controller, request.id, '기타'),
+                                                        ],
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Get.back(),
+                                                          child: Text('취소', style: TextStyle(color: Colors.grey)),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                                                const PopupMenuItem<String>(
+                                                  value: 'report',
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.flag_outlined, size: 18, color: Colors.red),
+                                                      SizedBox(width: 8),
+                                                      Text('신고하기', style: TextStyle(color: Colors.red)),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
@@ -947,7 +997,7 @@ class ProfilePage extends StatelessWidget {
                                           maxLines: 3,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        if (reviews.indexOf(review) < reviews.length - 1)
+                                        if (reviewsRequests.indexOf(request) < reviewsRequests.length - 1)
                                           Padding(
                                             padding: EdgeInsets.only(top: 16),
                                             child: Divider(height: 1),
@@ -1133,6 +1183,24 @@ class ProfilePage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+  Widget _buildReportOption(ProfileController controller, String requestId, String reason) {
+    return InkWell(
+      onTap: () {
+        Get.back(); // Close dialog
+        controller.reportReview(requestId, reason);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        child: Row(
+          children: [
+            Icon(Icons.arrow_right, size: 20, color: Colors.grey),
+            SizedBox(width: 8),
+            Text(reason, style: TextStyle(fontSize: 16)),
+          ],
+        ),
+      ),
     );
   }
 }
