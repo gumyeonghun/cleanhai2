@@ -5,8 +5,7 @@ class UserModel {
   final String email;
   final String? address;
   final String? detailAddress;
-  final double? latitude;
-  final double? longitude;
+  // latitude, longitude removed
   final String? userName;
   final String? phoneNumber;
   final String? profileImageUrl;
@@ -25,14 +24,17 @@ class UserModel {
   final String? autoRegisterTitle; // For staff: Auto-register title
   final DateTime? birthDate;
   final String? cleaningRequestImageUrl; // For owners: Image for auto-registered requests
+  
+  // Soft delete fields
+  final bool isDeleted;
+  final DateTime? deletedAt;
 
   UserModel({
     required this.id,
     required this.email,
     this.address,
     this.detailAddress,
-    this.latitude,
-    this.longitude,
+    // latitude, longitude removed
     this.userName,
     this.phoneNumber,
     this.profileImageUrl,
@@ -50,6 +52,8 @@ class UserModel {
     this.autoRegisterTitle,
     this.birthDate,
     this.cleaningRequestImageUrl,
+    this.isDeleted = false,
+    this.deletedAt,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -59,8 +63,8 @@ class UserModel {
       email: data['email'] ?? '',
       address: data['address'],
       detailAddress: data['detailAddress'],
-      latitude: data['latitude'],
-      longitude: data['longitude'],
+      // latitude: data['latitude'], // Removed
+      // longitude: data['longitude'], // Removed
       userName: data['userName'],
       phoneNumber: data['phoneNumber'],
       profileImageUrl: data['profileImageUrl'],
@@ -78,6 +82,8 @@ class UserModel {
       autoRegisterTitle: data['autoRegisterTitle'],
       birthDate: data['birthDate'] != null ? (data['birthDate'] as Timestamp).toDate() : null,
       cleaningRequestImageUrl: data['cleaningRequestImageUrl'],
+      isDeleted: data['isDeleted'] ?? false,
+      deletedAt: data['deletedAt'] != null ? (data['deletedAt'] as Timestamp).toDate() : null,
     );
   }
 
@@ -86,8 +92,8 @@ class UserModel {
       'email': email,
       'address': address,
       'detailAddress': detailAddress,
-      'latitude': latitude,
-      'longitude': longitude,
+      // 'latitude': latitude, // Removed
+      // 'longitude': longitude, // Removed
       'userName': userName,
       'phoneNumber': phoneNumber,
       'profileImageUrl': profileImageUrl,
@@ -105,6 +111,8 @@ class UserModel {
       'autoRegisterTitle': autoRegisterTitle,
       'birthDate': birthDate != null ? Timestamp.fromDate(birthDate!) : null,
       'cleaningRequestImageUrl': cleaningRequestImageUrl,
+      'isDeleted': isDeleted,
+      'deletedAt': deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
     };
   }
 }

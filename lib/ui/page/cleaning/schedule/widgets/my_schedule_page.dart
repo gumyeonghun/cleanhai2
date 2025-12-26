@@ -4,9 +4,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:cleanhai2/data/model/cleaning_request.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
+import 'package:cleanhai2/data/model/user_model.dart';
 import '../my_schedule_controller.dart';
 import '../../detail/widgets/detail_page.dart';
 import '../../progress/widgets/cleaning_progress_page.dart';
+import '../../report/widgets/completion_report_view_page.dart';
 
 class MySchedulePage extends StatelessWidget {
   const MySchedulePage({super.key});
@@ -205,7 +207,7 @@ class MySchedulePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -250,7 +252,7 @@ class MySchedulePage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
+                        color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -369,7 +371,7 @@ class MySchedulePage extends StatelessWidget {
                 return Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                    color: Color(0xFF1E88E5).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -417,7 +419,7 @@ class MySchedulePage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -474,29 +476,482 @@ class MySchedulePage extends StatelessWidget {
                 ),
               ],
             ),
+            // 예상 완료 시간 표시 (청소 진행중일 때)
+            if (request.status == 'in_progress' && request.estimatedCompletionTime != null) ...[
+              SizedBox(height: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.access_time, size: 16, color: Colors.orange[700]),
+                    SizedBox(width: 8),
+                    Text(
+                      '예상 완료: ${DateFormat('HH:mm').format(request.estimatedCompletionTime!)}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             SizedBox(height: 16),
+            if (isMyRequest && isAccepted && request.paymentStatus != 'completed')
+              SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final controller = Get.find<MyScheduleController>();
+                      controller.processPayment(request);
+                    },
+                    icon: Icon(Icons.payment, size: 18, color: Colors.white),
+                    label: Text('청소비 결제하기', 
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF1E88E5),
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ),
             if (isAccepted)
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    Get.to(() => CleaningProgressPage(
-                      requestId: request.id,
-                      isStaff: !isMyRequest, // 내 의뢰가 아니면(내 신청이면) 직원임
-                    ));
+                    if (request.status == 'completed' && request.completionReport != null) {
+                       Get.to(() => CompletionReportViewPage(
+                        report: request.completionReport!,
+                        requestId: request.id,
+                        canReview: isMyRequest && request.review == null,
+                        review: request.review,
+                      ));
+                    } else {
+                      Get.to(() => CleaningProgressPage(
+                        requestId: request.id,
+                        isStaff: !isMyRequest, // 내 의뢰가 아니면(내 신청이면) 직원임
+                      ));
+                    }
                   },
-                  icon: Icon(Icons.assignment_turned_in_outlined, size: 18),
-                  label: Text('진행 상황 확인'),
+                  icon: Icon(
+                    request.status == 'completed' 
+                        ? Icons.assignment_turned_in 
+                        : (request.status == 'in_progress' ? Icons.cleaning_services_outlined : Icons.assignment_turned_in_outlined),
+                    size: 18
+                  ),
+                  label: Text(
+                    request.status == 'completed' 
+                        ? (isMyRequest ? '청소 완료 보고서 보기' : '내 평점보기')
+                        : (request.status == 'in_progress' ? '청소 진행중' : '진행 상황 확인')
+                  ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Color(0xFF1E88E5),
-                    side: BorderSide(color: Color(0xFF1E88E5)),
+                    foregroundColor: request.status == 'completed' 
+                        ? Colors.green 
+                        : (request.status == 'in_progress' ? Colors.blue : Color(0xFF1E88E5)),
+                    side: BorderSide(
+                      color: request.status == 'completed' 
+                          ? Colors.green 
+                          : (request.status == 'in_progress' ? Colors.blue : Color(0xFF1E88E5))
+                    ),
                     padding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            if (isMyRequest && !isAccepted && request.applicants.isNotEmpty) ...[
+              SizedBox(height: 16),
+              Divider(),
+              Text(
+                '신청자 목록',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 8),
+              ...request.applicants.map((applicantId) {
+                final controller = Get.find<MyScheduleController>();
+                return FutureBuilder<UserModel?>(
+                  future: controller.getUserProfile(applicantId),
+                  builder: (context, snapshot) {
+                    final userProfile = snapshot.data;
+                    final displayName = userProfile?.userName ?? applicantId;
+                    
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 8),
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.grey[400],
+                            child: Icon(Icons.person, color: Colors.white, size: 20),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  displayName,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                if (userProfile?.address != null)
+                                  Text(
+                                    userProfile!.address!,
+                                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => _showApplicantProfile(context, userProfile, applicantId, controller, request),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF1E88E5),
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text('확인/수락', style: TextStyle(color: Colors.white, fontSize: 13)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              }),
+            ],
+            if (isAcceptedByMe && !isMyRequest && (request.status == 'pending' || request.status == 'accepted'))
+              SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final controller = Get.find<MyScheduleController>();
+                      controller.startCleaning(request.id);
+                    },
+                    icon: Icon(Icons.cleaning_services, size: 18, color: Colors.white),
+                    label: Text('청소 시작하기', 
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
               ),
           ],
         ),
       ),
+    );
+  }
+
+  void _showApplicantProfile(BuildContext context, UserModel? userProfile, String applicantId, MyScheduleController controller, CleaningRequest request) {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          padding: EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+              // Profile header
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Color(0xFF1E88E5),
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userProfile?.userName ?? '알 수 없음',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          userProfile?.userType == 'staff' ? '청소 전문가' : '청소 의뢰인',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              
+              SizedBox(height: 24),
+              Divider(),
+              SizedBox(height: 16),
+              
+              // Profile details
+              if (userProfile != null) ...[
+                _buildProfileRow(
+                  icon: Icons.email,
+                  label: '이메일',
+                  value: userProfile.email,
+                ),
+                SizedBox(height: 16),
+                
+                if (userProfile.address != null && userProfile.address!.isNotEmpty) ...[
+                  _buildProfileRow(
+                    icon: Icons.location_on,
+                    label: '주소',
+                    value: userProfile.address!,
+                  ),
+                  SizedBox(height: 16),
+                ],
+                
+                if (userProfile.userType == 'staff') ...[
+                  // Staff Ratings & Reviews
+                  FutureBuilder<Map<String, dynamic>>(
+                    future: controller.getStaffRatingStats(userProfile.id),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return SizedBox.shrink();
+                      final stats = snapshot.data!;
+                      final averageRating = stats['averageRating'] ?? 0.0;
+                      final reviewCount = stats['reviewCount'] ?? 0;
+                      
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.star, color: Colors.amber, size: 24),
+                              SizedBox(width: 8),
+                               Text(
+                                (averageRating as num).toStringAsFixed(1),
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                '($reviewCount개 후기)',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          
+                          // Recent Reviews
+                          FutureBuilder<List<dynamic>>(
+                            future: controller.getStaffRecentReviews(userProfile.id),
+                            builder: (context, reviewSnapshot) {
+                              if (!reviewSnapshot.hasData || reviewSnapshot.data!.isEmpty) {
+                                return Text('아직 후기가 없습니다.', style: TextStyle(color: Colors.grey));
+                              }
+                              
+                              final reviews = reviewSnapshot.data!;
+                              final recentReviews = reviews.take(3).toList();
+                              
+                              return Column(
+                                children: recentReviews.map((review) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12.0),
+                                    child: Container(
+                                      padding: EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: List.generate(5, (index) {
+                                              return Icon(
+                                                index < review.rating ? Icons.star : Icons.star_border,
+                                                color: Colors.amber,
+                                                size: 14,
+                                              );
+                                            }),
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text(
+                                            review.comment,
+                                            style: TextStyle(fontSize: 13),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                          SizedBox(height: 16),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ] else ...[
+                 Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      '프로필 정보를 불러올 수 없습니다',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                ),
+              ],
+              
+              SizedBox(height: 24),
+              
+              // Action Buttons
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    if (userProfile != null) {
+                      controller.startChat(applicantId, userProfile.userName ?? '알 수 없음');
+                    }
+                  },
+                  icon: Icon(Icons.chat_bubble_outline, size: 20),
+                  label: Text('메시지 보내기'),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    foregroundColor: Color(0xFF1E88E5),
+                    side: BorderSide(color: Color(0xFF1E88E5)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 12),
+              Row(
+                children: [
+                   Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Get.back(),
+                      style: OutlinedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text('닫기'),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Close dialog first
+                        Get.back();
+                        // Proceed to Accept & Pay
+                        if (userProfile != null) {
+                           controller.acceptApplicant(applicantId, userProfile, request);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF1E88E5),
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text('수락 및 결제', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+  Widget _buildProfileRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: Color(0xFF1E88E5),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -508,26 +963,26 @@ class MySchedulePage extends StatelessWidget {
     if (isMyRequest) {
       if (isAccepted) {
         text = '수락됨';
-        bgColor = Colors.green.withValues(alpha: 0.1);
+        bgColor = Colors.green.withOpacity(0.1);
         textColor = Colors.green[700]!;
       } else {
         text = '대기중';
-        bgColor = Colors.orange.withValues(alpha: 0.1);
+        bgColor = Colors.orange.withOpacity(0.1);
         textColor = Colors.orange[700]!;
       }
     } else {
       // 내 신청 탭
       if (isAcceptedByMe) {
         text = '수락됨';
-        bgColor = Colors.green.withValues(alpha: 0.1);
+        bgColor = Colors.green.withOpacity(0.1);
         textColor = Colors.green[700]!;
       } else if (isAccepted) {
         text = '마감됨';
-        bgColor = Colors.grey.withValues(alpha: 0.1);
+        bgColor = Colors.grey.withOpacity(0.1);
         textColor = Colors.grey[700]!;
       } else {
         text = '대기중';
-        bgColor = Colors.orange.withValues(alpha: 0.1);
+        bgColor = Colors.orange.withOpacity(0.1);
         textColor = Colors.orange[700]!;
       }
     }

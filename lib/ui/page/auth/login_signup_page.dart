@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cleanhai2/data/constants/regions.dart';
 import 'auth_controller.dart';
 
 class LoginSignupPage extends StatelessWidget {
@@ -54,7 +55,7 @@ class LoginSignupPage extends StatelessWidget {
                         '합리적인 가격, 편리한 매칭, 믿을 수 있는 청소',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Colors.white.withOpacity(0.9),
                         ),
                       ),
                       SizedBox(height: 50),
@@ -87,7 +88,7 @@ class LoginSignupPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
+                              color: Colors.black.withOpacity(0.1),
                               blurRadius: 20,
                               offset: Offset(0, 10),
                             ),
@@ -189,33 +190,68 @@ class LoginSignupPage extends StatelessWidget {
                                 ),
                                 SizedBox(height: 16),
 
-                                  // Address Button
-                                  GestureDetector(
-                                    onTap: controller.updateAddress,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[50],
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: Colors.grey[200]!),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.home_outlined, color: Colors.grey[400], size: 20),
-                                          SizedBox(width: 12),
-                                          Expanded(
-                                            child: Obx(() => Text(
-                                              controller.userAddress.value.isEmpty ? '주소 검색' : controller.userAddress.value,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: controller.userAddress.value.isEmpty ? Colors.grey[400] : Colors.black87,
-                                              ),
+                                  // Region Selection Dropdowns
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[50],
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: Colors.grey[200]!),
+                                          ),
+                                          child: DropdownButtonHideUnderline(
+                                            child: Obx(() => DropdownButton<String>(
+                                              value: controller.selectedCity.value.isEmpty ? null : controller.selectedCity.value,
+                                              hint: Text('시/도', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                                              isExpanded: true,
+                                              items: Regions.data.keys.map((String value) {
+                                                return DropdownMenuItem<String>(
+                                                  value: value,
+                                                  child: Text(value, style: TextStyle(fontSize: 13)),
+                                                );
+                                              }).toList(),
+                                              onChanged: (value) {
+                                                if (value != null) {
+                                                  controller.updateDistricts(value);
+                                                }
+                                              },
                                             )),
                                           ),
-                                          Icon(Icons.search, color: Colors.grey[400], size: 20),
-                                        ],
+                                        ),
                                       ),
-                                    ),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Obx(() => Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[50],
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: Colors.grey[200]!),
+                                          ),
+                                          child: DropdownButtonHideUnderline(
+                                            child: DropdownButton<String>(
+                                              key: ValueKey(controller.selectedCity.value), // Force rebuild when city changes
+                                              value: controller.selectedDistrict.value.isEmpty ? null : controller.selectedDistrict.value,
+                                              hint: Text('시/구/군', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                                              isExpanded: true,
+                                              items: controller.districts.map((String value) {
+                                                return DropdownMenuItem<String>(
+                                                  value: value,
+                                                  child: Text(value, style: TextStyle(fontSize: 13)),
+                                                );
+                                              }).toList(),
+                                              onChanged: (value) {
+                                                if (value != null) {
+                                                  controller.updateDistrict(value);
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                        )),
+                                      ),
+                                    ],
                                   ),
                                   SizedBox(height: 16),
 
@@ -225,7 +261,7 @@ class LoginSignupPage extends StatelessWidget {
                                     hintText: '상세주소 (예: 101호)',
                                     icon: Icons.add_location_outlined,
                                     validator: (value) {
-                                      // Optional field, but good to have
+                                      // Optional field
                                       return null;
                                     },
                                     onSaved: (value) => controller.detailAddress.value = value ?? '',
@@ -371,14 +407,12 @@ class LoginSignupPage extends StatelessWidget {
                                 // Google Login Button
                                 SizedBox(
                                   width: double.infinity,
-                                  child: OutlinedButton.icon(
+                                  child: OutlinedButton(
                                     onPressed: () async {
                                       //구글 전면광고
                                       // await Get.find<InterstitialAdController>().showAd();
                                       await controller.signInWithGoogle();
                                     },
-                                    icon: Icon(Icons.add, size: 18),
-                                    label: Text('Google로 계속하기'),
                                     style: OutlinedButton.styleFrom(
                                       padding: EdgeInsets.symmetric(vertical: 16),
                                       side: BorderSide(color: Colors.grey[300]!),
@@ -386,6 +420,38 @@ class LoginSignupPage extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       foregroundColor: Colors.black87,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 20,
+                                          height: 20,
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Color(0xFF4285F4), // Google Blue
+                                                Color(0xFFEA4335), // Google Red
+                                                Color(0xFFFBBC05), // Google Yellow
+                                                Color(0xFF34A853), // Google Green
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              'G',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text('Google로 계속하기'),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -403,7 +469,7 @@ class LoginSignupPage extends StatelessWidget {
                                     icon: Icon(Icons.chat_bubble, size: 20, color: Color(0xFF000000)), // Kakao Icon approx
                                     label: Text('Kakao로 계속하기', 
                                       style: TextStyle(
-                                        color: Color(0xFF000000).withValues(alpha: 0.85),
+                                        color: Color(0xFF000000).withOpacity(0.85),
                                         fontWeight: FontWeight.bold,
                                       )
                                     ),
@@ -460,26 +526,26 @@ class LoginSignupPage extends StatelessWidget {
                             child: Text(
                               '서비스 이용약관',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: Colors.white.withOpacity(0.8),
                                 fontSize: 12,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Colors.white.withValues(alpha: 0.8),
+                                decorationColor: Colors.white.withOpacity(0.8),
                               ),
                             ),
                           ),
                           Text(
                             '|',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
                           ),
                           TextButton(
                             onPressed: () => _launchUrl('https://short-tarragon-911.notion.site/2cd7ebba6144805f92d8c18adeab69c3'),
                             child: Text(
                               '개인정보 처리방침',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: Colors.white.withOpacity(0.8),
                                 fontSize: 12,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Colors.white.withValues(alpha: 0.8),
+                                decorationColor: Colors.white.withOpacity(0.8),
                               ),
                             ),
                           ),
@@ -495,7 +561,7 @@ class LoginSignupPage extends StatelessWidget {
             // Loading Spinner Overlay
             Obx(() => controller.showSpinner.value
               ? Container(
-                  color: Colors.black.withValues(alpha: 0.5),
+                  color: Colors.black.withOpacity(0.5),
                   child: Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -607,7 +673,7 @@ class LoginSignupPage extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Color(0xFF1E88E5).withValues(alpha: 0.3),
+                    color: Color(0xFF1E88E5).withOpacity(0.3),
                     blurRadius: 8,
                     offset: Offset(0, 4),
                   )

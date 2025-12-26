@@ -47,26 +47,34 @@ class ReviewWritePage extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 30),
-              Obx(() => RatingBar.builder(
-                initialRating: controller.rating.value,
-                minRating: 1,
-                direction: Axis.horizontal,
-                allowHalfRating: true,
-                itemCount: 5,
-                itemPadding: EdgeInsets.symmetric(horizontal: 4.0),
-                itemBuilder: (context, _) => Icon(
-                  Icons.star,
-                  color: Colors.amber,
-                ),
-                onRatingUpdate: (rating) {
-                  controller.rating.value = rating;
-                },
-              )),
-              SizedBox(height: 10),
+              // 소통
+              _buildRatingRow('소통', controller.communicationRating),
+              SizedBox(height: 16),
+              
+              // 청소 완성도
+              _buildRatingRow('청소 완성도', controller.qualityRating),
+              SizedBox(height: 16),
+              
+              // 일정 신뢰도
+              _buildRatingRow('일정 신뢰도', controller.reliabilityRating),
+              SizedBox(height: 16),
+              
+              // 가격
+              _buildRatingRow('가격', controller.priceRating),
+              SizedBox(height: 24),
+              
+              Divider(),
+              SizedBox(height: 16),
+
+              Text(
+                '총 평점',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
               Obx(() => Text(
-                '${controller.rating.value}점',
+                '${controller.totalRating}점',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: Colors.amber[800],
                 ),
@@ -124,6 +132,33 @@ class ReviewWritePage extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRatingRow(String label, RxDouble ratingObx) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        SizedBox(height: 8),
+        Obx(() => RatingBar.builder(
+          initialRating: ratingObx.value,
+          minRating: 1,
+          direction: Axis.horizontal,
+          allowHalfRating: true,
+          itemCount: 5,
+          itemPadding: EdgeInsets.symmetric(horizontal: 4.0),
+          itemBuilder: (context, _) => Icon(
+            Icons.star,
+            color: Colors.amber,
+          ),
+          onRatingUpdate: (rating) {
+            ratingObx.value = rating;
+          },
+        )),
+      ],
     );
   }
 }

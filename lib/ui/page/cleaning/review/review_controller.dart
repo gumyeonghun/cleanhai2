@@ -11,7 +11,13 @@ class ReviewController extends GetxController {
   ReviewController({required this.requestId});
 
   final TextEditingController commentController = TextEditingController();
-  final RxDouble rating = 5.0.obs;
+  final RxDouble communicationRating = 5.0.obs;
+  final RxDouble qualityRating = 5.0.obs;
+  final RxDouble reliabilityRating = 5.0.obs;
+  final RxDouble priceRating = 5.0.obs;
+  
+  // Calculate total rating dynamically
+  double get totalRating => double.parse(((communicationRating.value + qualityRating.value + reliabilityRating.value + priceRating.value) / 4).toStringAsFixed(1));
   final RxBool isLoading = false.obs;
 
   @override
@@ -30,7 +36,11 @@ class ReviewController extends GetxController {
 
     try {
       final review = Review(
-        rating: rating.value,
+        rating: totalRating,
+        communicationRating: communicationRating.value,
+        qualityRating: qualityRating.value,
+        reliabilityRating: reliabilityRating.value,
+        priceRating: priceRating.value,
         comment: commentController.text.trim(),
         createdAt: DateTime.now(),
       );

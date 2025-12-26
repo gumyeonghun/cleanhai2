@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:cleanhai2/data/constants/regions.dart';
 import '../profile_controller.dart';
 import 'staff_settlement_page.dart';
 import 'owner_payment_history_page.dart';
+import '../../detail/widgets/staff_review_list_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -73,7 +75,7 @@ class ProfilePage extends StatelessWidget {
                         border: Border.all(color: Color(0xFF1E88E5), width: 3),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: Colors.black.withOpacity(0.1),
                             blurRadius: 10,
                             offset: Offset(0, 5),
                           ),
@@ -131,8 +133,8 @@ class ProfilePage extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
                   color: userModel?.userType == 'staff' 
-                      ? Colors.green.withValues(alpha: 0.1) 
-                      : Color(0xFF1E88E5).withValues(alpha: 0.1),
+                      ? Colors.green.withOpacity(0.1) 
+                      : Color(0xFF1E88E5).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -162,7 +164,7 @@ class ProfilePage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Colors.black.withOpacity(0.05),
                             blurRadius: 10,
                             offset: Offset(0, 4),
                           ),
@@ -215,7 +217,7 @@ class ProfilePage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Colors.black.withOpacity(0.05),
                             blurRadius: 10,
                             offset: Offset(0, 4),
                           ),
@@ -239,59 +241,122 @@ class ProfilePage extends StatelessWidget {
                             ],
                           ),
                           SizedBox(height: 12),
-                          Text(
-                            userModel?.address ?? '주소가 등록되지 않았습니다',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          // Detailed Address
                           controller.isEditing.value
-                              ? TextField(
-                                  controller: controller.detailAddressController,
-                                  decoration: InputDecoration(
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.symmetric(vertical: 8),
-                                    border: InputBorder.none,
-                                    hintText: '상세주소 입력 (예: 101호)',
-                                    hintStyle: TextStyle(color: Colors.grey[400]),
-                                  ),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                  ),
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[50],
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(color: Colors.grey[200]!),
+                                            ),
+                                            child: DropdownButtonHideUnderline(
+                                              child: Obx(() => DropdownButton<String>(
+                                                value: controller.selectedCity.value.isEmpty ? null : controller.selectedCity.value,
+                                                hint: Text('시/도', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                                                isExpanded: true,
+                                                items: Regions.data.keys.map((String value) {
+                                                  return DropdownMenuItem<String>(
+                                                    value: value,
+                                                    child: Text(value, style: TextStyle(fontSize: 13)),
+                                                  );
+                                                }).toList(),
+                                                onChanged: (value) {
+                                                  if (value != null) {
+                                                    controller.updateDistricts(value);
+                                                  }
+                                                },
+                                              )),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Expanded(
+                                          child: Obx(() => Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[50],
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(color: Colors.grey[200]!),
+                                            ),
+                                            child: DropdownButtonHideUnderline(
+                                              child: DropdownButton<String>(
+                                                key: ValueKey(controller.selectedCity.value),
+                                                value: controller.selectedDistrict.value.isEmpty ? null : controller.selectedDistrict.value,
+                                                hint: Text('시/구/군', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                                                isExpanded: true,
+                                                items: controller.districts.map((String value) {
+                                                  return DropdownMenuItem<String>(
+                                                    value: value,
+                                                    child: Text(value, style: TextStyle(fontSize: 13)),
+                                                  );
+                                                }).toList(),
+                                                onChanged: (value) {
+                                                  if (value != null) {
+                                                    controller.updateDistrict(value);
+                                                  }
+                                                },
+                                              ),
+                                            ),
+                                          )),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 8),
+                                    TextField(
+                                      controller: controller.detailAddressController,
+                                      decoration: InputDecoration(
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.all(12),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: Colors.grey[200]!),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: Colors.grey[200]!),
+                                        ),
+                                        hintText: '상세주소 입력 (예: 101호)',
+                                        hintStyle: TextStyle(color: Colors.grey[400]),
+                                        filled: true,
+                                        fillColor: Colors.grey[50], 
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
                                 )
-                              : Text(
-                                  userModel?.detailAddress ?? '',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      userModel?.address ?? '주소가 등록되지 않았습니다',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    if (userModel?.detailAddress != null && userModel!.detailAddress!.isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4.0),
+                                        child: Text(
+                                          userModel.detailAddress!,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                          SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: controller.updateAddress,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey[50],
-                                foregroundColor: Color(0xFF1E88E5),
-                                elevation: 0,
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(color: Color(0xFF1E88E5).withValues(alpha: 0.3)),
-                                ),
-                              ),
-                              child: Text(
-                                '주소 변경하기',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     ),
@@ -307,7 +372,7 @@ class ProfilePage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: Colors.black.withOpacity(0.05),
                               blurRadius: 10,
                               offset: Offset(0, 4),
                             ),
@@ -327,7 +392,7 @@ class ProfilePage extends StatelessWidget {
                                   Container(
                                     padding: EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                                      color: Color(0xFF1E88E5).withOpacity(0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF1E88E5)),
@@ -376,7 +441,7 @@ class ProfilePage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: Colors.black.withOpacity(0.05),
                               blurRadius: 10,
                               offset: Offset(0, 4),
                             ),
@@ -396,7 +461,7 @@ class ProfilePage extends StatelessWidget {
                                   Container(
                                     padding: EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                                      color: Color(0xFF1E88E5).withOpacity(0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(Icons.payment_outlined, color: Color(0xFF1E88E5)),
@@ -436,7 +501,7 @@ class ProfilePage extends StatelessWidget {
                     
                     if (userModel?.userType == 'staff' || userModel?.userType == 'owner') ...[
                       SizedBox(height: 30),
-                      _buildSectionTitle(userModel?.userType == 'staff' ? '근무예약설정' : '청소예약설정'),
+                      _buildSectionTitle(userModel?.userType == 'staff' ? '근무간편설정' : '청소간편설정'),
                       SizedBox(height: 16),
                       Container(
                         width: double.infinity,
@@ -446,7 +511,7 @@ class ProfilePage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: Colors.black.withOpacity(0.05),
                               blurRadius: 10,
                               offset: Offset(0, 4),
                             ),
@@ -455,6 +520,68 @@ class ProfilePage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // 사진 추가 (청소 전문가만)
+                            if (userModel?.userType == 'staff') ...[
+                              Text(
+                                '프로필 사진',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 10),
+                              Center(
+                                child: GestureDetector(
+                                  onTap: controller.isEditing.value ? controller.pickQuickRegisterImage : null,
+                                  child: Obx(() {
+                                    return Container(
+                                      width: 120,
+                                      height: 120,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: controller.isEditing.value ? Color(0xFF1E88E5) : Colors.grey[300]!,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: controller.quickRegisterImage.value != null
+                                          ? ClipRRect(
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: Image.file(
+                                                controller.quickRegisterImage.value!,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            )
+                                          : userModel?.profileImageUrl != null
+                                              ? ClipRRect(
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  child: Image.network(
+                                                    userModel!.profileImageUrl!,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                )
+                                              : Column(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.add_photo_alternate,
+                                                      size: 32,
+                                                      color: controller.isEditing.value ? Color(0xFF1E88E5) : Colors.grey[400],
+                                                    ),
+                                                    SizedBox(height: 8),
+                                                    Text(
+                                                      controller.isEditing.value ? '사진 추가' : '사진 없음',
+                                                      style: TextStyle(
+                                                        color: controller.isEditing.value ? Color(0xFF1E88E5) : Colors.grey[500],
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                    );
+                                  }),
+                                ),
+                              ),
+                              SizedBox(height: 20),
+                            ],
                             Text(
                               userModel?.userType == 'staff' ? '근무 가능 요일' : '청소 필요 요일',
                               style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
@@ -471,7 +598,7 @@ class ProfilePage extends StatelessWidget {
                                     onSelected: controller.isEditing.value 
                                         ? (selected) => controller.toggleDay(day)
                                         : null,
-                                    selectedColor: Color(0xFF1E88E5).withValues(alpha: 0.2),
+                                    selectedColor: Color(0xFF1E88E5).withOpacity(0.2),
                                     labelStyle: TextStyle(
                                       color: isSelected ? Color(0xFF1E88E5) : Colors.black,
                                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -755,7 +882,7 @@ class ProfilePage extends StatelessWidget {
 
                             SizedBox(height: 20),
                             Text(
-                              '자동 등록 제목',
+                              '청소 제목',
                               style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
                             ),
                             SizedBox(height: 10),
@@ -781,28 +908,10 @@ class ProfilePage extends StatelessWidget {
                               ),
                             ),
 
-                            SizedBox(height: 20),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  userModel?.userType == 'staff' ? '대기 목록 자동 등록' : '청소 의뢰 자동 등록',
-                                  style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
-                                ),
-                                Obx(() => Switch(
-                                  value: controller.isAutoRegisterEnabled.value,
-                                  onChanged: controller.isEditing.value 
-                                      ? (value) => controller.isAutoRegisterEnabled.value = value
-                                      : null,
-                                  activeThumbColor: Color(0xFF1E88E5),
-                                )
-                                )],
-                            ),
-
                             if (userModel?.userType == 'owner') ...[
                               SizedBox(height: 20),
                               Text(
-                                '청소 현장 사진 (자동 등록용)',
+                                '청소 현장 사진 (간편 등록용)',
                                 style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 10),
@@ -855,56 +964,69 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ],
                     
-                    if (userModel?.userType == 'staff') ...[
+                    if (userModel?.userType == 'staff') ...[ 
                       SizedBox(height: 30),
                       _buildSectionTitle('청소 후기'),
                       SizedBox(height: 16),
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
+                      Obx(() {
+                        final stats = controller.staffRatingStats;
+                        final reviewsRequests = controller.staffReviewRequests;
+                        final averageRating = stats['averageRating'] ?? 0.0;
+                        final reviewCount = stats['reviewCount'] ?? 0;
+                        
+                        return GestureDetector(
+                          onTap: reviewCount > 0 ? () {
+                            // Navigate to full review list page
+                            Get.to(() => StaffReviewListPage(
+                              staffId: userModel!.id,
+                              staffName: userModel.userName ?? '알 수 없음',
+                              ratingStats: stats,
+                              reviewRequests: reviewsRequests,
+                            ));
+                          } : null,
+                          child: Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Obx(() {
-                          final stats = controller.staffRatingStats;
-                          final reviewsRequests = controller.staffReviewRequests;
-                          final averageRating = stats['averageRating'] ?? 0.0;
-                          final reviewCount = stats['reviewCount'] ?? 0;
-                          
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Rating summary
-                              Row(
-                                children: [
-                                  Icon(Icons.star, color: Colors.amber, size: 32),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    averageRating.toStringAsFixed(1),
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Rating summary with chevron icon
+                                Row(
+                                  children: [
+                                    Icon(Icons.star, color: Colors.amber, size: 32),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      averageRating.toStringAsFixed(1),
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    '($reviewCount개의 후기)',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
+                                    SizedBox(width: 8),
+                                    Text(
+                                      '($reviewCount개의 후기)',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                    Spacer(),
+                                    if (reviewCount > 0)
+                                      Icon(Icons.chevron_right, size: 24, color: Colors.grey[400]),
+                                  ],
+                                ),
                               
                               if (reviewsRequests.isNotEmpty) ...[
                                 SizedBox(height: 20),
@@ -913,7 +1035,9 @@ class ProfilePage extends StatelessWidget {
                                 
                                 // Reviews list
                                 ...reviewsRequests.map((request) {
-                                  final review = request.review!;
+                                  final review = request.review;
+                                  if (review == null) return SizedBox.shrink();
+                                  
                                   return Padding(
                                     padding: EdgeInsets.only(bottom: 16),
                                     child: Column(
@@ -1019,30 +1143,56 @@ class ProfilePage extends StatelessWidget {
                                 ),
                               ],
                             ],
-                          );
-                        }),
-                      ),
-                    ],
-                    
-                    SizedBox(height: 32),
-                    
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+
+                    SizedBox(height: 24),
+                    // 청소 자동 등록 버튼
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: (){controller.logout();},
-                        icon: Icon(Icons.logout_rounded, size: 20),
-                        label: Text('로그아웃'),
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () => controller.executeAutoRegister(),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[50],
-                          foregroundColor: Colors.red[400],
-                          elevation: 0,
-                          padding: EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Color(0xFF1E88E5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: Text(
+                          '청소 간편 등록하기',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
                       ),
                     ),
+                    SizedBox(height: 16),
+
+                    // 로그아웃 버튼
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                         onPressed: controller.logout,
+                         icon: Icon(Icons.logout_rounded, size: 20),
+                         label: Text('로그아웃'),
+                         style: ElevatedButton.styleFrom(
+                           backgroundColor: Colors.red[50],
+                           foregroundColor: Colors.red[400],
+                           elevation: 0,
+                           padding: EdgeInsets.symmetric(vertical: 16),
+                           shape: RoundedRectangleBorder(
+                             borderRadius: BorderRadius.circular(16),
+                           ),
+                         ),
+                       ),
+                     ),
                     SizedBox(height: 30),
                     Container(
                       alignment: Alignment.centerRight,

@@ -3,13 +3,18 @@ import 'package:cleanhai2/data/model/cleaning_request.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cleanhai2/data/model/user_model.dart';
-import 'package:cleanhai2/utils/location_utils.dart';
+import 'package:cleanhai2/data/constants/regions.dart';
 
 class CleaningController extends GetxController {
   final CleaningRepository _repository = CleaningRepository();
   final RxList<CleaningRequest> cleaningRequests = <CleaningRequest>[].obs;
   final RxBool isLoading = false.obs;
   final RxString searchQuery = ''.obs;
+
+  // Region Filters
+  final RxString selectedCity = ''.obs;
+  final RxString selectedDistrict = ''.obs;
+  final RxList<String> districts = <String>[].obs;
   
   // Cleaning type filter (Body)
   final RxString selectedCleaningTypeFilter = '전체'.obs;
@@ -46,6 +51,20 @@ class CleaningController extends GetxController {
     ever(cleaningRequests, (_) => _updateSortedRequests());
     ever(selectedCleaningTypeFilter, (_) => _updateSortedRequests());
     ever(currentUser, (_) => _updateSortedRequests());
+    ever(selectedCity, (_) => _updateSortedRequests());
+    ever(selectedDistrict, (_) => _updateSortedRequests());
+  }
+
+  void updateDistricts(String city) {
+    selectedCity.value = city;
+    districts.assignAll(Regions.data[city] ?? []);
+    selectedDistrict.value = '';
+    _updateSortedRequests();
+  }
+
+  void updateDistrict(String district) {
+    selectedDistrict.value = district;
+    _updateSortedRequests();
   }
 
   Future<void> loadUserProfile() async {
@@ -94,35 +113,23 @@ class CleaningController extends GetxController {
       
 
     
-    if (currentUser.value == null || 
-        currentUser.value!.latitude == null || 
-        currentUser.value!.longitude == null) {
-      sortedRequests.assignAll(requests);
-      return;
+    // Region Filtering
+    if (selectedCity.value.isNotEmpty) {
+      requests = requests.where((request) {
+        if (request.address == null) return false;
+        if (selectedDistrict.value.isNotEmpty) {
+          return request.address!.contains('${selectedCity.value} ${selectedDistrict.value}');
+        }
+        return request.address!.contains(selectedCity.value);
+      }).toList();
     }
-
-    final userLat = currentUser.value!.latitude!;
-    final userLng = currentUser.value!.longitude!;
 
     final sortedList = List<CleaningRequest>.from(requests);
     
-    // 전체청소일 때는 시간순 (최신순) 정렬
-    if (selectedCleaningTypeFilter.value == '전체') {
-      sortedList.sort((a, b) {
-        return b.createdAt.compareTo(a.createdAt);
-      });
-    } else {
-      // 그 외에는 거리순 정렬
-      sortedList.sort((a, b) {
-        if (a.latitude == null || a.longitude == null) return 1;
-        if (b.latitude == null || b.longitude == null) return -1;
-
-        final distA = LocationUtils.calculateDistance(userLat, userLng, a.latitude!, a.longitude!);
-        final distB = LocationUtils.calculateDistance(userLat, userLng, b.latitude!, b.longitude!);
-
-        return distA.compareTo(distB);
-      });
-    }
+    // Always sort by created time (Newest first)
+    sortedList.sort((a, b) {
+      return b.createdAt.compareTo(a.createdAt);
+    });
     
     sortedRequests.assignAll(sortedList);
   }

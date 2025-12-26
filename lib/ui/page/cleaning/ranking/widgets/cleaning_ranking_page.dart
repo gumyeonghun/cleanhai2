@@ -119,7 +119,7 @@ class CleaningRankingPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -133,7 +133,7 @@ class CleaningRankingPage extends StatelessWidget {
               height: 100,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: rank <= 3 ? rankColor.withValues(alpha: 0.1) : Colors.transparent,
+                color: rank <= 3 ? rankColor.withOpacity(0.1) : Colors.transparent,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   bottomLeft: Radius.circular(16),
@@ -173,7 +173,7 @@ class CleaningRankingPage extends StatelessWidget {
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                              color: Color(0xFF1E88E5).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(

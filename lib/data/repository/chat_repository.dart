@@ -17,21 +17,41 @@ class ChatRepository {
     return '${uids[0]}_${uids[1]}';
   }
 
-  /// 채팅방 생성 또는 가져오기
   Future<ChatRoom> getOrCreateChatRoom(
     String uid1,
     String uid2,
     String name1,
     String name2,
   ) async {
-    final chatRoomId = getChatRoomId(uid1, uid2);
-    final docRef = _chatRoomsRef.doc(chatRoomId);
-    final doc = await docRef.get();
+    try {
+      final chatRoomId = getChatRoomId(uid1, uid2);
+      debugPrint('🔵 채팅방 ID: $chatRoomId');
+      debugPrint('🔵 참여자: $uid1, $uid2');
+      
+      final docRef = _chatRoomsRef.doc(chatRoomId);
+      
+      // 먼저 채팅방 존재 여부 확인
+      DocumentSnapshot? doc;
+      try {
+        doc = await docRef.get();
+        debugPrint('🔵 채팅방 조회 성공: exists=${doc.exists}');
+      } catch (e) {
+        debugPrint('⚠️ 채팅방 조회 실패 (권한 문제 가능성): $e');
+        // 권한 오류인 경우 새로 생성 시도
+        doc = null;
+      }
 
-    if (doc.exists) {
-      return ChatRoom.fromFirestore(doc);
-    } else {
+      if (doc != null && doc.exists) {
+        try {
+          return ChatRoom.fromFirestore(doc);
+        } catch (e) {
+          debugPrint('⚠️ 채팅방 파싱 실패, 재생성 시도: $e');
+          // 파싱 실패 시 재생성
+        }
+      }
+      
       // 새 채팅방 생성
+      debugPrint('🔵 새 채팅방 생성 시작');
       final newChatRoom = ChatRoom(
         id: chatRoomId,
         participants: [uid1, uid2],
@@ -41,8 +61,21 @@ class ChatRepository {
         createdAt: DateTime.now(),
       );
 
-      await docRef.set(newChatRoom.toFirestore());
-      return newChatRoom;
+      try {
+        await docRef.set(newChatRoom.toFirestore());
+        debugPrint('✅ 채팅방 생성 성공: $chatRoomId');
+        debugPrint('✅ participants: ${newChatRoom.participants}');
+        return newChatRoom;
+      } catch (e) {
+        debugPrint('❌ 채팅방 생성 실패: $e');
+        // 생성 실패해도 메모리상의 객체는 반환 (UI는 동작하도록)
+        debugPrint('⚠️ 메모리상 채팅방 객체 반환 (Firestore 저장 실패)');
+        return newChatRoom;
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ getOrCreateChatRoom 전체 실패: $e');
+      debugPrint('❌ 스택 트레이스: $stackTrace');
+      rethrow;
     }
   }
 
@@ -59,13 +92,28 @@ class ChatRepository {
     });
   }
 
-  /// 메시지 전송
   Future<void> sendMessage(
     String chatRoomId,
     ChatMessage message,
   ) async {
     try {
+      debugPrint('🔵 메시지 전송 시작: chatRoomId=$chatRoomId');
+      debugPrint('🔵 메시지 내용: ${message.text}');
+      debugPrint('🔵 발신자: ${message.senderId} (${message.senderName})');
+      
+      if (chatRoomId.isEmpty) {
+        debugPrint('❌ chatRoomId가 비어있습니다');
+        throw Exception('채팅방 ID가 유효하지 않습니다');
+      }
+      
       final chatRoomRef = _chatRoomsRef.doc(chatRoomId);
+      
+      // 채팅방 존재 확인
+      final chatRoomDoc = await chatRoomRef.get();
+      if (!chatRoomDoc.exists) {
+        debugPrint('⚠️ 채팅방이 존재하지 않습니다. 새로 생성합니다.');
+      }
+      
       final messagesRef = chatRoomRef.collection('messages');
 
       // 메시지 추가
@@ -80,8 +128,9 @@ class ChatRepository {
       }, SetOptions(merge: true));
       
       debugPrint('✅ 채팅방 업데이트 성공: $chatRoomId, lastMessage: ${message.text}');
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ 메시지 전송 실패: $e');
+      debugPrint('❌ 스택 트레이스: $stackTrace');
       rethrow; // 에러를 상위로 전파하여 UI에서 처리할 수 있도록 함
     }
   }
@@ -147,6 +196,32 @@ class ChatRepository {
       await _chatRoomsRef.doc(chatRoomId).delete();
     } catch (e) {
       debugPrint('Error deleting chat room: $e');
+    }
+  }
+
+  /// 사용자 ID로 모든 채팅방 삭제 (회원 탈퇴용)
+  Future<void> deleteAllChatRoomsByUserId(String userId) async {
+    try {
+      final snapshot = await _chatRoomsRef
+          .where('participants', arrayContains: userId)
+          .get();
+      
+      for (var doc in snapshot.docs) {
+        // 메시지 서브컬렉션 삭제
+        final messagesSnapshot = await doc.reference
+            .collection('messages')
+            .get();
+        
+        for (var msgDoc in messagesSnapshot.docs) {
+          await msgDoc.reference.delete();
+        }
+        
+        // 채팅방 삭제
+        await doc.reference.delete();
+      }
+      debugPrint('Deleted ${snapshot.docs.length} chat rooms for user $userId');
+    } catch (e) {
+      debugPrint('Error deleting all chat rooms by user id: $e');
     }
   }
 }

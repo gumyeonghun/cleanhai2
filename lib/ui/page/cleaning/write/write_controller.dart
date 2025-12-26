@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:kpostal/kpostal.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:cleanhai2/data/constants/regions.dart';
 import 'package:cleanhai2/data/model/cleaning_request.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
@@ -30,12 +29,21 @@ class WriteController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isEditMode = false.obs;
   
-  final RxString address = ''.obs;
-  final RxDouble latitude = 0.0.obs;
-  final RxDouble longitude = 0.0.obs;
+  final RxString selectedCity = ''.obs;
+  final RxString selectedDistrict = ''.obs;
+  final RxList<String> districts = <String>[].obs;
   final RxString userType = ''.obs;
   final RxString selectedCleaningType = '숙박업소청소'.obs;
   final Rx<DateTime?> selectedCleaningDate = Rx<DateTime?>(null);
+  final RxString selectedCleaningDuration = '1일'.obs;
+
+  static const List<String> cleaningDurations = [
+    '기타',
+    '3개월 이상',
+    '1개월',
+    '1주일',
+    '1일',
+  ];
 
   static const List<String> cleaningTypes = [
     '숙박업소청소',
@@ -93,14 +101,9 @@ class WriteController extends GetxController {
       priceController.text = existingRequest!.price ?? '';
       detailAddressController.text = existingRequest!.detailAddress ?? '';
       existingImageUrl.value = existingRequest!.imageUrl ?? '';
-      address.value = existingRequest!.address ?? '';
-      latitude.value = existingRequest!.latitude ?? 0.0;
-      longitude.value = existingRequest!.longitude ?? 0.0;
-      selectedCleaningType.value = existingRequest!.cleaningType ?? '숙박업소청소';
-      requesterNameController.text = existingRequest!.requesterName ?? '';
-      cleaningToolLocationController.text = existingRequest!.cleaningToolLocation ?? '';
-      precautionsController.text = existingRequest!.precautions ?? '';
-      selectedCleaningDate.value = existingRequest!.cleaningDate;
+      selectedCity.value = ''; // 초기화 로직 필요 시 추가 (주소 파싱 등)
+      selectedDistrict.value = '';
+      selectedCleaningDuration.value = existingRequest!.cleaningDuration ?? '1일';
     } else if (existingStaff != null) {
       isEditMode.value = true;
       selectedType.value = 'staff';
@@ -108,10 +111,9 @@ class WriteController extends GetxController {
       contentController.text = existingStaff!.content;
       detailAddressController.text = existingStaff!.detailAddress ?? '';
       existingImageUrl.value = existingStaff!.imageUrl ?? '';
-      address.value = existingStaff!.address ?? '';
-      latitude.value = existingStaff!.latitude ?? 0.0;
-      longitude.value = existingStaff!.longitude ?? 0.0;
       selectedCleaningType.value = existingStaff!.cleaningType ?? '숙박업소청소';
+      selectedCity.value = ''; // 초기화 로직 필요 시 추가
+      selectedDistrict.value = '';
     }
 
     _loadUserType();
@@ -183,30 +185,14 @@ class WriteController extends GetxController {
     }
   }
 
-  Future<void> searchAddress() async {
-    await Get.to(() => KpostalView(
-      callback: (Kpostal result) async {
-        double? lat = result.latitude;
-        double? lng = result.longitude;
+  void updateDistricts(String city) {
+    selectedCity.value = city;
+    districts.assignAll(Regions.data[city] ?? []);
+    selectedDistrict.value = '';
+  }
 
-        // 좌표가 없는 경우 주소로 좌표 검색
-        if (lat == null || lng == null) {
-          try {
-            List<Location> locations = await locationFromAddress(result.address);
-            if (locations.isNotEmpty) {
-              lat = locations.first.latitude;
-              lng = locations.first.longitude;
-            }
-          } catch (e) {
-            debugPrint('좌표 변환 실패: $e');
-          }
-        }
-
-        address.value = result.address;
-        latitude.value = lat ?? 0.0;
-        longitude.value = lng ?? 0.0;
-      },
-    ));
+  void updateDistrict(String district) {
+    selectedDistrict.value = district;
   }
 
   Future<void> submit() async {
@@ -254,10 +240,10 @@ class WriteController extends GetxController {
             content: contentController.text.trim(),
             price: priceController.text.trim(),
             imageUrl: imageUrl,
-            address: address.value.isEmpty ? null : address.value,
+            address: '${selectedCity.value} ${selectedDistrict.value}',
             detailAddress: detailAddressController.text,
-            latitude: latitude.value == 0.0 ? null : latitude.value,
-            longitude: longitude.value == 0.0 ? null : longitude.value,
+            // latitude: null, // Removed
+            // longitude: null, // Removed
             updatedAt: now,
             targetStaffId: targetStaffId,
             cleaningType: selectedCleaningType.value,
@@ -265,6 +251,7 @@ class WriteController extends GetxController {
             cleaningToolLocation: cleaningToolLocationController.text.trim(),
             precautions: precautionsController.text.trim(),
             cleaningDate: selectedCleaningDate.value,
+            cleaningDuration: selectedCleaningDuration.value,
           );
           await _repository.updateCleaningRequest(updatedRequest);
         } else {
@@ -277,10 +264,10 @@ class WriteController extends GetxController {
             content: contentController.text.trim(),
             price: priceController.text.trim(),
             imageUrl: imageUrl,
-            address: address.value.isEmpty ? null : address.value,
+            address: '${selectedCity.value} ${selectedDistrict.value}',
             detailAddress: detailAddressController.text,
-            latitude: latitude.value == 0.0 ? null : latitude.value,
-            longitude: longitude.value == 0.0 ? null : longitude.value,
+            // latitude: null, // Removed
+            // longitude: null, // Removed
             createdAt: now,
             updatedAt: now,
             targetStaffId: targetStaffId,
@@ -289,6 +276,7 @@ class WriteController extends GetxController {
             cleaningToolLocation: cleaningToolLocationController.text.trim(),
             precautions: precautionsController.text.trim(),
             cleaningDate: selectedCleaningDate.value,
+            cleaningDuration: selectedCleaningDuration.value,
           );
           await _repository.createCleaningRequest(request);
         }
@@ -299,10 +287,10 @@ class WriteController extends GetxController {
             title: titleController.text.trim(),
             content: contentController.text.trim(),
             imageUrl: imageUrl,
-            address: address.value.isEmpty ? null : address.value,
+            address: '${selectedCity.value} ${selectedDistrict.value}',
             detailAddress: detailAddressController.text,
-            latitude: latitude.value == 0.0 ? null : latitude.value,
-            longitude: longitude.value == 0.0 ? null : longitude.value,
+            // latitude: null, // Removed
+            // longitude: null, // Removed
             updatedAt: now,
             cleaningType: selectedCleaningType.value,
           );
@@ -316,10 +304,10 @@ class WriteController extends GetxController {
             title: titleController.text.trim(),
             content: contentController.text.trim(),
             imageUrl: imageUrl,
-            address: address.value.isEmpty ? null : address.value,
+            address: '${selectedCity.value} ${selectedDistrict.value}',
             detailAddress: detailAddressController.text,
-            latitude: latitude.value == 0.0 ? null : latitude.value,
-            longitude: longitude.value == 0.0 ? null : longitude.value,
+            // latitude: null, // Removed
+            // longitude: null, // Removed
             createdAt: now,
             updatedAt: now,
             cleaningType: selectedCleaningType.value,

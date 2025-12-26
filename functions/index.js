@@ -108,3 +108,122 @@ exports.appleSignInCallback = functions.https.onRequest(async (request, response
 
   redirect(intentUrl);
 });
+
+/**
+ * 30일이 지난 탈퇴 사용자 데이터 자동 삭제
+ * 매일 자정(한국 시간 기준)에 실행
+ */
+exports.deleteExpiredUsers = functions.pubsub
+  .schedule('0 0 * * *') // 매일 자정 (UTC 기준)
+  .timeZone('Asia/Seoul') // 한국 시간대
+  .onRun(async (context) => {
+    console.log('[Delete Expired Users] Starting scheduled deletion...');
+
+    try {
+      const db = admin.firestore();
+      const now = admin.firestore.Timestamp.now();
+      const thirtyDaysAgo = admin.firestore.Timestamp.fromMillis(
+        now.toMillis() - (30 * 24 * 60 * 60 * 1000)
+      );
+
+      // 30일이 지난 탈퇴 사용자 조회
+      const usersSnapshot = await db.collection('users')
+        .where('isDeleted', '==', true)
+        .where('deletedAt', '<=', thirtyDaysAgo)
+        .get();
+
+      if (usersSnapshot.empty) {
+        console.log('[Delete Expired Users] No expired users found.');
+        return null;
+      }
+
+      console.log(`[Delete Expired Users] Found ${usersSnapshot.size} expired users.`);
+
+      // 각 사용자의 모든 데이터 삭제
+      const deletePromises = usersSnapshot.docs.map(async (userDoc) => {
+        const userId = userDoc.id;
+        console.log(`[Delete Expired Users] Deleting user: ${userId}`);
+
+        try {
+          // 1. 청소 의뢰 삭제
+          const requestsSnapshot = await db.collection('cleaning_requests')
+            .where('authorId', '==', userId)
+            .get();
+          for (const doc of requestsSnapshot.docs) {
+            await doc.ref.delete();
+          }
+          console.log(`  - Deleted ${requestsSnapshot.size} cleaning requests`);
+
+          // 2. 지원자 목록에서 제거
+          const applicantsSnapshot = await db.collection('cleaning_requests')
+            .where('applicants', 'array-contains', userId)
+            .get();
+          for (const doc of applicantsSnapshot.docs) {
+            await doc.ref.update({
+              applicants: admin.firestore.FieldValue.arrayRemove(userId)
+            });
+          }
+          console.log(`  - Removed from ${applicantsSnapshot.size} applicant lists`);
+
+          // 3. 청소 대기 프로필 삭제
+          const staffsSnapshot = await db.collection('cleaning_staffs')
+            .where('authorId', '==', userId)
+            .get();
+          for (const doc of staffsSnapshot.docs) {
+            await doc.ref.delete();
+          }
+          console.log(`  - Deleted ${staffsSnapshot.size} staff profiles`);
+
+          // 4. 청소 노하우 삭제
+          const knowhowsSnapshot = await db.collection('cleaning_knowhows')
+            .where('authorId', '==', userId)
+            .get();
+          for (const doc of knowhowsSnapshot.docs) {
+            await doc.ref.delete();
+          }
+          console.log(`  - Deleted ${knowhowsSnapshot.size} knowhows`);
+
+          // 5. 청소 추천 삭제
+          const recommendationsSnapshot = await db.collection('cleaning_recommendations')
+            .where('authorId', '==', userId)
+            .get();
+          for (const doc of recommendationsSnapshot.docs) {
+            await doc.ref.delete();
+          }
+          console.log(`  - Deleted ${recommendationsSnapshot.size} recommendations`);
+
+          // 6. 채팅방 및 메시지 삭제
+          const chatRoomsSnapshot = await db.collection('chat_rooms')
+            .where('participants', 'array-contains', userId)
+            .get();
+          for (const chatDoc of chatRoomsSnapshot.docs) {
+            // 메시지 서브컬렉션 삭제
+            const messagesSnapshot = await chatDoc.ref.collection('messages').get();
+            for (const msgDoc of messagesSnapshot.docs) {
+              await msgDoc.ref.delete();
+            }
+            // 채팅방 삭제
+            await chatDoc.ref.delete();
+          }
+          console.log(`  - Deleted ${chatRoomsSnapshot.size} chat rooms`);
+
+          // 7. 사용자 문서 삭제 (마지막)
+          await userDoc.ref.delete();
+          console.log(`  - Deleted user document`);
+
+          console.log(`[Delete Expired Users] Successfully deleted all data for user: ${userId}`);
+        } catch (error) {
+          console.error(`[Delete Expired Users] Error deleting user ${userId}:`, error);
+          // 개별 사용자 삭제 실패해도 계속 진행
+        }
+      });
+
+      await Promise.all(deletePromises);
+      console.log('[Delete Expired Users] Completed scheduled deletion.');
+      return null;
+
+    } catch (error) {
+      console.error('[Delete Expired Users] Fatal error:', error);
+      throw error;
+    }
+  });

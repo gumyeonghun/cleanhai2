@@ -11,6 +11,7 @@ import 'package:cleanhai2/data/model/user_model.dart';
 import '../../write/widgets/write_page.dart';
 import '../../report/widgets/completion_report_view_page.dart';
 import '../detail_controller.dart';
+import 'staff_review_list_page.dart';
 
 class DetailPage extends StatelessWidget {
   final CleaningRequest? cleaningRequest;
@@ -34,7 +35,7 @@ class DetailPage extends StatelessWidget {
       appBar: AppBar(
         actions: [
           Obx(() {
-            if (!controller.isAuthor) {
+            if (!controller.isAuthor.value) {
               return _iconButton(Icons.message, () async {
                 final myUser = FirebaseAuth.instance.currentUser;
                 if (myUser == null) return;
@@ -43,31 +44,38 @@ class DetailPage extends StatelessWidget {
                 final authorId = cleaningRequest?.authorId ?? cleaningStaff?.authorId ?? '';
                 final authorName = cleaningRequest?.authorName ?? cleaningStaff?.authorName ?? '알 수 없음';
                 
-                if (authorId.isEmpty) return;
+                if (authorId.isEmpty) {
+                  Get.snackbar('조회 실패', '상대방의 정보를 불러올 수 없습니다.');
+                  return;
+                }
 
-                // 내 이름 가져오기
-                final myUserData = await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(myUser.uid)
-                    .get();
-                final myName = myUserData.data()?['userName'] ?? '사용자';
+                try {
+                  // 내 이름 가져오기
+                  final myUserData = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(myUser.uid)
+                      .get();
+                  final myName = myUserData.data()?['userName'] ?? '사용자';
 
-                // 채팅방 생성 또는 가져오기
-                final chatRoom = await ChatRepository().getOrCreateChatRoom(
-                  myUser.uid,
-                  authorId,
-                  myName,
-                  authorName,
-                );
+                  // 채팅방 생성 또는 가져오기
+                  final chatRoom = await ChatRepository().getOrCreateChatRoom(
+                    myUser.uid,
+                    authorId,
+                    myName,
+                    authorName,
+                  );
 
-                // 채팅방으로 이동
-                Get.to(() => ChatRoomPage(chatRoom: chatRoom));
+                  // 채팅방으로 이동
+                  Get.to(() => ChatRoomPage(chatRoom: chatRoom));
+                } catch (e) {
+                  Get.snackbar('오류', '채팅방을 생성할 수 없습니다: $e');
+                }
               });
             }
             return SizedBox.shrink();
           }),
           Obx(() {
-            if (controller.isAuthor) {
+            if (controller.isAuthor.value) {
               // 자동 등록된 스태프는 삭제/편집 버튼 숨김
               final isAutoRegistered = cleaningStaff?.isAutoRegistered ?? false;
               
@@ -103,8 +111,10 @@ class DetailPage extends StatelessWidget {
         final price = controller.price;
         final content = controller.content;
         final currentRequest = controller.currentRequest.value;
-        final isAuthor = controller.isAuthor;
+        final isAuthor = controller.isAuthor.value;
         final hasApplied = controller.hasApplied;
+        final additionalOptionCost = controller.additionalOptionCost;
+        final cleaningType = controller.cleaningType;
         final currentUser = FirebaseAuth.instance.currentUser;
 
         return ListView(
@@ -161,6 +171,86 @@ class DetailPage extends StatelessWidget {
                     return SizedBox.shrink();
                   }),
                   SizedBox(height: 5),
+                  
+                  // 평점 및 리뷰 수 (청소 전문가인 경우)
+                  if (cleaningStaff != null)
+                    Obx(() {
+                      final ratings = controller.staffRating;
+                      if (ratings.isNotEmpty && ratings['reviewCount'] != null && ratings['reviewCount'] > 0) {
+                        final avgRating = (ratings['averageRating'] as num).toDouble();
+                        final reviewCount = ratings['reviewCount'] as int;
+                        return GestureDetector(
+                          onTap: () {
+                            // 리뷰 목록 페이지로 이동
+                            Get.to(() => StaffReviewListPage(
+                              staffId: cleaningStaff!.authorId,
+                              staffName: cleaningStaff!.authorName,
+                              ratingStats: ratings,
+                              reviewRequests: controller.staffReviewRequests,
+                            ));
+                          },
+                          child: Container(
+                            margin: EdgeInsets.only(top: 8, bottom: 8),
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star, size: 18, color: Colors.amber),
+                                SizedBox(width: 6),
+                                Text(
+                                  avgRating.toStringAsFixed(1),
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  '($reviewCount개 리뷰)',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(Icons.chevron_right, size: 18, color: Colors.grey[600]),
+                              ],
+                            ),
+                          ),
+                        );
+                      } else {
+                        return Container(
+                          margin: EdgeInsets.only(top: 8, bottom: 8),
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.star_border, size: 18, color: Colors.grey[400]),
+                              SizedBox(width: 6),
+                              Text(
+                                '리뷰 없음',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    }),
+                  
                   Text(
                     DateFormat('yyyy.MM.dd HH:mm').format(createdAt),
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w200),
@@ -246,8 +336,45 @@ class DetailPage extends StatelessWidget {
                     ),
                   ],
                   
+                  // 청소 필요 기간 (청소 의뢰일 때만)
+                  if (currentRequest?.cleaningDuration != null && currentRequest!.cleaningDuration!.isNotEmpty) ...[
+                    SizedBox(height: 15),
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.timelapse, color: Colors.purple),
+                          SizedBox(width: 12),
+                          Text(
+                            '청소 기간: ',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              currentRequest!.cleaningDuration!,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.purple[700],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  
                   // 추가옵션 비용 표시 (청소 전문가일 때만)
-                  if (controller.additionalOptionCost != null && controller.additionalOptionCost!.isNotEmpty) ...[
+                  if (additionalOptionCost != null && additionalOptionCost.isNotEmpty) ...[
                     SizedBox(height: 15),
                     Container(
                       padding: EdgeInsets.all(16),
@@ -275,7 +402,7 @@ class DetailPage extends StatelessWidget {
                           ),
                           SizedBox(height: 8),
                           Text(
-                            controller.additionalOptionCost!,
+                            additionalOptionCost,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.black87,
@@ -286,8 +413,167 @@ class DetailPage extends StatelessWidget {
                     ),
                   ],
                   
+                  // Activity Area (Address)
+                  if (cleaningStaff != null && cleaningStaff!.address != null && cleaningStaff!.address!.isNotEmpty) ...[
+                    SizedBox(height: 15),
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blueGrey.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.location_on, color: Colors.blueGrey),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '활동 지역',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  cleaningStaff!.address!,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // 근무 가능 요일 및 시간 (청소 전문가인 경우)
+                  if (cleaningStaff != null) ...[
+                    // 근무 가능 기간
+                    if (cleaningStaff!.cleaningDuration != null && cleaningStaff!.cleaningDuration!.isNotEmpty) ...[
+                      SizedBox(height: 15),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.timelapse, color: Colors.purple),
+                            SizedBox(width: 12),
+                            Text(
+                              '근무 가능 기간: ',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                cleaningStaff!.cleaningDuration!,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.purple[700],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    if (cleaningStaff!.availableDays != null && cleaningStaff!.availableDays!.isNotEmpty) ...[
+                      SizedBox(height: 15),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_today, color: Colors.purple),
+                                SizedBox(width: 12),
+                                Text(
+                                  '근무 가능 요일',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              cleaningStaff!.availableDays!.join(', '),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (cleaningStaff!.availableStartTime != null && cleaningStaff!.availableEndTime != null) ...[
+                      SizedBox(height: 15),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.access_time, color: Colors.orange),
+                            SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '근무 가능 시간',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '${cleaningStaff!.availableStartTime} ~ ${cleaningStaff!.availableEndTime}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                  
                   // 청소 종류 표시
-                  if (controller.cleaningType != null && controller.cleaningType!.isNotEmpty) ...[
+                  if (cleaningType != null && cleaningType.isNotEmpty) ...[
                     SizedBox(height: 15),
                     Container(
                       padding: EdgeInsets.all(16),
@@ -301,7 +587,7 @@ class DetailPage extends StatelessWidget {
                           Icon(Icons.cleaning_services, color: Color(0xFF1E88E5)),
                           SizedBox(width: 12),
                           Text(
-                            '전문 분야: ',
+                            '청소종류: ',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -315,7 +601,7 @@ class DetailPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              controller.cleaningType!,
+                              cleaningType,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -360,54 +646,8 @@ class DetailPage extends StatelessWidget {
                         ],
                       ),
                     ],
-                    if (currentRequest.cleaningToolLocation != null && currentRequest.cleaningToolLocation!.isNotEmpty) ...[
-                      SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.cleaning_services, size: 20, color: Color(0xFF1E88E5)),
-                          SizedBox(width: 8),
-                          Text(
-                            '청소 도구 위치: ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                              fontSize: 15,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              currentRequest.cleaningToolLocation!,
-                              style: TextStyle(fontSize: 15, color: Colors.black87),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (currentRequest.precautions != null && currentRequest.precautions!.isNotEmpty) ...[
-                      SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.warning_amber_rounded, size: 20, color: Colors.red[400]),
-                          SizedBox(width: 8),
-                          Text(
-                            '주의사항: ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                              fontSize: 15,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              currentRequest.precautions!,
-                              style: TextStyle(fontSize: 15, color: Colors.black87),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+
+
                   ],
                   
                   // 청소 신청 버튼 (청소 의뢰이고, 작성자가 아닐 때)
@@ -605,6 +845,9 @@ class DetailPage extends StatelessWidget {
                           onPressed: () {
                             Get.to(() => CompletionReportViewPage(
                               report: currentRequest.completionReport!,
+                              requestId: currentRequest.id,
+                              canReview: isAuthor && currentRequest.review == null,
+                              review: currentRequest.review,
                             ));
                           },
                           icon: Icon(Icons.assignment_turned_in, color: Color(0xFF1E88E5)),
@@ -866,206 +1109,246 @@ class DetailPage extends StatelessWidget {
         ),
         child: Container(
           padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Profile header
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Color(0xFF1E88E5),
-                    child: Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 30,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Profile header
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Color(0xFF1E88E5),
+                      child: Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 30,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userProfile?.userName ?? '알 수 없음',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userProfile?.userName ?? '알 수 없음',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          userProfile?.userType == 'staff' ? '청소 전문가' : '청소 의뢰인',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                          SizedBox(height: 4),
+                          Text(
+                            userProfile?.userType == 'staff' ? '청소 전문가' : '청소 의뢰인',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              
-              SizedBox(height: 24),
-              Divider(),
-              SizedBox(height: 16),
-              
-              // Profile details
-              if (userProfile != null) ...[
-                _buildProfileRow(
-                  icon: Icons.email,
-                  label: '이메일',
-                  value: userProfile.email,
+                  ],
                 ),
+                
+                SizedBox(height: 24),
+                Divider(),
                 SizedBox(height: 16),
                 
-                if (userProfile.address != null && userProfile.address!.isNotEmpty) ...[
+                // Profile details
+                if (userProfile != null) ...[
                   _buildProfileRow(
-                    icon: Icons.location_on,
-                    label: '주소',
-                    value: userProfile.address!,
+                    icon: Icons.email,
+                    label: '이메일',
+                    value: userProfile.email,
                   ),
                   SizedBox(height: 16),
-                ],
-                
-                if (userProfile.userType == 'staff') ...[
-                  // Staff Ratings & Reviews
-                  FutureBuilder<Map<String, dynamic>>(
-                    future: controller.getStaffRatingStats(userProfile.id),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) return SizedBox.shrink();
-                      final stats = snapshot.data!;
-                      final averageRating = stats['averageRating'] ?? 0.0;
-                      final reviewCount = stats['reviewCount'] ?? 0;
-                      
-                      return Column(
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.star, color: Colors.amber, size: 24),
-                              SizedBox(width: 8),
-                               Text(
-                                (averageRating as num).toStringAsFixed(1),
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                '($reviewCount개 후기)',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 16),
-                          
-                          // Recent Reviews
-                          FutureBuilder<List<dynamic>>(
-                            future: controller.getStaffRecentReviews(userProfile.id),
-                            builder: (context, reviewSnapshot) {
-                              if (!reviewSnapshot.hasData || reviewSnapshot.data!.isEmpty) {
-                                return Text('아직 후기가 없습니다.', style: TextStyle(color: Colors.grey));
+                  
+                  if (userProfile.address != null && userProfile.address!.isNotEmpty) ...[
+                    _buildProfileRow(
+                      icon: Icons.location_on,
+                      label: '주소',
+                      value: userProfile.address!,
+                    ),
+                    SizedBox(height: 16),
+                  ],
+                  
+                  if (userProfile.userType == 'staff') ...[
+                    // Staff Ratings & Reviews
+                    FutureBuilder<Map<String, dynamic>>(
+                      future: controller.getStaffRatingStats(userProfile.id),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return SizedBox.shrink();
+                        final stats = snapshot.data!;
+                        final averageRating = stats['averageRating'] ?? 0.0;
+                        final reviewCount = stats['reviewCount'] ?? 0;
+                        
+                        return Column(
+                          children: [
+                          GestureDetector(
+                            onTap: () async {
+                              if (reviewCount > 0) {
+                                final requests = await controller.getStaffCleaningHistory(userProfile.id);
+                                Get.to(() => StaffReviewListPage(
+                                  staffId: userProfile.id,
+                                  staffName: userProfile.userName ?? '알 수 없음',
+                                  ratingStats: stats,
+                                  reviewRequests: requests,
+                                ));
                               }
-                              
-                              final reviews = reviewSnapshot.data!;
-                              final recentReviews = reviews.take(3).toList();
-                              
-                              return Column(
-                                children: recentReviews.map((review) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12.0),
-                                    child: Container(
-                                      padding: EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: List.generate(5, (index) {
-                                              return Icon(
-                                                index < review.rating ? Icons.star : Icons.star_border,
-                                                color: Colors.amber,
-                                                size: 14,
-                                              );
-                                            }),
-                                          ),
-                                          SizedBox(height: 4),
-                                          Text(
-                                            review.comment,
-                                            style: TextStyle(fontSize: 13),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              );
                             },
+                            child: Row(
+                              children: [
+                                Icon(Icons.star, color: Colors.amber, size: 24),
+                                SizedBox(width: 8),
+                                 Text(
+                                  (averageRating as num).toStringAsFixed(1),
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  '($reviewCount개 후기)',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, size: 18, color: Colors.grey[400]),
+                              ],
+                            ),
                           ),
-                          SizedBox(height: 16),
-                        ],
-                      );
-                    },
+                            SizedBox(height: 16),
+                            
+                            // Recent Reviews
+                            FutureBuilder<List<dynamic>>(
+                              future: controller.getStaffRecentReviews(userProfile.id),
+                              builder: (context, reviewSnapshot) {
+                                if (!reviewSnapshot.hasData || reviewSnapshot.data!.isEmpty) {
+                                  return Text('아직 후기가 없습니다.', style: TextStyle(color: Colors.grey));
+                                }
+                                
+                                final reviews = reviewSnapshot.data!;
+                                final recentReviews = reviews.take(3).toList();
+                                
+                                return Column(
+                                  children: recentReviews.map((review) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 12.0),
+                                      child: Container(
+                                        padding: EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[100],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: List.generate(5, (index) {
+                                                return Icon(
+                                                  index < review.rating ? Icons.star : Icons.star_border,
+                                                  color: Colors.amber,
+                                                  size: 14,
+                                                );
+                                              }),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              review.comment,
+                                              style: TextStyle(fontSize: 13),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                );
+                              },
+                            ),
+                            SizedBox(height: 16),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                  
+                  _buildProfileRow(
+                    icon: Icons.badge,
+                    label: '회원 유형',
+                    value: userProfile.userType == 'staff' ? '청소 전문가' : '청소 의뢰인',
+                  ),
+                ] else ...[
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        '프로필 정보를 불러올 수 없습니다',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
                 
-                _buildProfileRow(
-                  icon: Icons.badge,
-                  label: '회원 유형',
-                  value: userProfile.userType == 'staff' ? '청소 전문가' : '청소 의뢰인',
+                SizedBox(height: 24),
+
+                // Message Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      if (userProfile != null) {
+                        controller.startChat(applicantId, userProfile.userName ?? '알 수 없음');
+                      }
+                    },
+                    icon: Icon(Icons.chat_bubble_outline, size: 20),
+                    label: Text('메시지 보내기'),
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      foregroundColor: Color(0xFF1E88E5),
+                      side: BorderSide(color: Color(0xFF1E88E5)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
                 ),
-              ] else ...[
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                SizedBox(height: 12),
+                
+                // Close button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Get.back(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF1E88E5),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                     child: Text(
-                      '프로필 정보를 불러올 수 없습니다',
+                      '닫기',
                       style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
               ],
-              
-              SizedBox(height: 24),
-              
-              // Close button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Get.back(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF1E88E5),
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    '닫기',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

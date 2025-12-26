@@ -47,6 +47,9 @@ class AuthService extends GetxService {
   // Google Sign In
   Future<UserCredential?> signInWithGoogle() async {
     try {
+      // 기존 로그인 세션 제거하여 계정 선택 화면 강제 표시
+      await _googleSignIn.signOut();
+      
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {

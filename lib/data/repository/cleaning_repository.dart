@@ -298,6 +298,40 @@ class CleaningRepository {
     }
   }
 
+  /// 작성자 ID로 모든 청소 의뢰 삭제 (회원 탈퇴용)
+  Future<void> deleteAllCleaningRequestsByAuthorId(String authorId) async {
+    try {
+      final snapshot = await _cleaningRequestsRef
+          .where('authorId', isEqualTo: authorId)
+          .get();
+      
+      for (var doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
+      debugPrint('Deleted ${snapshot.docs.length} cleaning requests for user $authorId');
+    } catch (e) {
+      debugPrint('Error deleting all requests by author id: $e');
+    }
+  }
+
+  /// 모든 청소 의뢰에서 사용자를 지원자 목록에서 제거 (회원 탈퇴용)
+  Future<void> removeUserFromApplicants(String userId) async {
+    try {
+      final snapshot = await _cleaningRequestsRef
+          .where('applicants', arrayContains: userId)
+          .get();
+      
+      for (var doc in snapshot.docs) {
+        await doc.reference.update({
+          'applicants': FieldValue.arrayRemove([userId]),
+        });
+      }
+      debugPrint('Removed user $userId from ${snapshot.docs.length} applicant lists');
+    } catch (e) {
+      debugPrint('Error removing user from applicants: $e');
+    }
+  }
+
   // ==================== 청소 대기 관련 메서드 ====================
 
   /// 청소 대기 생성
@@ -391,7 +425,7 @@ class CleaningRepository {
     }
   }
 
-  /// 작성자 ID로 청소 대기 삭제
+  /// 작성자 ID로 청소 대기 삭제 (모든 프로필)
   Future<void> deleteCleaningStaffByAuthorId(String authorId) async {
     try {
       final snapshot = await _cleaningStaffsRef
@@ -401,6 +435,7 @@ class CleaningRepository {
       for (var doc in snapshot.docs) {
         await doc.reference.delete();
       }
+      debugPrint('Deleted ${snapshot.docs.length} cleaning staff profiles for user $authorId');
     } catch (e) {
       debugPrint('Error deleting staff by author id: $e');
     }
@@ -478,10 +513,30 @@ class CleaningRepository {
       
       final totalRating = reviews.fold<double>(0.0, (total, review) => total + review.rating);
       final averageRating = totalRating / reviews.length;
+
+      // Calculate detailed averages
+      final communicationTotal = reviews.fold<double>(0.0, (total, review) => total + (review.communicationRating ?? review.rating));
+      final qualityTotal = reviews.fold<double>(0.0, (total, review) => total + (review.qualityRating ?? review.rating));
+      final reliabilityTotal = reviews.fold<double>(0.0, (total, review) => total + (review.reliabilityRating ?? review.rating));
+      final priceTotal = reviews.fold<double>(0.0, (total, review) => total + (review.priceRating ?? review.rating));
+
+      // Calculate distribution
+      final distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+      for (var review in reviews) {
+        final rating = review.rating.round();
+        if (rating >= 1 && rating <= 5) {
+          distribution[rating] = (distribution[rating] ?? 0) + 1;
+        }
+      }
       
       return {
         'averageRating': averageRating,
+        'communicationRating': communicationTotal / reviews.length,
+        'qualityRating': qualityTotal / reviews.length,
+        'reliabilityRating': reliabilityTotal / reviews.length,
+        'priceRating': priceTotal / reviews.length,
         'reviewCount': reviews.length,
+        'distribution': distribution,
       };
     } catch (e) {
       debugPrint('평점 통계 가져오기 실패: $e');
@@ -490,21 +545,31 @@ class CleaningRepository {
   }
 
   /// 청소 전문가의 완료된 청소 요청 중 리뷰가 있는 것들 가져오기
-  Future<List<CleaningRequest>> getCompletedRequestsWithReviews(String staffId) async {
+  Future<List<CleaningRequest>> getCompletedCleaningHistory(String staffId) async {
     try {
+      debugPrint('Fetching history for staffId (acceptedApplicantId): $staffId');
+      // Index 문제 방지를 위해 OrderBy 제거 후 메모리 정렬 (프로필 로직 참조)
       final snapshot = await _cleaningRequestsRef
           .where('acceptedApplicantId', isEqualTo: staffId)
-          .where('status', isEqualTo: 'completed')
-          .orderBy('completedAt', descending: true)
-          .limit(20)
           .get();
       
-      return snapshot.docs
+      debugPrint('Fetched ${snapshot.docs.length} history items (raw).');
+      
+      final List<CleaningRequest> allRequests = snapshot.docs
           .map((doc) => CleaningRequest.fromFirestore(doc))
-          .where((request) => request.review != null)
           .toList();
+          
+      // 내림차순 정렬 (최신순)
+      allRequests.sort((a, b) {
+        final aTime = a.updatedAt;
+        final bTime = b.updatedAt;
+        return bTime.compareTo(aTime);
+      });
+      
+      // 상위 20개만 반환
+      return allRequests.take(20).toList();
     } catch (e) {
-      debugPrint('리뷰 가져오기 실패: $e');
+      debugPrint('리뷰 가져오기 실패 (History fetch failed): $e');
       return [];
     }
   }
@@ -513,9 +578,17 @@ class CleaningRepository {
     await _usersRef.doc(user.id).set(user.toFirestore(), SetOptions(merge: true));
   }
 
-  /// 사용자 삭제
+  /// 사용자 삭제 (Hard Delete)
   Future<void> deleteUser(String uid) async {
     await _usersRef.doc(uid).delete();
+  }
+
+  /// 사용자 소프트 삭제 (Soft Delete)
+  Future<void> softDeleteUser(String uid) async {
+    await _usersRef.doc(uid).update({
+      'isDeleted': true,
+      'deletedAt': FieldValue.serverTimestamp(),
+    });
   }
   // ==================== 청소 노하우 관련 메서드 ====================
 
@@ -545,6 +618,22 @@ class CleaningRepository {
     await _cleaningKnowhowsRef.doc(id).delete();
   }
 
+  /// 작성자 ID로 모든 청소 노하우 삭제 (회원 탈퇴용)
+  Future<void> deleteAllKnowhowsByAuthorId(String authorId) async {
+    try {
+      final snapshot = await _cleaningKnowhowsRef
+          .where('authorId', isEqualTo: authorId)
+          .get();
+      
+      for (var doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
+      debugPrint('Deleted ${snapshot.docs.length} knowhows for user $authorId');
+    } catch (e) {
+      debugPrint('Error deleting knowhows by author id: $e');
+    }
+  }
+
   // ==================== 청소 추천(우리동네청소) 관련 메서드 ====================
 
   CollectionReference get _cleaningRecommendationsRef =>
@@ -571,6 +660,22 @@ class CleaningRepository {
   /// 청소 추천 삭제
   Future<void> deleteRecommendation(String id) async {
     await _cleaningRecommendationsRef.doc(id).delete();
+  }
+
+  /// 작성자 ID로 모든 청소 추천 삭제 (회원 탈퇴용)
+  Future<void> deleteAllRecommendationsByAuthorId(String authorId) async {
+    try {
+      final snapshot = await _cleaningRecommendationsRef
+          .where('authorId', isEqualTo: authorId)
+          .get();
+      
+      for (var doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
+      debugPrint('Deleted ${snapshot.docs.length} recommendations for user $authorId');
+    } catch (e) {
+      debugPrint('Error deleting recommendations by author id: $e');
+    }
   }
 
 

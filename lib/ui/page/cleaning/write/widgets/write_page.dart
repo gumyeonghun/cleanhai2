@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cleanhai2/data/model/cleaning_request.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
+import 'package:cleanhai2/data/constants/regions.dart'; // Import Regions
 import '../write_controller.dart';
 
 class WritePage extends StatelessWidget {
@@ -62,7 +63,7 @@ class WritePage extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Obx(() => controller.isLoading.value
@@ -406,6 +407,53 @@ class WritePage extends StatelessWidget {
                 }
                 return SizedBox.shrink();
               }),
+
+              // 청소 필요 기간 (청소 의뢰일 때만)
+              Obx(() {
+                if (controller.selectedType.value == 'request') {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '청소 필요 기간',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: controller.selectedCleaningDuration.value,
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            border: InputBorder.none,
+                          ),
+                          items: WriteController.cleaningDurations.map((String duration) {
+                            return DropdownMenuItem<String>(
+                              value: duration,
+                              child: Text(duration),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              controller.selectedCleaningDuration.value = newValue;
+                            }
+                          },
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                    ],
+                  );
+                }
+                return SizedBox.shrink();
+              }),
               
               // 내용
               Text(
@@ -547,33 +595,77 @@ class WritePage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 8),
-              GestureDetector(
-                onTap: controller.searchAddress,
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                          hintText: '시/도',
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          border: InputBorder.none,
+                        ),
+                        items: Regions.data.keys.map((String city) {
+                          return DropdownMenuItem<String>(
+                            value: city,
+                            child: Text(city),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            controller.updateDistricts(value);
+                          }
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '시/도를 선택해주세요';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Obx(() => Icon(Icons.location_on, color: controller.address.value.isNotEmpty ? Color(0xFF1E88E5) : Colors.grey[400])),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Obx(() => Text(
-                          controller.address.value.isNotEmpty ? controller.address.value : '위치 추가 (선택사항)',
-                          style: TextStyle(
-                            color: controller.address.value.isNotEmpty ? Colors.black87 : Colors.grey[400],
-                            fontSize: 16,
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Obx(() => Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: DropdownButtonFormField<String>(
+                            key: ValueKey(controller.selectedCity.value),
+                            decoration: InputDecoration(
+                              hintText: '시/구/군',
+                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              border: InputBorder.none,
+                            ),
+                            items: controller.districts.map((String district) {
+                              return DropdownMenuItem<String>(
+                                value: district,
+                                child: Text(district),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                controller.updateDistrict(value);
+                              }
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return '시/구/군을 선택해주세요';
+                              }
+                              return null;
+                            },
                           ),
                         )),
-                      ),
-                      Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-                    ],
                   ),
-                ),
+                ],
               ),
 
               SizedBox(height: 8),

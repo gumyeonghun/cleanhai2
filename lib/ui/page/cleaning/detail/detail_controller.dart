@@ -7,6 +7,9 @@ import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import 'package:cleanhai2/data/model/user_model.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
 import 'package:cleanhai2/ui/page/cleaning/payment/payment_selection_page.dart';
+import 'package:cleanhai2/data/repository/chat_repository.dart';
+import 'package:cleanhai2/ui/page/chat/chat_room_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DetailController extends GetxController {
   final CleaningRepository _repository = CleaningRepository();
@@ -18,6 +21,9 @@ class DetailController extends GetxController {
   final RxString currentUserType = ''.obs;
   final Rx<UserModel?> authorProfile = Rx<UserModel?>(null);
   final RxString existingRequestStatus = ''.obs; // New observable
+  final RxMap<String, dynamic> staffRating = <String, dynamic>{}.obs; // Staff rating info
+  final RxList<CleaningRequest> staffReviewRequests = <CleaningRequest>[].obs; // Staff review requests
+  final RxBool isAuthor = false.obs; // Is current user the author
 
   // Constructor arguments
   final CleaningRequest? initialRequest;
@@ -37,6 +43,9 @@ class DetailController extends GetxController {
       _checkExistingRequest();
     }
     _loadAuthorProfile();
+    if (initialStaff != null) {
+      _loadStaffRating();
+    }
   }
 
   Future<void> _loadCurrentUser() async {
@@ -45,6 +54,8 @@ class DetailController extends GetxController {
       final userDoc = await _repository.getUserProfile(user.uid);
       if (userDoc != null) {
         currentUserType.value = userDoc.userType;
+        // Update isAuthor
+        isAuthor.value = user.uid == authorId;
         // Re-check existing request if user type is loaded late (though usually fast)
         if (initialStaff != null) _checkExistingRequest();
       }
@@ -87,6 +98,21 @@ class DetailController extends GetxController {
       }
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _loadStaffRating() async {
+    if (currentStaff.value != null) {
+      try {
+        final ratings = await _repository.getStaffRatingStats(currentStaff.value!.authorId);
+        staffRating.value = ratings;
+        
+        // Load review requests
+        final requests = await _repository.getCompletedCleaningHistory(currentStaff.value!.authorId);
+        staffReviewRequests.assignAll(requests);
+      } catch (e) {
+        debugPrint('Failed to load staff rating: $e');
+      }
     }
   }
 
@@ -144,10 +170,7 @@ class DetailController extends GetxController {
     return null;
   }
 
-  bool get isAuthor {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    return currentUser != null && currentUser.uid == authorId;
-  }
+
 
   bool get hasApplied {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -157,7 +180,7 @@ class DetailController extends GetxController {
 
   // Actions
   Future<void> deleteItem() async {
-    if (!isAuthor) {
+    if (!isAuthor.value) {
       Get.snackbar('오류', '삭제 권한이 없습니다');
       return;
     }
@@ -504,6 +527,58 @@ class DetailController extends GetxController {
     }
   }
 
+  // Staff completes cleaning
+  Future<void> completeCleaning() async {
+    debugPrint('청소 완료하기 버튼 클릭됨');
+    
+    if (currentRequest.value == null) {
+      Get.snackbar('오류', '청소 요청 정보를 찾을 수 없습니다');
+      return;
+    }
+    
+    try {
+      await _repository.updateCleaningStatus(currentRequest.value!.id, 'completed');
+      await _loadRequestData();
+      Get.snackbar('청소 완료', '청소가 완료되었습니다! 수고하셨습니다.',
+        backgroundColor: Colors.green, colorText: Colors.white);
+      debugPrint('청소 상태가 completed로 변경됨');
+    } catch (e) {
+      debugPrint('청소 완료 오류: $e');
+      Get.snackbar('오류', '상태 변경 실패: $e',
+        backgroundColor: Colors.red, colorText: Colors.white);
+    }
+  }
+
+  Future<void> startChat(String targetUserId, String targetUserName) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      Get.snackbar('알림', '로그인이 필요합니다');
+      return;
+    }
+
+    try {
+      // 내 이름 가져오기
+      final myUserData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+      final myName = myUserData.data()?['userName'] ?? '사용자';
+
+      // 채팅방 생성 또는 가져오기
+      final chatRoom = await ChatRepository().getOrCreateChatRoom(
+        currentUser.uid,
+        targetUserId,
+        myName,
+        targetUserName,
+      );
+
+      // 채팅방으로 이동
+      Get.to(() => ChatRoomPage(chatRoom: chatRoom));
+    } catch (e) {
+      Get.snackbar('오류', '채팅방 연결 중 오류가 발생했습니다: $e');
+    }
+  }
+
   Future<UserModel?> getUserProfile(String uid) {
     return _repository.getUserProfile(uid);
   }
@@ -511,8 +586,15 @@ class DetailController extends GetxController {
     return _repository.getStaffRatingStats(staffId);
   }
 
+  Future<List<CleaningRequest>> getStaffCleaningHistory(String staffId) {
+    return _repository.getCompletedCleaningHistory(staffId);
+  }
+
   Future<List<dynamic>> getStaffRecentReviews(String staffId) async {
-    final requests = await _repository.getCompletedRequestsWithReviews(staffId);
-    return requests.map((r) => r.review!).toList();
+    final requests = await _repository.getCompletedCleaningHistory(staffId);
+    return requests
+        .where((r) => r.review != null)
+        .map((r) => r.review!)
+        .toList();
   }
 }

@@ -3,9 +3,9 @@ import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cleanhai2/data/model/user_model.dart';
-import 'package:cleanhai2/utils/location_utils.dart';
+import 'package:cleanhai2/data/constants/regions.dart';
 import 'package:flutter/material.dart';
-import 'package:cleanhai2/data/model/cleaning_staff.dart' as staff_model;
+
 
 class StaffWaitingController extends GetxController {
   final CleaningRepository _repository = CleaningRepository();
@@ -38,6 +38,11 @@ class StaffWaitingController extends GetxController {
     '가정집청소',
     '기타',
   ];
+
+  // Region Filters
+  final RxString selectedCity = ''.obs;
+  final RxString selectedDistrict = ''.obs;
+  final RxList<String> districts = <String>[].obs;
 
   @override
   void onInit() {
@@ -112,35 +117,22 @@ class StaffWaitingController extends GetxController {
     
     // Date filtering removed as per user request (Show all regardless of date)
     
-    if (currentUser.value == null || 
-        currentUser.value!.latitude == null || 
-        currentUser.value!.longitude == null) {
-      return staff;
+    // Region Filtering
+    if (selectedCity.value.isNotEmpty) {
+      staff = staff.where((s) {
+        if (s.address == null) return false;
+        if (selectedDistrict.value.isNotEmpty) {
+          return s.address!.contains('${selectedCity.value} ${selectedDistrict.value}');
+        }
+        return s.address!.contains(selectedCity.value);
+      }).toList();
     }
-
-    final userLat = currentUser.value!.latitude!;
-    final userLng = currentUser.value!.longitude!;
-
+    
     final sortedList = List<CleaningStaff>.from(staff);
     
-    // 전체청소일 때는 시간순 (최신순) 정렬
-    if (selectedCleaningTypeFilter.value == '전체청소') {
-      sortedList.sort((a, b) {
-        // if (a.createdAt == null || b.createdAt == null) return 0; // Removed unnecessary check
-        return b.createdAt.compareTo(a.createdAt);
-      });
-      return sortedList;
-    }
-
-    // 그 외에는 거리순 정렬
+    // Always sort by created time (Newest first)
     sortedList.sort((a, b) {
-      if (a.latitude == null || a.longitude == null) return 1;
-      if (b.latitude == null || b.longitude == null) return -1;
-
-      final distA = LocationUtils.calculateDistance(userLat, userLng, a.latitude!, a.longitude!);
-      final distB = LocationUtils.calculateDistance(userLat, userLng, b.latitude!, b.longitude!);
-
-      return distA.compareTo(distB);
+      return b.createdAt.compareTo(a.createdAt);
     });
     
     return sortedList;
@@ -194,7 +186,7 @@ class StaffWaitingController extends GetxController {
       // 프로필 정보로 청소 대기 등록
       final availabilityStr = '근무 가능: ${user.availableDays?.join(', ') ?? '미설정'}\n시간: ${user.availableStartTime ?? ''} ~ ${user.availableEndTime ?? ''}';
       
-      final newStaff = staff_model.CleaningStaff(
+      final newStaff = CleaningStaff(
         id: '',
         authorId: user.id,
         authorName: user.userName ?? '이름 없음',
@@ -202,8 +194,8 @@ class StaffWaitingController extends GetxController {
         content: availabilityStr,
         imageUrl: user.profileImageUrl,
         address: user.address,
-        latitude: user.latitude,
-        longitude: user.longitude,
+        // latitude: user.latitude, // Removed
+        // longitude: user.longitude, // Removed
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -215,5 +207,19 @@ class StaffWaitingController extends GetxController {
     } catch (e) {
       Get.snackbar('오류', '등록 중 오류가 발생했습니다: $e', backgroundColor: Colors.red, colorText: Colors.white);
     }
+  }
+
+
+  void updateDistricts(String city) {
+    selectedCity.value = city;
+    districts.assignAll(Regions.data[city] ?? []);
+    selectedDistrict.value = '';
+    // _updateSortedRequests(); // sortedStaff is a getter, so UI updates automatically when observables change
+    update(); // Force update if needed, but Obx should handle it
+  }
+
+  void updateDistrict(String district) {
+    selectedDistrict.value = district;
+    update();
   }
 }

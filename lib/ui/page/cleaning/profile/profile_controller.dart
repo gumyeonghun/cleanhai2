@@ -2,8 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:kpostal/kpostal.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:cleanhai2/data/constants/regions.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cleanhai2/service/auth_service.dart';
 import 'dart:io';
@@ -13,6 +12,7 @@ import 'package:cleanhai2/data/model/cleaning_request.dart';
 import 'package:cleanhai2/data/model/review.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
 import 'package:cleanhai2/data/repository/user_repository.dart';
+import 'package:cleanhai2/data/repository/chat_repository.dart';
 import '../../auth/login_signup_page.dart';
 
 class ProfileController extends GetxController {
@@ -27,6 +27,11 @@ class ProfileController extends GetxController {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController detailAddressController = TextEditingController();
+  
+  // Region Selection
+  final RxString selectedCity = ''.obs;
+  final RxString selectedDistrict = ''.obs;
+  final RxList<String> districts = <String>[].obs;
   final TextEditingController cleaningDetailsController = TextEditingController(); // For owners
   final TextEditingController cleaningToolLocationController = TextEditingController(); // For owners
   final TextEditingController cleaningPrecautionsController = TextEditingController(); // For owners
@@ -58,6 +63,9 @@ class ProfileController extends GetxController {
   // 프로필 이미지
   final Rx<File?> selectedImage = Rx<File?>(null);
   final ImagePicker _picker = ImagePicker();
+
+  // 간편등록용 이미지 (청소 전문가 프로필용)
+  final Rx<File?> quickRegisterImage = Rx<File?>(null);
 
   // Staff reviews and ratings
   final RxMap<String, dynamic> staffRatingStats = <String, dynamic>{}.obs;
@@ -97,6 +105,24 @@ class ProfileController extends GetxController {
         phoneController.text = userProfile.phoneNumber ?? '';
         addressController.text = userProfile.address ?? '';
         detailAddressController.text = userProfile.detailAddress ?? '';
+        
+        // Parse address to set initial region selection if possible
+        if (userProfile.address != null && userProfile.address!.isNotEmpty) {
+           final parts = userProfile.address!.split(' ');
+           if (parts.length >= 2) {
+             final city = parts[0];
+             final district = parts[1];
+             if (Regions.data.containsKey(city)) {
+               selectedCity.value = city;
+               districts.assignAll(Regions.data[city] ?? []);
+               
+               if (districts.contains(district)) {
+                 selectedDistrict.value = district;
+               }
+             }
+           }
+        }
+        
         cleaningDetailsController.text = userProfile.cleaningDetails ?? '';
         cleaningToolLocationController.text = userProfile.cleaningToolLocation ?? '';
         cleaningPrecautionsController.text = userProfile.cleaningPrecautions ?? '';
@@ -133,8 +159,8 @@ class ProfileController extends GetxController {
         final stats = await _repository.getStaffRatingStats(user.id);
         staffRatingStats.value = stats;
         
-        // Get all completed requests with reviews
-        final requests = await _repository.getCompletedRequestsWithReviews(user.id);
+        // Get all completion history (including those without reviews)
+        final requests = await _repository.getCompletedCleaningHistory(user.id);
         staffReviewRequests.assignAll(requests);
       } catch (e) {
         debugPrint('Failed to load staff reviews: $e');
@@ -227,6 +253,7 @@ class ProfileController extends GetxController {
         autoRegisterTitleController.text = user.autoRegisterTitle ?? '';
         birthDate.value = user.birthDate;
         selectedImage.value = null;
+        quickRegisterImage.value = null;
         
         availableDays.assignAll(user.availableDays ?? []);
         if (user.availableStartTime != null) {
@@ -243,6 +270,22 @@ class ProfileController extends GetxController {
         
         isAutoRegisterEnabled.value = user.isAutoRegisterEnabled;
         selectedCleaningType.value = user.preferredCleaningType ?? '숙박업소청소';
+        
+        // Restore region selection
+        if (user.address != null && user.address!.isNotEmpty) {
+           final parts = user.address!.split(' ');
+           if (parts.length >= 2) {
+             final city = parts[0];
+             final district = parts[1];
+             if (Regions.data.containsKey(city)) {
+               selectedCity.value = city;
+               districts.assignAll(Regions.data[city] ?? []);
+               if (districts.contains(district)) {
+                 selectedDistrict.value = district;
+               }
+             }
+           }
+        }
       }
     }
     isEditing.value = !isEditing.value;
@@ -253,6 +296,14 @@ class ProfileController extends GetxController {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       selectedImage.value = File(image.path);
+    }
+  }
+
+  // 간편등록용 이미지 선택
+  Future<void> pickQuickRegisterImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      quickRegisterImage.value = File(image.path);
     }
   }
 
@@ -288,10 +339,9 @@ class ProfileController extends GetxController {
       final updatedUser = UserModel(
         id: user.id,
         email: user.email,
-        address: addressController.text,
+        address: '${selectedCity.value} ${selectedDistrict.value}',
         detailAddress: detailAddressController.text,
-        latitude: user.latitude,
-        longitude: user.longitude,
+        // Latitude/Longitude removed
         userType: user.userType,
         userName: nameController.text,
         phoneNumber: phoneController.text,
@@ -338,8 +388,8 @@ class ProfileController extends GetxController {
                     : existingStaff.title,
                 imageUrl: updatedUser.profileImageUrl,
                 address: updatedUser.address,
-                latitude: updatedUser.latitude,
-                longitude: updatedUser.longitude,
+                // latitude: updatedUser.latitude, // Removed
+                // longitude: updatedUser.longitude, // Removed
                 content: availabilityStr,
                 updatedAt: DateTime.now(),
                 availableDays: availableDays.toList(),
@@ -357,8 +407,8 @@ class ProfileController extends GetxController {
                 authorName: updatedUser.userName ?? '',
                 imageUrl: updatedUser.profileImageUrl,
                 address: updatedUser.address,
-                latitude: updatedUser.latitude,
-                longitude: updatedUser.longitude,
+                // latitude: updatedUser.latitude, // Removed
+                // longitude: updatedUser.longitude, // Removed
                 updatedAt: DateTime.now(),
                 cleaningPrice: cleaningPriceController.text,
                 additionalOptionCost: additionalOptionCostController.text,
@@ -379,8 +429,8 @@ class ProfileController extends GetxController {
               content: availabilityStr,
               imageUrl: updatedUser.profileImageUrl,
               address: updatedUser.address,
-              latitude: updatedUser.latitude,
-              longitude: updatedUser.longitude,
+              // latitude: updatedUser.latitude, // Removed
+              // longitude: updatedUser.longitude, // Removed
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
               availableDays: availableDays.toList(),
@@ -408,8 +458,8 @@ class ProfileController extends GetxController {
                 authorName: updatedUser.userName ?? '',
                 imageUrl: updatedUser.profileImageUrl,
                 address: updatedUser.address,
-                latitude: updatedUser.latitude,
-                longitude: updatedUser.longitude,
+                // latitude: updatedUser.latitude, // Removed
+                // longitude: updatedUser.longitude, // Removed
                 updatedAt: DateTime.now(),
                 cleaningPrice: cleaningPriceController.text,
                 additionalOptionCost: additionalOptionCostController.text,
@@ -439,8 +489,8 @@ class ProfileController extends GetxController {
                   : existingRequest.title,
               imageUrl: updatedUser.cleaningRequestImageUrl ?? updatedUser.profileImageUrl,
               address: updatedUser.address,
-              latitude: updatedUser.latitude,
-              longitude: updatedUser.longitude,
+              // latitude: updatedUser.latitude, // Removed
+              // longitude: updatedUser.longitude, // Removed
               content: contentStr,
               updatedAt: DateTime.now(),
               availableDays: availableDays.toList(),
@@ -457,8 +507,8 @@ class ProfileController extends GetxController {
               authorName: updatedUser.userName ?? '',
               imageUrl: updatedUser.profileImageUrl,
               address: updatedUser.address,
-              latitude: updatedUser.latitude,
-              longitude: updatedUser.longitude,
+              // latitude: updatedUser.latitude, // Removed
+              // longitude: updatedUser.longitude, // Removed
               updatedAt: DateTime.now(),
             );
             await _repository.updateCleaningRequest(updatedRequest);
@@ -476,8 +526,8 @@ class ProfileController extends GetxController {
               price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의', // Default price
               imageUrl: updatedUser.cleaningRequestImageUrl ?? updatedUser.profileImageUrl,
               address: updatedUser.address,
-              latitude: updatedUser.latitude,
-              longitude: updatedUser.longitude,
+              // latitude: updatedUser.latitude, // Removed
+              // longitude: updatedUser.longitude, // Removed
               createdAt: DateTime.now(),
               updatedAt: DateTime.now(),
               status: 'pending',
@@ -500,8 +550,8 @@ class ProfileController extends GetxController {
               authorName: updatedUser.userName ?? '',
               imageUrl: updatedUser.profileImageUrl,
               address: updatedUser.address,
-              latitude: updatedUser.latitude,
-              longitude: updatedUser.longitude,
+              // latitude: updatedUser.latitude, // Removed
+              // longitude: updatedUser.longitude, // Removed
               updatedAt: DateTime.now(),
             );
             await _repository.updateCleaningRequest(updatedRequest);
@@ -522,54 +572,14 @@ class ProfileController extends GetxController {
     }
   }
 
-  Future<void> updateAddress() async {
-    await Get.to(() => KpostalView(
-      callback: (Kpostal result) async {
-        double? lat = result.latitude;
-        double? lng = result.longitude;
+  void updateDistricts(String city) {
+    selectedCity.value = city;
+    districts.assignAll(Regions.data[city] ?? []);
+    selectedDistrict.value = '';
+  }
 
-        // 좌표가 없는 경우 주소로 좌표 검색
-        if (lat == null || lng == null) {
-          try {
-            List<Location> locations = await locationFromAddress(result.address);
-            if (locations.isNotEmpty) {
-              lat = locations.first.latitude;
-              lng = locations.first.longitude;
-            }
-          } catch (e) {
-            debugPrint('좌표 변환 실패: $e');
-          }
-        }
-
-        final user = userModel.value; // 현재 로드된 유저 모델 사용
-        if (user != null) {
-          final updatedUser = UserModel(
-            id: user.id,
-            email: user.email,
-            address: result.address,
-            latitude: lat,
-            longitude: lng,
-            userName: user.userName,
-            phoneNumber: user.phoneNumber,
-            profileImageUrl: user.profileImageUrl,
-            userType: user.userType,
-            availableDays: user.availableDays,
-            availableStartTime: user.availableStartTime,
-            availableEndTime: user.availableEndTime,
-            isAutoRegisterEnabled: user.isAutoRegisterEnabled,
-            cleaningDetails: user.cleaningDetails,
-            preferredCleaningType: user.preferredCleaningType,
-            birthDate: user.birthDate,
-          );
-
-          await _repository.updateUserProfile(updatedUser);
-          userModel.value = updatedUser;
-          addressController.text = result.address; // Sync controller
-          
-          Get.snackbar('알림', '주소가 업데이트되었습니다');
-        }
-      },
-    ));
+  void updateDistrict(String district) {
+    selectedDistrict.value = district;
   }
 
   Future<void> logout() async {
@@ -629,40 +639,109 @@ class ProfileController extends GetxController {
     }
   }
 
-  Future<void> bumpAutoRegisteredStaff() async {
+  Future<void> executeAutoRegister() async {
     final user = userModel.value;
     if (user == null) return;
-    
-    if (user.userType == 'staff' && isAutoRegisterEnabled.value) {
-      try {
-        isLoading.value = true;
-        final existingStaff = await _repository.getAutoRegisteredStaffByAuthorId(user.id);
-        
-        if (existingStaff != null && existingStaff.isAutoRegistered) {
-          // createdAt만 현재 시간으로 업데이트하여 상단으로 "끌어올리기"
-          final updatedStaff = existingStaff.copyWith(
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          );
-          
-          await _repository.updateCleaningStaff(updatedStaff);
-          
-          Get.snackbar('성공', '프로필이 상단으로 끌어올려졌습니다!',
-            backgroundColor: Colors.green, colorText: Colors.white);
-        } else {
-           Get.snackbar('알림', '끌어올릴 수 있는 자동 등록 프로필이 없습니다.',
-            backgroundColor: Colors.orange, colorText: Colors.white);
-        }
-      } catch (e) {
-        debugPrint('Bump staff failed: $e');
-        Get.snackbar('오류', '작업 실패: $e',
-            backgroundColor: Colors.red, colorText: Colors.white);
-      } finally {
-        isLoading.value = false;
-      }
+
+    // 자동 등록이 꺼져있다면 켜기
+    if (!isAutoRegisterEnabled.value) {
+      isAutoRegisterEnabled.value = true;
+      // 설정 값 저장을 위해 saveProfile 호출 (프로필 업데이트)
+      await saveProfile(); 
+      return; 
+    }
+
+    // 이미 켜져있는 상태에서 버튼 클릭 시 -> 무조건 새로 추가
+    if (user.userType == 'staff') {
+      await _createNewStaffPosting();
     } else {
-       Get.snackbar('알림', '자동 등록이 활성화된 상태에서만 가능합니다.',
-          backgroundColor: Colors.orange, colorText: Colors.white);
+      await _createNewRequestPosting();
+    }
+  }
+
+  Future<void> _createNewStaffPosting() async {
+    final user = userModel.value;
+    if (user == null) return;
+
+    try {
+      isLoading.value = true;
+      
+      final availabilityStr = '근무가능일시: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}';
+
+      final newStaff = CleaningStaff(
+        id: '', // Repo will generate ID
+        authorId: user.id,
+        authorName: user.userName ?? '',
+        title: autoRegisterTitleController.text.isNotEmpty 
+            ? autoRegisterTitleController.text 
+            : '청소 가능합니다',
+        content: availabilityStr,
+        imageUrl: user.profileImageUrl,
+        address: user.address,
+        // latitude: user.latitude, // Removed
+        // longitude: user.longitude, // Removed
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        availableDays: availableDays.toList(),
+        isAutoRegistered: true,
+        cleaningType: selectedCleaningType.value,
+        cleaningPrice: cleaningPriceController.text,
+        additionalOptionCost: additionalOptionCostController.text,
+      );
+
+      await _repository.createCleaningStaff(newStaff);
+      
+      Get.snackbar('성공', '새로운 근무 프로필이 등록되었습니다!',
+        backgroundColor: Colors.green, colorText: Colors.white);
+    } catch (e) {
+      Get.snackbar('오류', '등록 실패: $e',
+        backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> _createNewRequestPosting() async {
+    final user = userModel.value;
+    if (user == null) return;
+
+    try {
+      isLoading.value = true;
+      
+      final contentStr = '청소 필요 요일: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}\n상세: ${cleaningDetailsController.text}${cleaningToolLocationController.text.isNotEmpty ? '\n청소도구위치: ${cleaningToolLocationController.text}' : ''}${cleaningPrecautionsController.text.isNotEmpty ? '\n주의사항: ${cleaningPrecautionsController.text}' : ''}';
+
+      final newRequest = CleaningRequest(
+        id: '', // Repo will generate ID
+        authorId: user.id,
+        authorName: user.userName ?? '',
+        title: autoRegisterTitleController.text.isNotEmpty 
+            ? autoRegisterTitleController.text 
+            : '${user.userName}님의 청소 의뢰',
+        content: contentStr,
+        price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의',
+        imageUrl: user.cleaningRequestImageUrl ?? user.profileImageUrl,
+        address: user.address,
+        // latitude: user.latitude, // Removed
+        // longitude: user.longitude, // Removed
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        status: 'pending',
+        availableDays: availableDays.toList(),
+        isAutoRegistered: true,
+        cleaningType: selectedCleaningType.value,
+        cleaningToolLocation: cleaningToolLocationController.text,
+        precautions: cleaningPrecautionsController.text,
+      );
+
+      await _repository.createCleaningRequest(newRequest);
+      
+      Get.snackbar('성공', '새로운 청소 의뢰가 등록되었습니다!',
+        backgroundColor: Colors.green, colorText: Colors.white);
+    } catch (e) {
+      Get.snackbar('오류', '등록 실패: $e',
+        backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -678,7 +757,7 @@ class ProfileController extends GetxController {
         title: const Text('회원 탈퇴'),
         content: const Text(
           '정말 탈퇴하시겠습니까?\n'
-          '탈퇴 시 모든 계정 정보가 삭제되며 되돌릴 수 없습니다.',
+          '탈퇴 후 30일간 데이터가 보관되며, 이후 완전히 삭제됩니다.',
         ),
         actions: [
           TextButton(
@@ -702,19 +781,35 @@ class ProfileController extends GetxController {
       isLoading.value = true;
       String uid = user.uid;
 
-      // 2. Firestore 데이터 삭제
-      // 사용자 데이터
-      await _repository.deleteUser(uid);
+      // 2. Firestore 데이터 소프트 삭제 (30일 보관)
+      debugPrint('회원 탈퇴: 사용자 데이터 소프트 삭제 시작 (UID: $uid)');
       
-      // 관련 데이터(스태프 대기 명단 등)도 삭제해야 깔끔하지만, 
-      // 정책에 따라 남겨두거나 별도 배치로 지울 수도 있음.
-      // 여기서는 본인 작성 대기/의뢰 삭제 시도
+      // 2-1. 사용자 문서 소프트 삭제 (isDeleted: true, deletedAt: 현재시간)
+      await _repository.softDeleteUser(uid);
+      
+      // 2-2. 청소 의뢰 소프트 삭제 (상태를 'deleted'로 변경)
+      await _repository.deleteAllCleaningRequestsByAuthorId(uid);
+      await _repository.removeUserFromApplicants(uid);
+      
+      // 2-3. 청소 대기 프로필 삭제
       await _repository.deleteCleaningStaffByAuthorId(uid);
-      await _repository.deleteCleaningRequestByAuthorId(uid);
+      
+      // 2-4. 청소 노하우 삭제
+      await _repository.deleteAllKnowhowsByAuthorId(uid);
+      
+      // 2-5. 청소 추천 삭제
+      await _repository.deleteAllRecommendationsByAuthorId(uid);
+      
+      // 2-6. 채팅방 및 메시지 삭제
+      final chatRepository = ChatRepository();
+      await chatRepository.deleteAllChatRoomsByUserId(uid);
+      
+      debugPrint('회원 탈퇴: Firestore 데이터 소프트 삭제 완료');
 
       // 3. Firebase Auth 계정 삭제
       try {
         await user.delete();
+        debugPrint('회원 탈퇴: Firebase Auth 계정 삭제 완료');
       } on FirebaseAuthException catch (e) {
         if (e.code == 'requires-recent-login') {
           // 재로그인 필요
@@ -725,16 +820,32 @@ class ProfileController extends GetxController {
             backgroundColor: Colors.orange,
             colorText: Colors.white,
           );
-          await logout(); // 로그아웃 처리하여 재로그인 유도
+          await logout();
           return;
         }
         rethrow;
       }
 
-      // 4. 완료 처리
+      // 4. 완료 처리 및 로그인 페이지로 이동
+      isLoading.value = false;
+      
+      // GetX 상태 초기화
       await Get.deleteAll(force: true);
+      
+      // 핵심 서비스 재등록
+      Get.put(UserRepository());
+      Get.put(AuthService());
+
+      // 로그인 페이지로 이동
       Get.offAll(() => LoginSignupPage(), predicate: (_) => false);
-      Get.snackbar('알림', '회원 탈퇴가 완료되었습니다.');
+      
+      // 탈퇴 완료 메시지
+      Get.snackbar(
+        '회원 탈퇴 완료', 
+        '30일 후 모든 데이터가 완전히 삭제됩니다.',
+        backgroundColor: Colors.grey[800],
+        colorText: Colors.white,
+      );
 
     } catch (e) {
       debugPrint('회원 탈퇴 실패: $e');

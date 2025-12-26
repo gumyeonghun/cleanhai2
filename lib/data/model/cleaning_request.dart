@@ -14,8 +14,7 @@ class CleaningRequest {
   final DateTime updatedAt;
   final String? address;
   final String? detailAddress;
-  final double? latitude;
-  final double? longitude;
+  // latitude, longitude removed
   final String? price;
   final List<String> applicants;
   final String? acceptedApplicantId;
@@ -37,6 +36,8 @@ class CleaningRequest {
   final String? cleaningToolLocation;
   final String? precautions;
   final DateTime? cleaningDate;
+  final String? cleaningDuration;
+  final DateTime? estimatedCompletionTime;
 
   CleaningRequest({
     required this.id,
@@ -47,8 +48,7 @@ class CleaningRequest {
     this.imageUrl,
     this.address,
     this.detailAddress,
-    this.latitude,
-    this.longitude,
+    // latitude, longitude removed
     required this.createdAt,
     required this.updatedAt,
     this.price,
@@ -72,6 +72,8 @@ class CleaningRequest {
     this.cleaningToolLocation,
     this.precautions,
     this.cleaningDate,
+    this.cleaningDuration,
+    this.estimatedCompletionTime,
   });
 
   // Firestore에서 데이터를 가져올 때 사용
@@ -86,8 +88,8 @@ class CleaningRequest {
       imageUrl: data['imageUrl'],
       address: data['address'],
       detailAddress: data['detailAddress'],
-      latitude: data['latitude'],
-      longitude: data['longitude'],
+      // latitude: data['latitude'], // Removed
+      // longitude: data['longitude'], // Removed
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       price: data['price'],
@@ -111,6 +113,8 @@ class CleaningRequest {
       cleaningToolLocation: data['cleaningToolLocation'],
       precautions: data['precautions'],
       cleaningDate: data['cleaningDate'] != null ? (data['cleaningDate'] as Timestamp).toDate() : null,
+      cleaningDuration: data['cleaningDuration'],
+      estimatedCompletionTime: data['estimatedCompletionTime'] != null ? (data['estimatedCompletionTime'] as Timestamp).toDate() : null,
     );
   }
 
@@ -124,8 +128,8 @@ class CleaningRequest {
       'imageUrl': imageUrl,
       'address': address,
       'detailAddress': detailAddress,
-      'latitude': latitude,
-      'longitude': longitude,
+      // 'latitude': latitude, // Removed
+      // 'longitude': longitude, // Removed
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'price': price,
@@ -149,6 +153,8 @@ class CleaningRequest {
       'cleaningToolLocation': cleaningToolLocation,
       'precautions': precautions,
       'cleaningDate': cleaningDate != null ? Timestamp.fromDate(cleaningDate!) : null,
+      'cleaningDuration': cleaningDuration,
+      'estimatedCompletionTime': estimatedCompletionTime != null ? Timestamp.fromDate(estimatedCompletionTime!) : null,
     };
   }
 
@@ -162,8 +168,7 @@ class CleaningRequest {
     String? imageUrl,
     String? address,
     String? detailAddress,
-    double? latitude,
-    double? longitude,
+    // latitude, longitude removed
     DateTime? createdAt,
     DateTime? updatedAt,
     String? price,
@@ -187,6 +192,8 @@ class CleaningRequest {
     String? cleaningToolLocation,
     String? precautions,
     DateTime? cleaningDate,
+    String? cleaningDuration,
+    DateTime? estimatedCompletionTime,
   }) {
     return CleaningRequest(
       id: id ?? this.id,
@@ -197,8 +204,8 @@ class CleaningRequest {
       imageUrl: imageUrl ?? this.imageUrl,
       address: address ?? this.address,
       detailAddress: detailAddress ?? this.detailAddress,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
+      // latitude: latitude ?? this.latitude, // Removed
+      // longitude: longitude ?? this.longitude, // Removed
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       price: price ?? this.price,
@@ -222,6 +229,8 @@ class CleaningRequest {
       cleaningToolLocation: cleaningToolLocation ?? this.cleaningToolLocation,
       precautions: precautions ?? this.precautions,
       cleaningDate: cleaningDate ?? this.cleaningDate,
+      cleaningDuration: cleaningDuration ?? this.cleaningDuration,
+      estimatedCompletionTime: estimatedCompletionTime ?? this.estimatedCompletionTime,
     );
   }
 }

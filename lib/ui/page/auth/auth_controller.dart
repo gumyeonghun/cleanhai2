@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:kpostal/kpostal.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:cleanhai2/data/constants/regions.dart';
+import 'social_login_setup_page.dart';
 import 'package:cleanhai2/ui/page/main/widgets/main_page.dart';
 import 'package:cleanhai2/data/repository/user_repository.dart';
 import 'package:cleanhai2/service/auth_service.dart';
@@ -26,8 +25,12 @@ class AuthController extends GetxController {
   String confirmPassword = '';
   final RxString userAddress = ''.obs;
   final RxString detailAddress = ''.obs;
-  double? userLatitude;
-  double? userLongitude;
+  // userLatitude, userLongitude removed
+  
+  // Region Selection
+  final RxString selectedCity = ''.obs;
+  final RxString selectedDistrict = ''.obs;
+  final RxList<String> districts = <String>[].obs;
   final Rx<DateTime?> userBirthDate = Rx<DateTime?>(null);
 
   // Getter for isLoading (alias for showSpinner)
@@ -66,11 +69,14 @@ class AuthController extends GetxController {
           backgroundColor: Colors.red, colorText: Colors.white);
         return;
       }
-      if (userAddress.value.isEmpty) {
-        Get.snackbar('오류', '주소를 입력해주세요.', 
+      if (selectedCity.value.isEmpty || selectedDistrict.value.isEmpty) {
+        Get.snackbar('오류', '지역(시/도, 시/구/군)을 모두 선택해주세요.', 
           backgroundColor: Colors.red, colorText: Colors.white);
         return;
       }
+      
+      // Construct address for validation check / usage
+      userAddress.value = '${selectedCity.value} ${selectedDistrict.value}';
       if (userBirthDate.value == null) {
         Get.snackbar('오류', '생년월일을 선택해주세요.', 
           backgroundColor: Colors.red, colorText: Colors.white);
@@ -94,8 +100,8 @@ class AuthController extends GetxController {
           'userType': userType.value,
           'address': userAddress.value,
           'detailAddress': detailAddress.value,
-          'latitude': userLatitude,
-          'longitude': userLongitude,
+          // 'latitude': userLatitude, // Removed
+          // 'longitude': userLongitude, // Removed
           'birthDate': Timestamp.fromDate(userBirthDate.value!),
           'createdAt': FieldValue.serverTimestamp(),
         });
@@ -110,6 +116,14 @@ class AuthController extends GetxController {
         final userCredential = await _authService.signInWithEmail(userEmail, userPassword);
         
         if (userCredential.user != null) {
+          // Check if user is deleted
+          final userDoc = await _userRepository.getUserProfile(userCredential.user!.uid);
+          if (userDoc != null && userDoc.isDeleted) {
+            await _authService.signOut();
+            Get.snackbar('로그인 불가', '탈퇴한 계정입니다.',
+              backgroundColor: Colors.red, colorText: Colors.white);
+            return;
+          }
           Get.offAll(() => MainPage());
         }
       }
@@ -163,16 +177,22 @@ class AuthController extends GetxController {
         final exists = await _userRepository.userExists(userCredential.user!.uid);
         
         if (!exists) {
-          // If user doesn't exist, create a new user document
-          await _userRepository.createUser(userCredential.user!.uid, {
-            'userName': userCredential.user!.displayName ?? 'Google User',
-            'email': userCredential.user!.email ?? '',
-            'userType': 'owner', // Default role
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+          // If user doesn't exist, redirect to setup page
+          // Pre-fill name and email if available
+          userName = userCredential.user!.displayName ?? '';
+          userEmail = userCredential.user!.email ?? '';
+          Get.to(() => SocialLoginSetupPage());
+        } else {
+          // Check if user is deleted
+          final userDoc = await _userRepository.getUserProfile(userCredential.user!.uid);
+          if (userDoc != null && userDoc.isDeleted) {
+            await _authService.signOut();
+            Get.snackbar('로그인 불가', '탈퇴한 계정입니다.',
+              backgroundColor: Colors.red, colorText: Colors.white);
+            return;
+          }
+          Get.offAll(() => MainPage());
         }
-        
-        Get.offAll(() => MainPage());
       }
     } catch (e) {
       debugPrint('Google Sign-In Error: $e');
@@ -224,7 +244,14 @@ class AuthController extends GetxController {
           'createdAt': FieldValue.serverTimestamp(),
         });
       } else {
-        // User exists
+        // User exists - check if deleted
+        final userDoc = await _userRepository.getUserProfile(userCredential.user!.uid);
+        if (userDoc != null && userDoc.isDeleted) {
+          await _authService.signOut();
+          Get.snackbar('로그인 불가', '탈퇴한 계정입니다.',
+            backgroundColor: Colors.red, colorText: Colors.white);
+          return;
+        }
         debugPrint('User already exists in Firestore with Kakao ID: $kakaoId');
       }
       
@@ -254,22 +281,21 @@ class AuthController extends GetxController {
         final exists = await _userRepository.userExists(userCredential.user!.uid);
 
         if (!exists) {
-          // Note: Apple only returns the name on the first sign in.
-          // AuthService doesn't return the raw apple credential to get the name here easily 
-          // unless we change the signature. 
-          // For now, simpler implementation:
-          // If we needed the name heavily we should return it from AuthService.
-          // However, let's just use a default or update if possible.
-          
-          await _userRepository.createUser(userCredential.user!.uid, {
-            'userName': userCredential.user!.displayName ?? 'Apple User',
-            'email': userCredential.user!.email ?? '',
-            'userType': 'owner', // Default role
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+          // If user doesn't exist, redirect to setup page
+          userName = userCredential.user!.displayName ?? '';
+          userEmail = userCredential.user!.email ?? '';
+          Get.to(() => SocialLoginSetupPage());
+        } else {
+          // Check if user is deleted
+          final userDoc = await _userRepository.getUserProfile(userCredential.user!.uid);
+          if (userDoc != null && userDoc.isDeleted) {
+            await _authService.signOut();
+            Get.snackbar('로그인 불가', '탈퇴한 계정입니다.',
+              backgroundColor: Colors.red, colorText: Colors.white);
+            return;
+          }
+          Get.offAll(() => MainPage());
         }
-        
-        Get.offAll(() => MainPage());
       }
 
     } catch (e) {
@@ -285,30 +311,78 @@ class AuthController extends GetxController {
     }
   }
 
-  // 주소 업데이트 (KpostalView 사용)
-  Future<void> updateAddress() async {
-    await Get.to(() => KpostalView(
-      callback: (Kpostal result) async {
-        double? lat = result.latitude;
-        double? lng = result.longitude;
+  // Complete Social Signup
+  Future<void> completeSocialSignup() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Get.snackbar('오류', '인증 정보가 없습니다. 다시 로그인해주세요.', 
+        backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
 
-        // 좌표가 없는 경우 주소로 좌표 검색
-        if (lat == null || lng == null) {
-          try {
-            List<Location> locations = await locationFromAddress(result.address);
-            if (locations.isNotEmpty) {
-              lat = locations.first.latitude;
-              lng = locations.first.longitude;
-            }
-          } catch (e) {
-            debugPrint('좌표 변환 실패: $e');
-          }
-        }
+    if (userName.isEmpty) {
+      Get.snackbar('오류', '이름을 입력해주세요.', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (phoneNumber.isEmpty) {
+      Get.snackbar('오류', '전화번호를 입력해주세요.', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (selectedCity.value.isEmpty || selectedDistrict.value.isEmpty) {
+      Get.snackbar('오류', '지역(시/도, 시/구/군)을 모두 선택해주세요.', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    if (userBirthDate.value == null) {
+      Get.snackbar('오류', '생년월일을 선택해주세요.', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
 
-        userAddress.value = result.address;
-        userLatitude = lat;
-        userLongitude = lng;
-      },
-    ));
+    showSpinner.value = true;
+    try {
+      // Construct address
+      userAddress.value = '${selectedCity.value} ${selectedDistrict.value}';
+
+      await _userRepository.createUser(user.uid, {
+        'userName': userName,
+        'email': user.email ?? userEmail, // Use Auth email preferably
+        'phoneNumber': phoneNumber,
+        'userType': userType.value,
+        'address': userAddress.value,
+        'detailAddress': detailAddress.value,
+        'birthDate': Timestamp.fromDate(userBirthDate.value!),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      Get.offAll(() => MainPage());
+      Get.snackbar('환영합니다', '회원가입이 완료되었습니다!', 
+        backgroundColor: Colors.green, colorText: Colors.white);
+    } catch (e) {
+      debugPrint('Social Signup Completion Error: $e');
+      Get.snackbar('오류', '가입 처리에 실패했습니다: $e', 
+        backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      showSpinner.value = false;
+    }
   }
+
+  // 주소 업데이트 (KpostalView 사용)
+  void updateDistricts(String city) {
+    selectedCity.value = city;
+    districts.assignAll(Regions.data[city] ?? []);
+    selectedDistrict.value = '';
+    // _updateAddressString();
+  }
+
+  void updateDistrict(String district) {
+    selectedDistrict.value = district;
+    // _updateAddressString();
+  }
+  
+  /*
+  void _updateAddressString() {
+    if (selectedCity.value.isNotEmpty && selectedDistrict.value.isNotEmpty) {
+      userAddress.value = '${selectedCity.value} ${selectedDistrict.value}';
+    }
+  }
+  */
 }

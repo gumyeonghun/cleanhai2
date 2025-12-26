@@ -5,6 +5,7 @@ import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import '../staff_waiting_controller.dart';
 import '../../detail/widgets/detail_page.dart';
 import 'staff_profile_write_page.dart';
+import 'package:cleanhai2/data/constants/regions.dart';
 
 import 'package:cleanhai2/ui/page/cleaning/ranking/widgets/cleaning_ranking_page.dart';
 import 'package:cleanhai2/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart';
@@ -111,19 +112,7 @@ class StaffWaitingPage extends StatelessWidget {
                 icon: Icon(Icons.edit),
                 label: Text('직접 작성하기'),
               ),
-              SizedBox(height: 12),
-              // 프로필로 빠른 등록 버튼
-              FloatingActionButton.extended(
-                onPressed: () {
-                  controller.registerWithProfile();
-                  controller.toggleFab();
-                },
-                heroTag: 'profile',
-                backgroundColor: Colors.green,
-                icon: Icon(Icons.person_add),
-                label: Text('프로필로 빠른 등록'),
-              ),
-              SizedBox(height: 12),
+              SizedBox(height: 20,),
             ],
             // 메인 FAB 버튼
             FloatingActionButton(
@@ -188,36 +177,111 @@ class StaffWaitingPage extends StatelessWidget {
           ),
           
           Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return Center(child: CircularProgressIndicator());
-              }
-              
-              final staffList = controller.sortedStaff;
-
-              if (staffList.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
+              children: [
+                // Region Filters
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Row(
                     children: [
-                      Icon(Icons.person_off_outlined, size: 60, color: Colors.grey[300]),
-                      SizedBox(height: 16),
-                      Text(
-                        '대기중인 청소 전문가가 없습니다',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                      // City Filter
+                      Expanded(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: Obx(() => DropdownButton<String>(
+                              value: controller.selectedCity.value.isEmpty ? null : controller.selectedCity.value,
+                              hint: Text('시/도 선택', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                              isExpanded: true,
+                              items: ['전체', ...Regions.data.keys].map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value == '전체' ? '' : value,
+                                  child: Text(value, style: TextStyle(fontSize: 13)),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  controller.updateDistricts(value);
+                                }
+                              },
+                            )),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      // District Filter
+                      Expanded(
+                        child: Obx(() => Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              key: ValueKey(controller.selectedCity.value),
+                              value: controller.selectedDistrict.value.isEmpty ? null : controller.selectedDistrict.value,
+                              hint: Text('시/구/군 선택', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                              isExpanded: true,
+                              items: ['전체', ...controller.districts].map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value == '전체' ? '' : value,
+                                  child: Text(value, style: TextStyle(fontSize: 13)),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  controller.updateDistrict(value);
+                                }
+                              },
+                            ),
+                          ),
+                        )),
                       ),
                     ],
                   ),
-                );
-              }
+                ),
 
-              return ListView.separated(
-                itemCount: staffList.length,
-                padding: EdgeInsets.only(top: 20, bottom: 80, left: 16, right: 16),
-                itemBuilder: (context, index) => _staffItem(context, staffList[index]),
-                separatorBuilder: (context, index) => SizedBox(height: 16),
-              );
-            }),
+                Expanded(
+                  child: Obx(() {
+                    if (controller.isLoading.value) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    
+                    final staffList = controller.sortedStaff;
+
+                    if (staffList.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.person_off_outlined, size: 60, color: Colors.grey[300]),
+                            SizedBox(height: 16),
+                            Text(
+                              '대기중인 청소 전문가가 없습니다',
+                              style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      itemCount: staffList.length,
+                      padding: EdgeInsets.only(top: 20, bottom: 80, left: 16, right: 16),
+                      itemBuilder: (context, index) => _staffItem(context, staffList[index]),
+                      separatorBuilder: (context, index) => SizedBox(height: 16),
+                    );
+                  }),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -307,34 +371,23 @@ class StaffWaitingPage extends StatelessWidget {
                        return SizedBox.shrink();
                     }),
                     SizedBox(height: 8),
-                    // Title (if present)
+                    // Title
                     if (staff.title.isNotEmpty) ...[
                        Text(
                         staff.title,
                         style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
                           color: Colors.black87,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: 12),
                     ],
-                    // Content (Introduction)
-                    Text(
-                      staff.content,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 4),
-                    // Address
-                    if (staff.address != null)
+                    
+                    // Activity Area (Address)
+                    if (staff.address != null && staff.address!.isNotEmpty) ...[
                       Row(
                         children: [
                           Icon(Icons.location_on_outlined, size: 14, color: Colors.grey[500]),
@@ -344,7 +397,7 @@ class StaffWaitingPage extends StatelessWidget {
                               staff.address!,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[500],
+                                color: Colors.grey[600],
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -352,6 +405,60 @@ class StaffWaitingPage extends StatelessWidget {
                           ),
                         ],
                       ),
+                      SizedBox(height: 4),
+                    ],
+                    
+                    // Availability (Days and Time)
+                    if (staff.availableDays != null && staff.availableDays!.isNotEmpty)
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today, size: 14, color: Colors.grey[500]),
+                          SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              staff.availableDays!.join(', '),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (staff.availableStartTime != null && staff.availableEndTime != null) ...[
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                          SizedBox(width: 4),
+                          Text(
+                            '${staff.availableStartTime} ~ ${staff.availableEndTime}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (staff.cleaningDuration != null && staff.cleaningDuration!.isNotEmpty) ...[
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.timelapse, size: 14, color: Colors.grey[500]),
+                          SizedBox(width: 4),
+                          Text(
+                            staff.cleaningDuration!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     SizedBox(height: 4),
                     // Ratings & Cleaning Type
                     Row(
@@ -385,8 +492,23 @@ class StaffWaitingPage extends StatelessWidget {
                                 SizedBox(width: 8),
                               ],
                             );
+                          } else {
+                            // No reviews
+                            return Row(
+                              children: [
+                                Icon(Icons.star_border, size: 14, color: Colors.grey[400]),
+                                SizedBox(width: 4),
+                                Text(
+                                  '리뷰 없음',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                              ],
+                            );
                           }
-                          return SizedBox.shrink();
                         }),
                         // Cleaning Type
                         if (staff.cleaningType != null && staff.cleaningType!.isNotEmpty)
@@ -451,8 +573,8 @@ class StaffWaitingPage extends StatelessWidget {
             ),
             if (staff.imageUrl != null && staff.imageUrl!.isNotEmpty)
               Container(
-                width: 100, // Match HomePage width
-                height: 140, // Match HomePage height
+                width: 90, // ID photo ratio width
+                height: 120, // ID photo ratio height (3:4)
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
                     topRight: Radius.circular(16),

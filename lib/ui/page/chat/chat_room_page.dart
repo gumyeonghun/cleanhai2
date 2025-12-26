@@ -127,7 +127,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
                   offset: Offset(0, -2),
                 ),
@@ -198,7 +198,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         onPressed: _userEnterMessage.trim().isEmpty ? null : _sendMessage,
                         icon: Icon(Icons.send),
                         color: Colors.white,
-                        disabledColor: Colors.white.withValues(alpha: 0.5),
+                        disabledColor: Colors.white.withOpacity(0.5),
                       ),
                     ),
                   ],

@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import 'package:cleanhai2/data/model/cleaning_request.dart';
+import 'package:cleanhai2/data/constants/regions.dart'; // Import Regions
 import '../home_controller.dart';
 import '../../detail/widgets/detail_page.dart';
 
@@ -86,31 +87,36 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Color(0xFF1E88E5).withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: Offset(0, 4),
+      floatingActionButton: Obx(() {
+        if (controller.currentUser.value?.userType == 'staff') {
+          return SizedBox.shrink();
+        }
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF1E88E5), Color(0xFF64B5F6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        child: FloatingActionButton(
-          onPressed: () {
-            Get.to(() => WritePage(type: 'request'));
-          },
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: Icon(Icons.edit),
-        ),
-      ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Color(0xFF1E88E5).withOpacity(0.3),
+                blurRadius: 8,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            onPressed: () {
+              Get.to(() => WritePage(type: 'request'));
+            },
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: Icon(Icons.edit),
+          ),
+        );
+      }),
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -166,36 +172,112 @@ class HomePage extends StatelessWidget {
 
           // 청소 의뢰 목록
           Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value) {
-                return Center(child: CircularProgressIndicator());
-              }
-              
-              final requests = controller.sortedRequests;
-
-              if (requests.isEmpty) {
-                 return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
+              children: [
+                // Region Filters
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Row(
                     children: [
-                      Icon(Icons.cleaning_services_outlined, size: 60, color: Colors.grey[300]),
-                      SizedBox(height: 16),
-                      Text(
-                        '등록된 청소 의뢰가 없습니다',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                      // City Filter
+                      Expanded(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: controller.selectedCity.value.isEmpty ? null : controller.selectedCity.value,
+                              hint: Text('시/도 선택', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                              isExpanded: true,
+                              items: ['전체', ...Regions.data.keys].map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value == '전체' ? '' : value,
+                                  child: Text(value, style: TextStyle(fontSize: 13)),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  controller.updateDistricts(value);
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      // District Filter
+                      Expanded(
+                        child: Obx(() => Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              key: ValueKey(controller.selectedCity.value), // Rebuild on city change
+                              value: controller.selectedDistrict.value.isEmpty ? null : controller.selectedDistrict.value,
+                              hint: Text('시/구/군 선택', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                              isExpanded: true,
+                              items: ['전체', ...controller.districts].map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value == '전체' ? '' : value,
+                                  child: Text(value, style: TextStyle(fontSize: 13)),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  controller.updateDistrict(value);
+                                }
+                              },
+                            ),
+                          ),
+                        )),
                       ),
                     ],
                   ),
-                );
-              }
+                ),
+                
+                // Request List
+                Expanded(
+                  child: Obx(() {
+                    if (controller.isLoading.value) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    
+                    final requests = controller.sortedRequests;
 
-              return ListView.separated(
-                itemCount: requests.length,
-                padding: EdgeInsets.only(top: 20, bottom: 80, left: 16, right: 16),
-                itemBuilder: (context, index) => _requestItem(context, requests[index]),
-                separatorBuilder: (context, index) => SizedBox(height: 16),
-              );
-            }),
+                    if (requests.isEmpty) {
+                       return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.cleaning_services_outlined, size: 60, color: Colors.grey[300]),
+                            SizedBox(height: 16),
+                            Text(
+                              '등록된 청소 의뢰가 없습니다',
+                              style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      itemCount: requests.length,
+                      padding: EdgeInsets.only(top: 20, bottom: 80, left: 16, right: 16),
+                      itemBuilder: (context, index) => _requestItem(context, requests[index]),
+                      separatorBuilder: (context, index) => SizedBox(height: 16),
+                    );
+                  }),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -215,7 +297,7 @@ class HomePage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),

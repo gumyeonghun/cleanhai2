@@ -54,7 +54,7 @@ class StaffSettlementPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF1E88E5).withValues(alpha: 0.3),
+                      color: Color(0xFF1E88E5).withOpacity(0.3),
                       blurRadius: 15,
                       offset: Offset(0, 8),
                     ),
@@ -65,12 +65,12 @@ class StaffSettlementPage extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.account_balance_wallet_outlined, color: Colors.white.withValues(alpha: 0.8), size: 24),
+                        Icon(Icons.account_balance_wallet_outlined, color: Colors.white.withOpacity(0.8), size: 24),
                         SizedBox(width: 8),
                         Text(
                           '총 예상 정산 금액',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: Colors.white.withOpacity(0.9),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -90,7 +90,7 @@ class StaffSettlementPage extends StatelessWidget {
                     Text(
                       '완료된 청소 ${controller.completedRequests.length}건',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: Colors.white.withOpacity(0.8),
                         fontSize: 14,
                       ),
                     ),
@@ -148,7 +148,7 @@ class StaffSettlementPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: Colors.black.withOpacity(0.05),
                               blurRadius: 10,
                               offset: Offset(0, 4),
                             ),
@@ -159,7 +159,7 @@ class StaffSettlementPage extends StatelessWidget {
                             Container(
                               padding: EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
+                                color: Colors.green.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(Icons.check_circle_outline, color: Colors.green, size: 24),

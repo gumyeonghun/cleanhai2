@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'dart:io';
+import 'package:cleanhai2/data/constants/regions.dart';
 import '../staff_profile_write_controller.dart';
 
 class StaffProfileWritePage extends StatelessWidget {
@@ -43,9 +44,9 @@ class StaffProfileWritePage extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                    color: Color(0xFF1E88E5).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Color(0xFF1E88E5).withValues(alpha: 0.3)),
+                    border: Border.all(color: Color(0xFF1E88E5).withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
@@ -125,7 +126,6 @@ class StaffProfileWritePage extends StatelessWidget {
                 TextFormField(
                   controller: controller.titleController,
                   decoration: InputDecoration(
-                    hintText: '예: 청소 가능합니다',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -155,7 +155,6 @@ class StaffProfileWritePage extends StatelessWidget {
                   controller: controller.contentController,
                   maxLines: 8,
                   decoration: InputDecoration(
-                    hintText: '근무 가능 시간, 경력, 특기 등을 작성해주세요.',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -177,7 +176,7 @@ class StaffProfileWritePage extends StatelessWidget {
 
                 // 전문 분야
                 Text(
-                  '전문 분야',
+                  '청소종류',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
@@ -194,6 +193,8 @@ class StaffProfileWritePage extends StatelessWidget {
                       border: InputBorder.none,
                     ),
                     icon: Icon(Icons.arrow_drop_down, color: Color(0xFF1E88E5)),
+                    isExpanded: true,
+                    menuMaxHeight: 300,
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.black87,
@@ -213,51 +214,75 @@ class StaffProfileWritePage extends StatelessWidget {
                 )),
                 SizedBox(height: 24),
 
-                // 주소 정보 (읽기 전용)
-                Obx(() {
-                  final user = controller.currentUser.value;
-                  if (user?.address != null) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '활동 지역',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                // 활동 지역 선택 (기존 주소 표시 대체)
+                Text(
+                  '활동 지역',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
                         ),
-                        SizedBox(height: 8),
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[300]!),
+                        child: DropdownButtonHideUnderline(
+                          child: Obx(() => DropdownButton<String>(
+                            value: controller.selectedCity.value.isEmpty ? null : controller.selectedCity.value,
+                            hint: Text('시/도', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                            isExpanded: true,
+                            items: Regions.data.keys.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value, style: TextStyle(fontSize: 13)),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                controller.updateDistricts(value);
+                              }
+                            },
+                          )),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Obx(() => Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            key: ValueKey(controller.selectedCity.value),
+                            value: controller.selectedDistrict.value.isEmpty ? null : controller.selectedDistrict.value,
+                            hint: Text('시/구/군', style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                            isExpanded: true,
+                            items: controller.districts.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value, style: TextStyle(fontSize: 13)),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value != null) {
+                                controller.updateDistrict(value);
+                              }
+                            },
                           ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.location_on, color: Color(0xFF1E88E5)),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  user!.address!,
-                                  style: TextStyle(fontSize: 14),
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
-                        SizedBox(height: 8),
-                        Text(
-                          '* 프로필 페이지에서 주소를 변경할 수 있습니다.',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        ),
-                        SizedBox(height: 24),
-                      ],
-                    );
-                  }
-                  return SizedBox.shrink();
-                }),
-
-                // 청소 금액
+                      )),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 24),
                 Text(
                   '청소 금액',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -268,6 +293,7 @@ class StaffProfileWritePage extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: '예: 50,000원',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -292,6 +318,7 @@ class StaffProfileWritePage extends StatelessWidget {
                   maxLines: 3,
                   decoration: InputDecoration(
                     hintText: '예: 창문청소 +10,000원\n베란다청소 +15,000원',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -302,6 +329,148 @@ class StaffProfileWritePage extends StatelessWidget {
                       borderSide: BorderSide(color: Color(0xFF1E88E5), width: 2),
                     ),
                   ),
+                ),
+                SizedBox(height: 24),
+
+                // 근무 가능 기간
+                Text(
+                  '근무 가능 기간',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Obx(() => Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: DropdownButtonFormField<String>(
+                    value: controller.selectedCleaningDuration.value,
+                    decoration: InputDecoration(
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: InputBorder.none,
+                    ),
+                    icon: Icon(Icons.arrow_drop_down, color: Color(0xFF1E88E5)),
+                    items: StaffProfileWriteController.cleaningDurations.map((String duration) {
+                      return DropdownMenuItem<String>(
+                        value: duration,
+                        child: Text(duration),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        controller.selectedCleaningDuration.value = newValue;
+                      }
+                    },
+                  ),
+                )),
+                SizedBox(height: 24),
+
+                // 근무 가능 요일
+                Text(
+                  '근무 가능 요일',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 12),
+                Obx(() => Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: ['월', '화', '수', '목', '금', '토', '일'].map((day) {
+                    final isSelected = controller.availableDays.contains(day);
+                    return ChoiceChip(
+                      label: Text(day),
+                      selected: isSelected,
+                      onSelected: (_) => controller.toggleDay(day),
+                      selectedColor: Color(0xFF1E88E5),
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      backgroundColor: Colors.grey[100],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isSelected ? Color(0xFF1E88E5) : Colors.grey[300]!,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                )),
+                SizedBox(height: 24),
+
+                // 근무 가능 시간
+                Text(
+                  '근무 가능 시간',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => controller.selectTime(context, true),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('시작 시간', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                              SizedBox(height: 4),
+                              Obx(() => Text(
+                                controller.startTime.value != null
+                                    ? controller.startTime.value!.format(context)
+                                    : '선택',
+                                style: TextStyle(
+                                  fontSize: 16, 
+                                  fontWeight: FontWeight.bold,
+                                  color: controller.startTime.value != null ? Colors.black87 : Colors.grey[400],
+                                ),
+                              )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('~', style: TextStyle(fontSize: 20, color: Colors.grey[400])),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => controller.selectTime(context, false),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('종료 시간', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                              SizedBox(height: 4),
+                              Obx(() => Text(
+                                controller.endTime.value != null
+                                    ? controller.endTime.value!.format(context)
+                                    : '선택',
+                                style: TextStyle(
+                                  fontSize: 16, 
+                                  fontWeight: FontWeight.bold,
+                                  color: controller.endTime.value != null ? Colors.black87 : Colors.grey[400],
+                                ),
+                              )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: 24),
 

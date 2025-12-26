@@ -80,38 +80,38 @@ class MyCleaningHistoryPage extends StatelessWidget {
     if (request.status == 'completed') {
       statusText = '완료됨';
       statusColor = Colors.green;
-      statusBgColor = Colors.green.withValues(alpha: 0.1);
+      statusBgColor = Colors.green.withOpacity(0.1);
     } else if (request.status == 'in_progress') {
       statusText = '진행중';
       statusColor = Colors.blue;
-      statusBgColor = Colors.blue.withValues(alpha: 0.1);
+      statusBgColor = Colors.blue.withOpacity(0.1);
     } else if (request.status == 'accepted') {
       // Accepted but check payment
       if (request.acceptedApplicantId != null && request.paymentStatus != 'completed') {
         if (request.authorId == controller.currentUser.value?.id) {
             statusText = '결제 대기';
             statusColor = Colors.orange;
-            statusBgColor = Colors.orange.withValues(alpha: 0.1);
+            statusBgColor = Colors.orange.withOpacity(0.1);
         } else {
              statusText = '수락됨 (결제대기)';
              statusColor = Colors.orange;
-             statusBgColor = Colors.orange.withValues(alpha: 0.1);
+             statusBgColor = Colors.orange.withOpacity(0.1);
         }
       } else {
         statusText = '매칭 완료';
         statusColor = Color(0xFF1E88E5);
-        statusBgColor = Color(0xFF1E88E5).withValues(alpha: 0.1);
+        statusBgColor = Color(0xFF1E88E5).withOpacity(0.1);
       }
     } else {
       // Pending
       if (request.targetStaffId != null) {
          statusText = '지명대기중'; 
          statusColor = Colors.purple;
-         statusBgColor = Colors.purple.withValues(alpha: 0.1);
+         statusBgColor = Colors.purple.withOpacity(0.1);
       } else {
         statusText = '대기중';
         statusColor = Colors.grey;
-        statusBgColor = Colors.grey.withValues(alpha: 0.1);
+        statusBgColor = Colors.grey.withOpacity(0.1);
       }
     }
 
@@ -130,7 +130,7 @@ class MyCleaningHistoryPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),

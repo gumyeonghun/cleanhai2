@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import '../model/user_model.dart';
 
 class UserRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -37,11 +38,26 @@ class UserRepository {
       final querySnapshot = await _firestore
           .collection('users')
           .where('kakaoId', isEqualTo: kakaoId)
+          .limit(1)
           .get();
       return querySnapshot.docs.isNotEmpty;
     } catch (e) {
         debugPrint('Error checking user by Kakao ID: $e');
         return false;
+    }
+  }
+
+  /// 사용자 프로필 조회
+  Future<UserModel?> getUserProfile(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return UserModel.fromFirestore(doc);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting user profile: $e');
+      return null;
     }
   }
 }

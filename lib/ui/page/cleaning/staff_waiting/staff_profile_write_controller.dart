@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
 import 'package:cleanhai2/data/model/user_model.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
+import 'package:cleanhai2/data/constants/regions.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
@@ -22,12 +23,35 @@ class StaffProfileWriteController extends GetxController {
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
   final RxString selectedCleaningType = '숙박업소청소'.obs;
   
+  // Availability
+  final RxList<String> availableDays = <String>[].obs;
+  final Rx<TimeOfDay?> startTime = Rx<TimeOfDay?>(null);
+  final Rx<TimeOfDay?> endTime = Rx<TimeOfDay?>(null);
+  final RxString selectedCleaningDuration = '1일'.obs; // Default to 1 day as per write controller
+
+  static const List<String> cleaningDurations = [
+    '3개월 이상',
+    '1개월',
+    '1주일',
+    '1일',
+  ];
+  
+  // Region Selection
+  final RxString selectedCity = ''.obs;
+  final RxString selectedDistrict = ''.obs;
+  final RxList<String> districts = <String>[].obs;
+  
   static const List<String> cleaningTypes = [
+    '전체청소',
     '숙박업소청소',
-    '가정집청소',
     '사무실청소',
-    '상가청소',
-    '기타청소',
+    '건물청소',
+    '가게청소',
+    '출장손세차',
+    '특수청소',
+    '입주청소',
+    '가정집청소',
+    '기타',
   ];
   
   final formKey = GlobalKey<FormState>();
@@ -45,10 +69,7 @@ class StaffProfileWriteController extends GetxController {
       
       // 프로필 정보로 기본값 설정
       if (currentUser.value != null) {
-        titleController.text = '청소 가능합니다';
-        
-        final availabilityStr = '근무가능일시: ${currentUser.value!.availableDays?.join(', ') ?? '미설정'}\n시간: ${currentUser.value!.availableStartTime ?? ''} ~ ${currentUser.value!.availableEndTime ?? ''}';
-        contentController.text = availabilityStr;
+        // Do NOT pre-fill title
         
         // Load pricing from user profile
         cleaningPriceController.text = currentUser.value!.cleaningPrice ?? '';
@@ -56,6 +77,15 @@ class StaffProfileWriteController extends GetxController {
         
         // Load cleaning type from user profile
         selectedCleaningType.value = currentUser.value!.preferredCleaningType ?? '숙박업소청소';
+
+        // Load availability defaults from user profile
+        availableDays.assignAll(currentUser.value!.availableDays ?? []);
+        if (currentUser.value!.availableStartTime != null) {
+          startTime.value = _parseTime(currentUser.value!.availableStartTime!);
+        }
+        if (currentUser.value!.availableEndTime != null) {
+          endTime.value = _parseTime(currentUser.value!.availableEndTime!);
+        }
       }
     }
   }
@@ -128,14 +158,20 @@ class StaffProfileWriteController extends GetxController {
         title: titleController.text.trim(),
         content: contentController.text.trim(),
         imageUrl: imageUrl,
-        address: user.address,
-        latitude: user.latitude,
-        longitude: user.longitude,
+        address: selectedCity.value.isNotEmpty && selectedDistrict.value.isNotEmpty
+            ? '${selectedCity.value} ${selectedDistrict.value}'
+            : user.address ?? '',
+        // latitude: user.latitude, // Removed
+        // longitude: user.longitude, // Removed
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         cleaningType: selectedCleaningType.value,
         cleaningPrice: cleaningPriceController.text.trim(),
         additionalOptionCost: additionalOptionCostController.text.trim(),
+        availableDays: availableDays.toList(),
+        availableStartTime: startTime.value != null ? _formatTime(startTime.value!) : null,
+        availableEndTime: endTime.value != null ? _formatTime(endTime.value!) : null,
+        cleaningDuration: selectedCleaningDuration.value,
       );
 
       await _repository.createCleaningStaff(newStaff);
@@ -158,5 +194,54 @@ class StaffProfileWriteController extends GetxController {
     cleaningPriceController.dispose();
     additionalOptionCostController.dispose();
     super.onClose();
+  }
+
+  // Helper methods for time/day
+  void toggleDay(String day) {
+    if (availableDays.contains(day)) {
+      availableDays.remove(day);
+    } else {
+      availableDays.add(day);
+    }
+  }
+
+  Future<void> selectTime(BuildContext context, bool isStart) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isStart 
+          ? (startTime.value ?? TimeOfDay(hour: 9, minute: 0))
+          : (endTime.value ?? TimeOfDay(hour: 18, minute: 0)),
+    );
+    if (picked != null) {
+      if (isStart) {
+        startTime.value = picked;
+      } else {
+        endTime.value = picked;
+      }
+    }
+  }
+
+  TimeOfDay? _parseTime(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String _formatTime(TimeOfDay time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  // Region selection methods
+  void updateDistricts(String city) {
+    selectedCity.value = city;
+    districts.assignAll(Regions.data[city] ?? []);
+    selectedDistrict.value = '';
+  }
+
+  void updateDistrict(String district) {
+    selectedDistrict.value = district;
   }
 }

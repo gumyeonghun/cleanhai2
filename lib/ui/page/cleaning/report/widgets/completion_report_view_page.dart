@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cleanhai2/data/model/completion_report.dart';
+import 'package:cleanhai2/data/model/review.dart';
 import 'package:intl/intl.dart';
+import '../../review/widgets/review_write_page.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class CompletionReportViewPage extends StatelessWidget {
   final CompletionReport report;
+  final String? requestId;
+  final bool canReview;
+  final Review? review;
 
   const CompletionReportViewPage({
     super.key,
     required this.report,
+    this.requestId,
+    this.canReview = false,
+    this.review,
   });
 
   @override
@@ -105,27 +114,27 @@ class CompletionReportViewPage extends StatelessWidget {
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                  crossAxisCount: 1, // Changed to 1 column for larger view
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 1.0,
+                  childAspectRatio: 1.5, // Changed aspect ratio to be less tall
                 ),
                 itemCount: report.imageUrls.length,
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () {
                       Get.to(() => Scaffold(
-                        backgroundColor: Colors.black,
-                        appBar: AppBar(
-                          backgroundColor: Colors.black,
-                          iconTheme: IconThemeData(color: Colors.white),
-                        ),
-                        body: Center(
-                          child: InteractiveViewer(
-                            child: Image.network(report.imageUrls[index]),
-                          ),
-                        ),
-                      ));
+                            backgroundColor: Colors.black,
+                            appBar: AppBar(
+                              backgroundColor: Colors.black,
+                              iconTheme: IconThemeData(color: Colors.white),
+                            ),
+                            body: Center(
+                              child: InteractiveViewer(
+                                child: Image.network(report.imageUrls[index]),
+                              ),
+                            ),
+                          ));
                     },
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
@@ -172,8 +181,137 @@ class CompletionReportViewPage extends StatelessWidget {
               ),
             ],
             SizedBox(height: 40),
+
+              if (review != null) ...[
+                Text(
+                  '나의 리뷰',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E88E5)),
+                ),
+                SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    RatingBarIndicator(
+                                      rating: review!.rating,
+                                      itemBuilder: (context, index) => Icon(
+                                        Icons.star,
+                                        color: Colors.amber,
+                                      ),
+                                      itemCount: 5,
+                                      itemSize: 20.0,
+                                      direction: Axis.horizontal,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      '${review!.rating}점',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.amber[800]),
+                                    ),
+                                  ],
+                                ),
+                                if (review!.communicationRating != null) ...[
+                                  SizedBox(height: 8),
+                                  _buildDetailRating('소통', review!.communicationRating!),
+                                  _buildDetailRating('청소 완성도', review!.qualityRating ?? review!.rating),
+                                  _buildDetailRating('일정 신뢰도', review!.reliabilityRating ?? review!.rating),
+                                  _buildDetailRating('가격', review!.priceRating ?? review!.rating),
+                                ],
+                              ],
+                            ),
+                          ),
+                          Text(
+                            DateFormat('yyyy.MM.dd').format(review!.createdAt),
+                            style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        review!.comment,
+                        style: TextStyle(fontSize: 15, color: Colors.black87),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 40),
+              ],
+
+            if (canReview && requestId != null)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Get.to(() => ReviewWritePage(requestId: requestId!));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF1E88E5),
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    '리뷰 작성하기',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRating(String label, double rating) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+            ),
+          ),
+          RatingBarIndicator(
+            rating: rating,
+            itemBuilder: (context, index) => Icon(
+              Icons.star,
+              color: Colors.amber,
+            ),
+            itemCount: 5,
+            itemSize: 14.0,
+            direction: Axis.horizontal,
+          ),
+          SizedBox(width: 8),
+          Text(
+            '$rating',
+            style: TextStyle(fontSize: 13, color: Colors.grey[700], fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     );
   }

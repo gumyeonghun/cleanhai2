@@ -11,13 +11,15 @@ class CleaningStaff {
   final DateTime updatedAt;
   final String? address;
   final String? detailAddress;
-  final double? latitude;
-  final double? longitude;
+  // latitude, longitude removed
   final List<String>? availableDays; // For auto-registered staff
   final bool isAutoRegistered; // Flag for auto-registered staff
   final String? cleaningType; // Cleaning specialty
   final String? cleaningPrice; // Base cleaning price
   final String? additionalOptionCost; // Additional option costs
+  final String? availableStartTime; // New field
+  final String? availableEndTime; // New field
+  final String? cleaningDuration;
 
   CleaningStaff({
     required this.id,
@@ -28,8 +30,7 @@ class CleaningStaff {
     this.imageUrl,
     this.address,
     this.detailAddress,
-    this.latitude,
-    this.longitude,
+    // latitude, longitude removed
     required this.createdAt,
     required this.updatedAt,
     this.availableDays,
@@ -37,6 +38,9 @@ class CleaningStaff {
     this.cleaningType,
     this.cleaningPrice,
     this.additionalOptionCost,
+    this.availableStartTime,
+    this.availableEndTime,
+    this.cleaningDuration,
   });
 
   // Firestore에서 데이터를 가져올 때 사용
@@ -51,8 +55,8 @@ class CleaningStaff {
       imageUrl: data['imageUrl'],
       address: data['address'],
       detailAddress: data['detailAddress'],
-      latitude: data['latitude'],
-      longitude: data['longitude'],
+      // latitude: data['latitude'], // Removed
+      // longitude: data['longitude'], // Removed
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       availableDays: data['availableDays'] != null ? List<String>.from(data['availableDays']) : null,
@@ -60,6 +64,9 @@ class CleaningStaff {
       cleaningType: data['cleaningType'],
       cleaningPrice: data['cleaningPrice'],
       additionalOptionCost: data['additionalOptionCost'],
+      availableStartTime: data['availableStartTime'],
+      availableEndTime: data['availableEndTime'],
+      cleaningDuration: data['cleaningDuration'],
     );
   }
 
@@ -73,8 +80,8 @@ class CleaningStaff {
       'imageUrl': imageUrl,
       'address': address,
       'detailAddress': detailAddress,
-      'latitude': latitude,
-      'longitude': longitude,
+      // 'latitude': latitude, // Removed
+      // 'longitude': longitude, // Removed
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'availableDays': availableDays,
@@ -82,6 +89,9 @@ class CleaningStaff {
       'cleaningType': cleaningType,
       'cleaningPrice': cleaningPrice,
       'additionalOptionCost': additionalOptionCost,
+      'availableStartTime': availableStartTime,
+      'availableEndTime': availableEndTime,
+      'cleaningDuration': cleaningDuration,
     };
   }
 
@@ -95,8 +105,7 @@ class CleaningStaff {
     String? imageUrl,
     String? address,
     String? detailAddress,
-    double? latitude,
-    double? longitude,
+    // latitude, longitude removed
     DateTime? createdAt,
     DateTime? updatedAt,
     List<String>? availableDays,
@@ -104,6 +113,9 @@ class CleaningStaff {
     String? cleaningType,
     String? cleaningPrice,
     String? additionalOptionCost,
+    String? availableStartTime,
+    String? availableEndTime,
+    String? cleaningDuration,
   }) {
     return CleaningStaff(
       id: id ?? this.id,
@@ -114,8 +126,8 @@ class CleaningStaff {
       imageUrl: imageUrl ?? this.imageUrl,
       address: address ?? this.address,
       detailAddress: detailAddress ?? this.detailAddress,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
+      // latitude: latitude ?? this.latitude, // Removed
+      // longitude: longitude ?? this.longitude, // Removed
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       availableDays: availableDays ?? this.availableDays,
@@ -123,6 +135,9 @@ class CleaningStaff {
       cleaningType: cleaningType ?? this.cleaningType,
       cleaningPrice: cleaningPrice ?? this.cleaningPrice,
       additionalOptionCost: additionalOptionCost ?? this.additionalOptionCost,
+      availableStartTime: availableStartTime ?? this.availableStartTime,
+      availableEndTime: availableEndTime ?? this.availableEndTime,
+      cleaningDuration: cleaningDuration ?? this.cleaningDuration,
     );
   }
 }
