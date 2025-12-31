@@ -200,6 +200,11 @@ class WriteController extends GetxController {
       return;
     }
 
+    if (selectedType.value == 'request' && selectedCleaningDate.value == null) {
+      Get.snackbar('알림', '청소 필요 날짜 및 시간을 선택해주세요');
+      return;
+    }
+
     isLoading.value = true;
 
     try {

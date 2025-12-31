@@ -92,7 +92,7 @@ class StaffReviewListPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 10,
                           offset: Offset(0, 4),
                         ),
@@ -267,7 +267,7 @@ class StaffReviewListPage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                                 offset: Offset(0, 4),
                               ),
@@ -322,9 +322,9 @@ class StaffReviewListPage extends StatelessWidget {
                                     Container(
                                       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: Colors.amber.withOpacity(0.1),
+                                        color: Colors.amber.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                                        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,

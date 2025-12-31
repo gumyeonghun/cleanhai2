@@ -44,9 +44,9 @@ class StaffProfileWritePage extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Color(0xFF1E88E5).withOpacity(0.1),
+                    color: Color(0xFF1E88E5).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Color(0xFF1E88E5).withOpacity(0.3)),
+                    border: Border.all(color: Color(0xFF1E88E5).withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -186,30 +186,33 @@ class StaffProfileWritePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey[300]!),
                   ),
-                  child: DropdownButtonFormField<String>(
-                    value: controller.selectedCleaningType.value,
+                  child: InputDecorator(
                     decoration: InputDecoration(
                       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       border: InputBorder.none,
                     ),
-                    icon: Icon(Icons.arrow_drop_down, color: Color(0xFF1E88E5)),
-                    isExpanded: true,
-                    menuMaxHeight: 300,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: controller.selectedCleaningType.value,
+                        icon: Icon(Icons.arrow_drop_down, color: Color(0xFF1E88E5)),
+                        isExpanded: true,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                        items: StaffProfileWriteController.cleaningTypes.map((String type) {
+                          return DropdownMenuItem<String>(
+                            value: type,
+                            child: Text(type),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            controller.selectedCleaningType.value = newValue;
+                          }
+                        },
+                      ),
                     ),
-                    items: StaffProfileWriteController.cleaningTypes.map((String type) {
-                      return DropdownMenuItem<String>(
-                        value: type,
-                        child: Text(type),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        controller.selectedCleaningType.value = newValue;
-                      }
-                    },
                   ),
                 )),
                 SizedBox(height: 24),
@@ -344,24 +347,29 @@ class StaffProfileWritePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey[300]!),
                   ),
-                  child: DropdownButtonFormField<String>(
-                    value: controller.selectedCleaningDuration.value,
+                  child: InputDecorator(
                     decoration: InputDecoration(
                       contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       border: InputBorder.none,
                     ),
-                    icon: Icon(Icons.arrow_drop_down, color: Color(0xFF1E88E5)),
-                    items: StaffProfileWriteController.cleaningDurations.map((String duration) {
-                      return DropdownMenuItem<String>(
-                        value: duration,
-                        child: Text(duration),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        controller.selectedCleaningDuration.value = newValue;
-                      }
-                    },
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: controller.selectedCleaningDuration.value,
+                        icon: Icon(Icons.arrow_drop_down, color: Color(0xFF1E88E5)),
+                        isExpanded: true,
+                        items: StaffProfileWriteController.cleaningDurations.map((String duration) {
+                          return DropdownMenuItem<String>(
+                            value: duration,
+                            child: Text(duration),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            controller.selectedCleaningDuration.value = newValue;
+                          }
+                        },
+                      ),
+                    ),
                   ),
                 )),
                 SizedBox(height: 24),

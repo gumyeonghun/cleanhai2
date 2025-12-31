@@ -96,7 +96,7 @@ class MySchedulePage extends StatelessWidget {
         child: ListView.separated(
           itemCount: requests.length,
           padding: EdgeInsets.only(bottom: 80, top: 20),
-          itemBuilder: (context, index) => _requestCard(requests[index], myUid, true),
+          itemBuilder: (context, index) => _requestCard(requests[index], myUid, true, controller),
           separatorBuilder: (context, index) => SizedBox(height: 16),
         ),
       );
@@ -128,7 +128,7 @@ class MySchedulePage extends StatelessWidget {
         child: ListView.separated(
           itemCount: requests.length,
           padding: EdgeInsets.only(bottom: 80, top: 20),
-          itemBuilder: (context, index) => _requestCard(requests[index], myUid, false),
+          itemBuilder: (context, index) => _requestCard(requests[index], myUid, false, controller),
           separatorBuilder: (context, index) => SizedBox(height: 16),
         ),
       );
@@ -137,10 +137,10 @@ class MySchedulePage extends StatelessWidget {
 
   Widget _buildMyWaitingTab(MyScheduleController controller, String myUid) {
     return Obx(() {
-      final waitingProfile = controller.myWaitingProfile.value;
+      final waitingProfiles = controller.myWaitingProfiles;
       final targetedRequests = controller.myTargetedRequests;
 
-      if (waitingProfile == null && targetedRequests.isEmpty) {
+      if (waitingProfiles.isEmpty && targetedRequests.isEmpty) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -174,16 +174,16 @@ class MySchedulePage extends StatelessWidget {
               SizedBox(height: 12),
               ...targetedRequests.map((request) => Column(
                 children: [
-                  _requestCard(request, myUid, false),
+                  _requestCard(request, myUid, false, controller),
                   SizedBox(height: 16),
                 ],
               )),
               Divider(height: 32, thickness: 1),
             ],
 
-            if (waitingProfile != null) ...[
+            if (waitingProfiles.isNotEmpty) ...[
               Text(
-                '내 대기 프로필',
+                '내 대기 프로필 (${waitingProfiles.length})',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -191,7 +191,12 @@ class MySchedulePage extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 12),
-              _waitingProfileCard(waitingProfile),
+              ...waitingProfiles.map((profile) => Column(
+                children: [
+                  _waitingProfileCard(profile),
+                  SizedBox(height: 16),
+                ],
+              )),
             ],
           ],
         ),
@@ -207,7 +212,7 @@ class MySchedulePage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -252,7 +257,7 @@ class MySchedulePage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -371,7 +376,7 @@ class MySchedulePage extends StatelessWidget {
                 return Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Color(0xFF1E88E5).withOpacity(0.1),
+                    color: Color(0xFF1E88E5).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -403,7 +408,7 @@ class MySchedulePage extends StatelessWidget {
   }
 
 
-  Widget _requestCard(CleaningRequest request, String myUid, bool isMyRequest) {
+  Widget _requestCard(CleaningRequest request, String myUid, bool isMyRequest, MyScheduleController controller) {
     final isAccepted = request.acceptedApplicantId != null;
     final isAcceptedByMe = request.acceptedApplicantId == myUid;
 
@@ -419,7 +424,7 @@ class MySchedulePage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -482,9 +487,9 @@ class MySchedulePage extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -511,7 +516,6 @@ class MySchedulePage extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      final controller = Get.find<MyScheduleController>();
                       controller.processPayment(request);
                     },
                     icon: Icon(Icons.payment, size: 18, color: Colors.white),
@@ -568,6 +572,61 @@ class MySchedulePage extends StatelessWidget {
                   ),
                 ),
               ),
+            if (isAcceptedByMe && !isMyRequest && (request.status == 'pending' || request.status == 'accepted'))
+              SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: request.paymentStatus == 'completed'
+                      ? ElevatedButton.icon( // 결제 완료 시 청소 시작 가능
+                          onPressed: () {
+                            controller.startCleaning(request.id);
+                          },
+                          icon: Icon(Icons.cleaning_services, size: 18, color: Colors.white),
+                          label: Text('청소 시작하기', 
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        )
+                      : ElevatedButton.icon( // 결제 대기중일 때
+                          onPressed: null, // 비활성화
+                          icon: Icon(Icons.hourglass_empty, size: 18, color: Colors.grey),
+                          label: Text('결제 대기중', 
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[200],
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                          ),
+                        ),
+                ),
+              ),
+
+             // 직접 의뢰받은 요청 수락하기 버튼 (아직 수락자가 없을 때)
+            if (!isMyRequest && !isAccepted && request.targetStaffId == myUid)
+              SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      controller.acceptDirectRequest(request.id);
+                    },
+                    icon: Icon(Icons.check_circle_outline, size: 18, color: Colors.white),
+                    label: Text('청소 수락하기', 
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green, // 수락은 초록색
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ),
             if (isMyRequest && !isAccepted && request.applicants.isNotEmpty) ...[
               SizedBox(height: 16),
               Divider(),
@@ -581,7 +640,7 @@ class MySchedulePage extends StatelessWidget {
               ),
               SizedBox(height: 8),
               ...request.applicants.map((applicantId) {
-                final controller = Get.find<MyScheduleController>();
+                // final controller usage removed as it is now passed
                 return FutureBuilder<UserModel?>(
                   future: controller.getUserProfile(applicantId),
                   builder: (context, snapshot) {
@@ -642,27 +701,29 @@ class MySchedulePage extends StatelessWidget {
                 );
               }),
             ],
-            if (isAcceptedByMe && !isMyRequest && (request.status == 'pending' || request.status == 'accepted'))
+            // 신청 취소 버튼 (신청했지만 아직 수락되지 않은 경우)
+            if (!isMyRequest && !isAccepted && request.applicants.contains(myUid))
               SizedBox(
                 width: double.infinity,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 8.0),
-                  child: ElevatedButton.icon(
+                  child: OutlinedButton.icon(
                     onPressed: () {
-                      final controller = Get.find<MyScheduleController>();
-                      controller.startCleaning(request.id);
+                      controller.cancelApplication(request.id);
                     },
-                    icon: Icon(Icons.cleaning_services, size: 18, color: Colors.white),
-                    label: Text('청소 시작하기', 
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)
+                    icon: Icon(Icons.cancel_outlined, size: 18),
+                    label: Text('신청 취소', 
+                      style: TextStyle(fontWeight: FontWeight.bold)
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: BorderSide(color: Colors.red),
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 ),
               ),
+
           ],
         ),
       ),
@@ -963,26 +1024,26 @@ class MySchedulePage extends StatelessWidget {
     if (isMyRequest) {
       if (isAccepted) {
         text = '수락됨';
-        bgColor = Colors.green.withOpacity(0.1);
+        bgColor = Colors.green.withValues(alpha: 0.1);
         textColor = Colors.green[700]!;
       } else {
         text = '대기중';
-        bgColor = Colors.orange.withOpacity(0.1);
+        bgColor = Colors.orange.withValues(alpha: 0.1);
         textColor = Colors.orange[700]!;
       }
     } else {
       // 내 신청 탭
       if (isAcceptedByMe) {
         text = '수락됨';
-        bgColor = Colors.green.withOpacity(0.1);
+        bgColor = Colors.green.withValues(alpha: 0.1);
         textColor = Colors.green[700]!;
       } else if (isAccepted) {
         text = '마감됨';
-        bgColor = Colors.grey.withOpacity(0.1);
+        bgColor = Colors.grey.withValues(alpha: 0.1);
         textColor = Colors.grey[700]!;
       } else {
         text = '대기중';
-        bgColor = Colors.orange.withOpacity(0.1);
+        bgColor = Colors.orange.withValues(alpha: 0.1);
         textColor = Colors.orange[700]!;
       }
     }

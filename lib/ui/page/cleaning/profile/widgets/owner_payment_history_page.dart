@@ -41,6 +41,66 @@ class OwnerPaymentHistoryPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 날짜 선택 버튼
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2024),
+                    lastDate: DateTime.now(),
+                    initialDateRange: DateTimeRange(
+                      start: controller.startDate.value,
+                      end: controller.endDate.value,
+                    ),
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: ColorScheme.light(
+                            primary: Color(0xFF1E88E5),
+                            onPrimary: Colors.white,
+                            onSurface: Colors.black,
+                          ),
+                        ),
+                        child: child!,
+                      );
+                    },
+                  );
+                  
+                  if (picked != null) {
+                    controller.updateDateRange(picked.start, picked.end);
+                  }
+                },
+                child: Container(
+                  margin: EdgeInsets.only(bottom: 20),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.calendar_today, size: 20, color: Color(0xFF1E88E5)),
+                          SizedBox(width: 10),
+                          Obx(() => Text(
+                            '${DateFormat('yyyy.MM.dd').format(controller.startDate.value)} ~ ${DateFormat('yyyy.MM.dd').format(controller.endDate.value)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          )),
+                        ],
+                      ),
+                      Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+                    ],
+                  ),
+                ),
+              ),
+
               // 총 지불 금액 카드
               Container(
                 width: double.infinity,
@@ -54,7 +114,7 @@ class OwnerPaymentHistoryPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF1E88E5).withOpacity(0.3),
+                      color: Color(0xFF1E88E5).withValues(alpha: 0.3),
                       blurRadius: 15,
                       offset: Offset(0, 8),
                     ),
@@ -65,12 +125,12 @@ class OwnerPaymentHistoryPage extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.payment_outlined, color: Colors.white.withOpacity(0.8), size: 24),
+                        Icon(Icons.payment_outlined, color: Colors.white.withValues(alpha: 0.8), size: 24),
                         SizedBox(width: 8),
                         Text(
-                          '총 지불 금액',
+                          '지불 예상 금액', // "총" 제거
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -90,7 +150,7 @@ class OwnerPaymentHistoryPage extends StatelessWidget {
                     Text(
                       '완료된 청소 ${controller.completedRequests.length}건',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 14,
                       ),
                     ),
@@ -148,7 +208,7 @@ class OwnerPaymentHistoryPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: Offset(0, 4),
                             ),
@@ -159,7 +219,7 @@ class OwnerPaymentHistoryPage extends StatelessWidget {
                             Container(
                               padding: EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: Colors.green.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(Icons.check_circle_outline, color: Colors.green, size: 24),
@@ -217,7 +277,7 @@ class OwnerPaymentHistoryPage extends StatelessWidget {
                                 Container(
                                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.withOpacity(0.1),
+                                    color: Colors.green.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(

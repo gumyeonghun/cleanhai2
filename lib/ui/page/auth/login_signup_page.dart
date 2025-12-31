@@ -55,7 +55,7 @@ class LoginSignupPage extends StatelessWidget {
                         '합리적인 가격, 편리한 매칭, 믿을 수 있는 청소',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
                       SizedBox(height: 50),
@@ -88,7 +88,7 @@ class LoginSignupPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 20,
                               offset: Offset(0, 10),
                             ),
@@ -469,7 +469,7 @@ class LoginSignupPage extends StatelessWidget {
                                     icon: Icon(Icons.chat_bubble, size: 20, color: Color(0xFF000000)), // Kakao Icon approx
                                     label: Text('Kakao로 계속하기', 
                                       style: TextStyle(
-                                        color: Color(0xFF000000).withOpacity(0.85),
+                                        color: Color(0xFF000000).withValues(alpha: 0.85),
                                         fontWeight: FontWeight.bold,
                                       )
                                     ),
@@ -526,26 +526,26 @@ class LoginSignupPage extends StatelessWidget {
                             child: Text(
                               '서비스 이용약관',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                                 fontSize: 12,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Colors.white.withOpacity(0.8),
+                                decorationColor: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                           ),
                           Text(
                             '|',
-                            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
                           ),
                           TextButton(
                             onPressed: () => _launchUrl('https://short-tarragon-911.notion.site/2cd7ebba6144805f92d8c18adeab69c3'),
                             child: Text(
                               '개인정보 처리방침',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                                 fontSize: 12,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Colors.white.withOpacity(0.8),
+                                decorationColor: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                           ),
@@ -561,7 +561,7 @@ class LoginSignupPage extends StatelessWidget {
             // Loading Spinner Overlay
             Obx(() => controller.showSpinner.value
               ? Container(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   child: Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -673,7 +673,7 @@ class LoginSignupPage extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Color(0xFF1E88E5).withOpacity(0.3),
+                    color: Color(0xFF1E88E5).withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: Offset(0, 4),
                   )

@@ -49,7 +49,7 @@ class ChatRoomListController extends GetxController {
       // 하지만 확실하게 하기 위해 로컬 리스트에서도 제거 가능
       chatRooms.removeWhere((room) => room.id == chatRoomId);
       Get.snackbar('알림', '채팅방이 삭제되었습니다.',
-          backgroundColor: Colors.black.withOpacity(0.7), colorText: Colors.white);
+          backgroundColor: Colors.black.withValues(alpha: 0.7), colorText: Colors.white);
     } catch (e) {
       Get.snackbar('오류', '채팅방 삭제 중 오류가 발생했습니다.',
           backgroundColor: Colors.red, colorText: Colors.white);

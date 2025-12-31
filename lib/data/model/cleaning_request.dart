@@ -38,6 +38,8 @@ class CleaningRequest {
   final DateTime? cleaningDate;
   final String? cleaningDuration;
   final DateTime? estimatedCompletionTime;
+  final bool isDeleted; // Soft delete flag
+  final DateTime? deletedAt; // Soft delete timestamp
 
   CleaningRequest({
     required this.id,
@@ -74,6 +76,8 @@ class CleaningRequest {
     this.cleaningDate,
     this.cleaningDuration,
     this.estimatedCompletionTime,
+    this.isDeleted = false,
+    this.deletedAt,
   });
 
   // Firestore에서 데이터를 가져올 때 사용
@@ -115,6 +119,8 @@ class CleaningRequest {
       cleaningDate: data['cleaningDate'] != null ? (data['cleaningDate'] as Timestamp).toDate() : null,
       cleaningDuration: data['cleaningDuration'],
       estimatedCompletionTime: data['estimatedCompletionTime'] != null ? (data['estimatedCompletionTime'] as Timestamp).toDate() : null,
+      isDeleted: data['isDeleted'] ?? false,
+      deletedAt: data['deletedAt'] != null ? (data['deletedAt'] as Timestamp).toDate() : null,
     );
   }
 
@@ -155,6 +161,8 @@ class CleaningRequest {
       'cleaningDate': cleaningDate != null ? Timestamp.fromDate(cleaningDate!) : null,
       'cleaningDuration': cleaningDuration,
       'estimatedCompletionTime': estimatedCompletionTime != null ? Timestamp.fromDate(estimatedCompletionTime!) : null,
+      'isDeleted': isDeleted,
+      'deletedAt': deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
     };
   }
 
@@ -194,6 +202,8 @@ class CleaningRequest {
     DateTime? cleaningDate,
     String? cleaningDuration,
     DateTime? estimatedCompletionTime,
+    bool? isDeleted,
+    DateTime? deletedAt,
   }) {
     return CleaningRequest(
       id: id ?? this.id,
@@ -231,6 +241,8 @@ class CleaningRequest {
       cleaningDate: cleaningDate ?? this.cleaningDate,
       cleaningDuration: cleaningDuration ?? this.cleaningDuration,
       estimatedCompletionTime: estimatedCompletionTime ?? this.estimatedCompletionTime,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 }

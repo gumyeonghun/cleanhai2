@@ -64,14 +64,20 @@ class StaffWaitingController extends GetxController {
     if (user != null) {
       _repository.getAllMyRequestsAsOwner(user.uid).listen((requests) {
         final statusMap = <String, String>{};
+        final currentUserId = user.uid.trim();
+        
         for (var request in requests) {
           if (request.targetStaffId != null && request.targetStaffId!.isNotEmpty) {
-            // 이미 상태가 있거나 더 중요한 상태(진행중 > 수락됨 > 대기중)라면 업데이트
-            // 여기서는 간단하게 가장 최신의 요청 상태를 우선시하거나,
-            // 특정 상태 우선순위를 둘 수 있음. 
-            // 일단 완료된 것은 제외하고 진행중/수락됨/대기중을 표시한다고 가정.
+            final targetId = request.targetStaffId!.trim();
+            
+            // 자기 자신에게 보낸 요청(혹은 데이터 오류)은 제외
+            if (targetId == currentUserId) continue;
+
             if (request.status != 'completed') {
-               statusMap[request.targetStaffId!] = request.status;
+               // 이미 최신 상태가 저장되어 있다면 건너뜀 (최신순 정렬되어 있으므로 첫 번째가 최신)
+               if (statusMap.containsKey(targetId)) continue;
+               
+               statusMap[targetId] = request.status;
             }
           }
         }
@@ -132,7 +138,7 @@ class StaffWaitingController extends GetxController {
     
     // Always sort by created time (Newest first)
     sortedList.sort((a, b) {
-      return b.createdAt.compareTo(a.createdAt);
+      return b.updatedAt.compareTo(a.updatedAt);
     });
     
     return sortedList;

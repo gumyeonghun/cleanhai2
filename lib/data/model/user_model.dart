@@ -24,6 +24,8 @@ class UserModel {
   final String? autoRegisterTitle; // For staff: Auto-register title
   final DateTime? birthDate;
   final String? cleaningRequestImageUrl; // For owners: Image for auto-registered requests
+  final String? cleaningAddress; // For owners: Address for cleaning requests
+  final String? cleaningDetailAddress; // For owners: Detail address for cleaning requests
   
   // Soft delete fields
   final bool isDeleted;
@@ -52,6 +54,8 @@ class UserModel {
     this.autoRegisterTitle,
     this.birthDate,
     this.cleaningRequestImageUrl,
+    this.cleaningAddress,
+    this.cleaningDetailAddress,
     this.isDeleted = false,
     this.deletedAt,
   });
@@ -82,6 +86,8 @@ class UserModel {
       autoRegisterTitle: data['autoRegisterTitle'],
       birthDate: data['birthDate'] != null ? (data['birthDate'] as Timestamp).toDate() : null,
       cleaningRequestImageUrl: data['cleaningRequestImageUrl'],
+      cleaningAddress: data['cleaningAddress'],
+      cleaningDetailAddress: data['cleaningDetailAddress'],
       isDeleted: data['isDeleted'] ?? false,
       deletedAt: data['deletedAt'] != null ? (data['deletedAt'] as Timestamp).toDate() : null,
     );
@@ -111,6 +117,8 @@ class UserModel {
       'autoRegisterTitle': autoRegisterTitle,
       'birthDate': birthDate != null ? Timestamp.fromDate(birthDate!) : null,
       'cleaningRequestImageUrl': cleaningRequestImageUrl,
+      'cleaningAddress': cleaningAddress,
+      'cleaningDetailAddress': cleaningDetailAddress,
       'isDeleted': isDeleted,
       'deletedAt': deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
     };

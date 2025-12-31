@@ -274,7 +274,7 @@ class SocialLoginSetupPage extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Color(0xFF1E88E5).withOpacity(0.3),
+                    color: Color(0xFF1E88E5).withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: Offset(0, 4),
                   )

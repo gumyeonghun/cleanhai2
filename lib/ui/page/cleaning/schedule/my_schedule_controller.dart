@@ -18,7 +18,7 @@ class MyScheduleController extends GetxController {
   final RxList<CleaningRequest> myAcceptedRequests = <CleaningRequest>[].obs;
   final RxList<CleaningRequest> myAppliedRequests = <CleaningRequest>[].obs;
   final RxList<CleaningRequest> myTargetedRequests = <CleaningRequest>[].obs;
-  final Rx<CleaningStaff?> myWaitingProfile = Rx<CleaningStaff?>(null);
+  final RxList<CleaningStaff> myWaitingProfiles = <CleaningStaff>[].obs;
   final RxBool isLoading = true.obs;
   
   // 이전에 확인한 요청 ID들을 저장
@@ -84,8 +84,8 @@ class MyScheduleController extends GetxController {
     });
 
     // 청소 직원: 내 대기 프로필 (청소 대기 목록에 등록한 것)
-    _repository.getMyWaitingProfileStream(user.uid).listen((profile) {
-      myWaitingProfile.value = profile;
+    _repository.getMyWaitingProfilesStream(user.uid).listen((profiles) {
+      myWaitingProfiles.assignAll(profiles);
     });
   }
 
@@ -447,6 +447,56 @@ class MyScheduleController extends GetxController {
       Get.to(() => ChatRoomPage(chatRoom: chatRoom));
     } catch (e) {
       Get.snackbar('오류', '채팅방 연결 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  Future<void> cancelApplication(String requestId) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      Get.snackbar('알림', '로그인이 필요합니다');
+      return;
+    }
+
+    try {
+      await _repository.cancelApplication(requestId, user.uid);
+      Get.snackbar(
+        '신청 취소',
+        '청소 신청이 취소되었습니다',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+      loadMySchedule();
+    } catch (e) {
+      Get.snackbar('오류', '신청 취소 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  Future<void> acceptDirectRequest(String requestId) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      Get.snackbar('알림', '로그인이 필요합니다');
+      return;
+    }
+
+    try {
+      // 1. 상태를 'accepted'로 변경
+      // 2. acceptedApplicantId를 본인 ID로 설정
+      await FirebaseFirestore.instance.collection('cleaning_requests').doc(requestId).update({
+        'status': 'accepted',
+        'acceptedApplicantId': user.uid,
+        'updatedAt': Timestamp.now(),
+      });
+
+      Get.snackbar(
+        '수락 완료',
+        '의뢰를 수락했습니다! 이제 청소를 시작할 수 있습니다.',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+      
+      loadMySchedule();
+    } catch (e) {
+      Get.snackbar('오류', '의뢰 수락 중 오류가 발생했습니다: $e');
     }
   }
 

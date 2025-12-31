@@ -33,11 +33,13 @@ class CleaningRepository {
   Stream<List<CleaningRequest>> getCleaningRequests() {
     return _cleaningRequestsRef
         .orderBy('createdAt', descending: true)
+        // .where('isDeleted', isNotEqualTo: true) // Removed due to legacy data missing field
         .limit(50)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
           .map((doc) => CleaningRequest.fromFirestore(doc))
+          .where((request) => request.isDeleted != true) // Client-side filtering
           .toList();
     });
   }
@@ -57,8 +59,12 @@ class CleaningRepository {
   }
 
   /// 청소 의뢰 삭제
-  Future<void> deleteCleaningRequest(String id) async {
-    await _cleaningRequestsRef.doc(id).delete();
+  Future<void> softDeleteCleaningRequest(String id) async {
+    await _cleaningRequestsRef.doc(id).update({
+      'isDeleted': true,
+      'deletedAt': FieldValue.serverTimestamp(),
+      'status': 'deleted', // Optional: update status as well
+    });
   }
 
   /// 청소 의뢰 지원
@@ -67,6 +73,14 @@ class CleaningRepository {
       'applicants': FieldValue.arrayUnion([userId]),
     });
   }
+
+  /// 청소 의뢰 지원 취소
+  Future<void> cancelApplication(String requestId, String userId) async {
+    await _cleaningRequestsRef.doc(requestId).update({
+      'applicants': FieldValue.arrayRemove([userId]),
+    });
+  }
+
 
   /// 청소 의뢰 지원자 수락 (결제 정보 포함)
   Future<void> acceptApplicant(
@@ -291,7 +305,11 @@ class CleaningRepository {
           .get();
       
       for (var doc in snapshot.docs) {
-        await doc.reference.delete();
+        await doc.reference.update({
+          'isDeleted': true,
+          'deletedAt': FieldValue.serverTimestamp(),
+          'status': 'deleted',
+        });
       }
     } catch (e) {
       debugPrint('Error deleting request by author id: $e');
@@ -306,9 +324,13 @@ class CleaningRepository {
           .get();
       
       for (var doc in snapshot.docs) {
-        await doc.reference.delete();
+        await doc.reference.update({
+          'isDeleted': true,
+          'deletedAt': FieldValue.serverTimestamp(),
+          'status': 'deleted',
+        });
       }
-      debugPrint('Deleted ${snapshot.docs.length} cleaning requests for user $authorId');
+      debugPrint('Soft deleted ${snapshot.docs.length} cleaning requests for user $authorId');
     } catch (e) {
       debugPrint('Error deleting all requests by author id: $e');
     }
@@ -336,6 +358,9 @@ class CleaningRepository {
 
   /// 청소 대기 생성
   Future<void> createCleaningStaff(CleaningStaff staff) async {
+    // toFirestore()에서 DateTime을 Timestamp로 변환하여 저장하므로
+    // 별도의 FieldValue.serverTimestamp() 강제 설정 없이 staff 객체의 시간을 사용합니다.
+    // 이는 클라이언트 간의 데이터 파싱 오류(Null Timestamp)를 방지하기 위함입니다.
     await _cleaningStaffsRef.add(staff.toFirestore());
   }
 
@@ -343,11 +368,13 @@ class CleaningRepository {
   Stream<List<CleaningStaff>> getCleaningStaffs() {
     return _cleaningStaffsRef
         .orderBy('createdAt', descending: true)
-        .limit(50)
+        // .where('isDeleted', isNotEqualTo: true) // Removed due to legacy data missing field
+        .limit(100)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
           .map((doc) => CleaningStaff.fromFirestore(doc))
+          .where((staff) => staff.isDeleted != true) // Client-side filtering
           .toList();
     });
   }
@@ -363,12 +390,16 @@ class CleaningRepository {
 
   /// 청소 대기 수정
   Future<void> updateCleaningStaff(CleaningStaff staff) async {
+    // Parsing 안전성을 위해 명시적 Timestamp 사용 (Controller가 DateTime.now()로 설정함)
     await _cleaningStaffsRef.doc(staff.id).update(staff.toFirestore());
   }
 
   /// 청소 대기 삭제
-  Future<void> deleteCleaningStaff(String id) async {
-    await _cleaningStaffsRef.doc(id).delete();
+  Future<void> softDeleteCleaningStaff(String id) async {
+    await _cleaningStaffsRef.doc(id).update({
+      'isDeleted': true,
+      'deletedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   /// 대기 중인 청소 직원 목록 조회 (users 컬렉션에서 userType == 'staff' 조회)
@@ -376,11 +407,13 @@ class CleaningRepository {
     try {
       final snapshot = await _cleaningStaffsRef
           .orderBy('createdAt', descending: true)
+          // .where('isDeleted', isNotEqualTo: true) // Removed
           .limit(50)
           .get();
 
       return snapshot.docs
           .map((doc) => CleaningStaff.fromFirestore(doc))
+          .where((staff) => staff.isDeleted != true) // Client-side filtering
           .toList();
     } catch (e) {
       debugPrint('Error loading waiting staff: $e');
@@ -433,24 +466,28 @@ class CleaningRepository {
           .get();
       
       for (var doc in snapshot.docs) {
-        await doc.reference.delete();
+        await doc.reference.update({
+          'isDeleted': true,
+          'deletedAt': FieldValue.serverTimestamp(),
+        });
       }
-      debugPrint('Deleted ${snapshot.docs.length} cleaning staff profiles for user $authorId');
+      debugPrint('Soft deleted ${snapshot.docs.length} cleaning staff profiles for user $authorId');
     } catch (e) {
       debugPrint('Error deleting staff by author id: $e');
     }
   }
 
   /// 내 대기 프로필 스트림
-  Stream<CleaningStaff?> getMyWaitingProfileStream(String userId) {
+  /// 내 대기 프로필 스트림 (목록)
+  Stream<List<CleaningStaff>> getMyWaitingProfilesStream(String userId) {
     return _cleaningStaffsRef
         .where('authorId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      if (snapshot.docs.isNotEmpty) {
-        return CleaningStaff.fromFirestore(snapshot.docs.first);
-      }
-      return null;
+      return snapshot.docs
+          .map((doc) => CleaningStaff.fromFirestore(doc))
+          .toList();
     });
   }
 

@@ -1,3 +1,4 @@
+import 'package:cleanhai2/ui/page/cleaning/write/widgets/write_page.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,9 +11,12 @@ import 'package:cleanhai2/ui/page/cleaning/payment/payment_selection_page.dart';
 import 'package:cleanhai2/data/repository/chat_repository.dart';
 import 'package:cleanhai2/ui/page/chat/chat_room_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cleanhai2/data/model/report.dart';
+import 'package:cleanhai2/data/repository/report_repository.dart';
 
 class DetailController extends GetxController {
   final CleaningRepository _repository = CleaningRepository();
+  final ReportRepository _reportRepository = ReportRepository();
   
   // Observables
   final RxBool isLoading = false.obs;
@@ -205,9 +209,9 @@ class DetailController extends GetxController {
     if (confirmed == true) {
       try {
         if (currentRequest.value != null) {
-          await _repository.deleteCleaningRequest(currentRequest.value!.id);
+          await _repository.softDeleteCleaningRequest(currentRequest.value!.id);
         } else if (currentStaff.value != null) {
-          await _repository.deleteCleaningStaff(currentStaff.value!.id);
+          await _repository.softDeleteCleaningStaff(currentStaff.value!.id);
         }
         Get.back(); // Close page
         Get.snackbar('알림', '삭제되었습니다');
@@ -303,18 +307,30 @@ class DetailController extends GetxController {
   // Staff accepts a direct request
   Future<void> acceptRequest() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      Get.snackbar('알림', '로그인이 필요합니다');
+      return;
+    }
+
+    if (currentRequest.value == null) {
+      Get.snackbar('오류', '청소 요청 정보를 찾을 수 없습니다');
+      return;
+    }
 
     try {
+      debugPrint('의뢰 수락 시도: ${currentRequest.value!.id}');
+      
       // Just set the acceptedApplicantId, payment comes later by owner
       await _repository.acceptApplicant(
         currentRequest.value!.id,
         user.uid,
         paymentStatus: 'pending',
       );
+      
       await _loadRequestData();
       Get.snackbar('수락 완료', '의뢰를 수락했습니다. 의뢰인의 결제를 기다려주세요.');
     } catch (e) {
+      debugPrint('의뢰 수락 실패: $e');
       Get.snackbar('오류', '수락 실패: $e');
     }
   }
@@ -596,5 +612,151 @@ class DetailController extends GetxController {
         .where((r) => r.review != null)
         .map((r) => r.review!)
         .toList();
+  }
+
+  // Owner requests cleaning from a specific Staff
+  void requestCleaningFromStaff() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Get.snackbar('알림', '로그인이 필요합니다');
+      return;
+    }
+
+    if (currentStaff.value == null) return;
+
+    // Navigate to WritePage with predefined type and target
+    Get.to(() => WritePage(
+      type: 'request',
+      targetStaffId: currentStaff.value!.authorId,
+    ));
+  }
+
+  // --- Report & Block ---
+
+  /// 게시글/사용자 신고
+  Future<void> reportItem() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Get.snackbar('알림', '로그인이 필요합니다');
+      return;
+    }
+
+    String? reason = await Get.dialog<String>(
+      SimpleDialog(
+        title: Text('신고 사유 선택'),
+        children: [
+          _buildReportOption('부적절한 내용'),
+          _buildReportOption('스팸/홍보성'),
+          _buildReportOption('욕설/비방'),
+          _buildReportOption('사기 의심'),
+          _buildReportOption('기타'),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0, top: 8.0),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Get.back(),
+                child: Text('취소', style: TextStyle(color: Colors.grey)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (reason != null) {
+      try {
+        final targetId = currentRequest.value?.id ?? currentStaff.value?.id ?? '';
+        final targetType = currentRequest.value != null 
+            ? 'cleaning_request' 
+            : (currentStaff.value != null ? 'cleaning_staff' : 'unknown');
+
+        debugPrint('Report creating for target: $targetId, type: $targetType, reason: $reason');
+
+        final report = Report(
+          id: '',
+          reporterId: user.uid,
+          targetId: targetId,
+          targetType: targetType,
+          reason: reason,
+          createdAt: DateTime.now(),
+        );
+
+        await _reportRepository.createReport(report);
+        
+        Get.snackbar(
+          '신고 완료', 
+          '신고가 접수되었습니다. 검토 후 처리하겠습니다.', 
+          backgroundColor: Colors.grey[800], 
+          colorText: Colors.white
+        );
+      } catch (e) {
+        debugPrint('Report error: $e');
+        Get.snackbar('오류', '신고 처리에 실패했습니다: $e');
+      }
+    }
+  }
+  
+  Widget _buildReportOption(String reason) {
+    return SimpleDialogOption(
+      onPressed: () => Get.back(result: reason),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text(reason, style: TextStyle(fontSize: 16)),
+      ),
+    );
+  }
+
+  /// 사용자 차단
+  Future<void> blockUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Get.snackbar('알림', '로그인이 필요합니다');
+      return;
+    }
+
+    final targetUserId = currentRequest.value?.authorId ?? currentStaff.value?.authorId;
+    if (targetUserId == null) {
+      Get.snackbar('오류', '차단할 대상을 찾을 수 없습니다.');
+      return;
+    }
+    
+    if (targetUserId == user.uid) {
+       Get.snackbar('알림', '자기 자신은 차단할 수 없습니다.');
+       return;
+    }
+
+    final confirm = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text('사용자 차단'),
+        content: Text('이 사용자를 차단하시겠습니까?\n차단하면 이 사용자의 글이 더 이상 보이지 않습니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Get.back(result: true),
+            child: Text('차단', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _reportRepository.blockUser(user.uid, targetUserId);
+        Get.back(); // 상세 페이지 닫기
+        Get.snackbar(
+          '차단 완료', 
+          '사용자가 차단되었습니다.', 
+          backgroundColor: Colors.grey[800], 
+          colorText: Colors.white
+        );
+      } catch (e) {
+        debugPrint('Block error: $e');
+        Get.snackbar('오류', '차단 처리에 실패했습니다: $e');
+      }
+    }
   }
 }

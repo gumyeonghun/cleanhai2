@@ -304,7 +304,7 @@ class StaffWaitingPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -328,14 +328,20 @@ class StaffWaitingPage extends StatelessWidget {
                       ),
                     ),
                     Obx(() {
+                       final currentUserId = controller.currentUser.value?.id;
+                       if (currentUserId != null && staff.authorId == currentUserId) {
+                         return SizedBox.shrink();
+                       }
+
                        final status = controller.myRequestStatus[staff.authorId];
+                       
+                       String statusText = '청소의뢰가능';
+                       Color badgeColor = Color(0xFF1E88E5);
+                       
                        if (status != null && status.isNotEmpty) {
-                         String statusText = '';
-                         Color badgeColor = Colors.grey;
-                         
                          switch (status) {
                            case 'pending':
-                             statusText = '의뢰 대기중';
+                             statusText = '청소의뢰대기중';
                              badgeColor = Colors.orange;
                              break;
                            case 'accepted':
@@ -347,28 +353,25 @@ class StaffWaitingPage extends StatelessWidget {
                              badgeColor = Colors.blue;
                              break;
                          }
-                         
-                         if (statusText.isNotEmpty) {
-                           return Container(
-                             margin: EdgeInsets.only(top: 8),
-                             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                             decoration: BoxDecoration(
-                               color: badgeColor.withOpacity(0.1),
-                               borderRadius: BorderRadius.circular(8),
-                               border: Border.all(color: badgeColor.withOpacity(0.5)),
-                             ),
-                             child: Text(
-                               statusText,
-                               style: TextStyle(
-                                 color: badgeColor,
-                                 fontSize: 12,
-                                 fontWeight: FontWeight.bold,
-                               ),
-                             ),
-                           );
-                         }
                        }
-                       return SizedBox.shrink();
+                       
+                       return Container(
+                         margin: EdgeInsets.only(top: 8),
+                         padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                         decoration: BoxDecoration(
+                           color: badgeColor.withValues(alpha: 0.1),
+                           borderRadius: BorderRadius.circular(8),
+                           border: Border.all(color: badgeColor.withValues(alpha: 0.5)),
+                         ),
+                         child: Text(
+                           statusText,
+                           style: TextStyle(
+                             color: badgeColor,
+                             fontSize: 12,
+                             fontWeight: FontWeight.bold,
+                           ),
+                         ),
+                       );
                     }),
                     SizedBox(height: 8),
                     // Title
@@ -512,18 +515,21 @@ class StaffWaitingPage extends StatelessWidget {
                         }),
                         // Cleaning Type
                         if (staff.cleaningType != null && staff.cleaningType!.isNotEmpty)
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Color(0xFF1E88E5).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              staff.cleaningType!,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF1E88E5),
-                                fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Color(0xFF1E88E5).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                staff.cleaningType!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF1E88E5),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ),

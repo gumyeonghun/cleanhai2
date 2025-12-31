@@ -5,15 +5,18 @@ import 'package:get/get.dart';
 import 'package:cleanhai2/data/constants/regions.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cleanhai2/service/auth_service.dart';
+import 'dart:async';
 import 'dart:io';
 import 'package:cleanhai2/data/model/user_model.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import 'package:cleanhai2/data/model/cleaning_request.dart';
-import 'package:cleanhai2/data/model/review.dart';
+
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
 import 'package:cleanhai2/data/repository/user_repository.dart';
 import 'package:cleanhai2/data/repository/chat_repository.dart';
 import '../../auth/login_signup_page.dart';
+import '../../main/main_controller.dart';
+
 
 class ProfileController extends GetxController {
   final CleaningRepository _repository = CleaningRepository();
@@ -21,7 +24,8 @@ class ProfileController extends GetxController {
 
   final Rx<UserModel?> userModel = Rx<UserModel?>(null);
   final RxBool isLoading = true.obs;
-  final RxBool isEditing = false.obs; // 편집 모드 상태
+  final RxBool isEditing = false.obs; // 통합 편집 모드 상태
+
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
@@ -32,6 +36,13 @@ class ProfileController extends GetxController {
   final RxString selectedCity = ''.obs;
   final RxString selectedDistrict = ''.obs;
   final RxList<String> districts = <String>[].obs;
+  
+  // Cleaning Address (Owner specific)
+  final RxString selectedCleaningCity = ''.obs;
+  final RxString selectedCleaningDistrict = ''.obs;
+  final RxList<String> cleaningDistricts = <String>[].obs;
+  final TextEditingController cleaningDetailAddressController = TextEditingController();
+  
   final TextEditingController cleaningDetailsController = TextEditingController(); // For owners
   final TextEditingController cleaningToolLocationController = TextEditingController(); // For owners
   final TextEditingController cleaningPrecautionsController = TextEditingController(); // For owners
@@ -84,6 +95,7 @@ class ProfileController extends GetxController {
     phoneController.dispose();
     addressController.dispose();
     detailAddressController.dispose();
+    cleaningDetailAddressController.dispose();
     cleaningDetailsController.dispose();
     cleaningToolLocationController.dispose();
     cleaningPrecautionsController.dispose();
@@ -94,61 +106,83 @@ class ProfileController extends GetxController {
   }
 
   Future<void> loadUserProfile() async {
-    final user = _authService.currentUser;
-    if (user != null) {
-      final userProfile = await _repository.getUserProfile(user.uid);
-      userModel.value = userProfile;
-      
-      // 초기값 설정
-      if (userProfile != null) {
-        nameController.text = userProfile.userName ?? '';
-        phoneController.text = userProfile.phoneNumber ?? '';
-        addressController.text = userProfile.address ?? '';
-        detailAddressController.text = userProfile.detailAddress ?? '';
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        final userProfile = await _repository.getUserProfile(user.uid);
+        userModel.value = userProfile;
         
-        // Parse address to set initial region selection if possible
-        if (userProfile.address != null && userProfile.address!.isNotEmpty) {
-           final parts = userProfile.address!.split(' ');
-           if (parts.length >= 2) {
-             final city = parts[0];
-             final district = parts[1];
-             if (Regions.data.containsKey(city)) {
-               selectedCity.value = city;
-               districts.assignAll(Regions.data[city] ?? []);
-               
-               if (districts.contains(district)) {
-                 selectedDistrict.value = district;
+        // 초기값 설정
+        if (userProfile != null) {
+          nameController.text = userProfile.userName ?? '';
+          phoneController.text = userProfile.phoneNumber ?? '';
+          addressController.text = userProfile.address ?? '';
+          detailAddressController.text = userProfile.detailAddress ?? '';
+          
+          // Parse address to set initial region selection if possible
+          if (userProfile.address != null && userProfile.address!.isNotEmpty) {
+             final parts = userProfile.address!.split(' ');
+             if (parts.length >= 2) {
+               final city = parts[0];
+               final district = parts[1];
+               if (Regions.data.containsKey(city)) {
+                 selectedCity.value = city;
+                 districts.assignAll(Regions.data[city] ?? []);
+                 
+                 if (districts.contains(district)) {
+                   selectedDistrict.value = district;
+                 }
                }
              }
            }
-        }
-        
-        cleaningDetailsController.text = userProfile.cleaningDetails ?? '';
-        cleaningToolLocationController.text = userProfile.cleaningToolLocation ?? '';
-        cleaningPrecautionsController.text = userProfile.cleaningPrecautions ?? '';
-        cleaningPriceController.text = userProfile.cleaningPrice ?? '';
-        additionalOptionCostController.text = userProfile.additionalOptionCost ?? '';
-        autoRegisterTitleController.text = userProfile.autoRegisterTitle ?? '';
-        birthDate.value = userProfile.birthDate;
-        
-        availableDays.assignAll(userProfile.availableDays ?? []);
-        if (userProfile.availableStartTime != null) {
-          startTime.value = _parseTime(userProfile.availableStartTime!);
-        }
-        if (userProfile.availableEndTime != null) {
-          endTime.value = _parseTime(userProfile.availableEndTime!);
-        }
+          
+          // cleaningAddress parsing logic (separate from main address)
+          cleaningDetailAddressController.text = userProfile.cleaningDetailAddress ?? '';
+          if (userProfile.cleaningAddress != null && userProfile.cleaningAddress!.isNotEmpty) {
+             final parts = userProfile.cleaningAddress!.split(' ');
+             if (parts.length >= 2) {
+               final city = parts[0];
+               final district = parts[1];
+               if (Regions.data.containsKey(city)) {
+                 selectedCleaningCity.value = city;
+                 cleaningDistricts.assignAll(Regions.data[city] ?? []);
+                 if (cleaningDistricts.contains(district)) {
+                   selectedCleaningDistrict.value = district;
+                 }
+               }
+             }
+          }
+           
+           cleaningDetailsController.text = userProfile.cleaningDetails ?? '';
+          cleaningToolLocationController.text = userProfile.cleaningToolLocation ?? '';
+          cleaningPrecautionsController.text = userProfile.cleaningPrecautions ?? '';
+          cleaningPriceController.text = userProfile.cleaningPrice ?? '';
+          additionalOptionCostController.text = userProfile.additionalOptionCost ?? '';
+          autoRegisterTitleController.text = userProfile.autoRegisterTitle ?? '';
+          birthDate.value = userProfile.birthDate;
+          
+          availableDays.assignAll(userProfile.availableDays ?? []);
+          if (userProfile.availableStartTime != null) {
+            startTime.value = _parseTime(userProfile.availableStartTime!);
+          }
+          if (userProfile.availableEndTime != null) {
+            endTime.value = _parseTime(userProfile.availableEndTime!);
+          }
 
-        isAutoRegisterEnabled.value = userProfile.isAutoRegisterEnabled;
-        selectedCleaningType.value = userProfile.preferredCleaningType ?? '숙박업소청소';
-        
-        // Load staff reviews if user is staff
-        if (userProfile.userType == 'staff') {
-          loadStaffReviews();
+          isAutoRegisterEnabled.value = userProfile.isAutoRegisterEnabled;
+          selectedCleaningType.value = userProfile.preferredCleaningType ?? '숙박업소청소';
+          
+          // Load staff reviews if user is staff
+          if (userProfile.userType == 'staff') {
+            loadStaffReviews();
+          }
         }
       }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+    } finally {
+      isLoading.value = false;
     }
-    isLoading.value = false;
   }
 
   Future<void> loadStaffReviews() async {
@@ -291,6 +325,9 @@ class ProfileController extends GetxController {
     isEditing.value = !isEditing.value;
   }
 
+  // 간편설정 편집 모드 토글 제거됨 (통합)
+
+
   // 이미지 선택
   Future<void> pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -316,30 +353,58 @@ class ProfileController extends GetxController {
     }
   }
 
-  // 프로필 저장
   Future<void> saveProfile() async {
+    // 만약 유저 정보가 없으면 다시 한 번 로딩 시도 (Self-healing)
+    if (userModel.value == null) {
+      debugPrint('User model missing in saveProfile. Attempting to reload...');
+      // 로딩 인디케이터를 위해 isLoading 잠깐 true (loadUserProfile 내부에서 false로 끝남)
+      isLoading.value = true;
+      await loadUserProfile();
+    }
+
     final user = userModel.value;
-    if (user == null) return;
+    if (user == null) {
+      Get.snackbar('오류', '사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
 
     try {
       isLoading.value = true;
+      
+      // 간편설정 모드 로직 통합됨.
+
       String? imageUrl = user.profileImageUrl;
 
       // 새 이미지가 선택되었다면 업로드
       if (selectedImage.value != null) {
-        imageUrl = await _repository.uploadImage(selectedImage.value!, 'profile');
+        final uploaded = await _repository.uploadImage(selectedImage.value!, 'profile');
+        if (uploaded != null) {
+          imageUrl = uploaded;
+        } else {
+           Get.snackbar('알림', '프로필 이미지 업로드에 실패했습니다. 기존 이미지를 유지합니다.', 
+               backgroundColor: Colors.orange, colorText: Colors.white);
+        }
       }
 
       // 새 요청 이미지가 선택되었다면 업로드
       String? requestImageUrl = user.cleaningRequestImageUrl;
       if (selectedRequestImage.value != null) {
-        requestImageUrl = await _repository.uploadImage(selectedRequestImage.value!, 'request');
+        final uploaded = await _repository.uploadImage(selectedRequestImage.value!, 'request');
+        if (uploaded != null) {
+          requestImageUrl = uploaded;
+        } else {
+           Get.snackbar('알림', '요청 이미지 업로드에 실패했습니다. 기존 이미지를 유지합니다.', 
+               backgroundColor: Colors.orange, colorText: Colors.white);
+        }
       }
 
       final updatedUser = UserModel(
         id: user.id,
         email: user.email,
-        address: '${selectedCity.value} ${selectedDistrict.value}',
+        address: (selectedCity.value.isEmpty && user.address != null) 
+            ? user.address! 
+            : '${selectedCity.value} ${selectedDistrict.value}'.trim(),
         detailAddress: detailAddressController.text,
         // Latitude/Longitude removed
         userType: user.userType,
@@ -359,216 +424,188 @@ class ProfileController extends GetxController {
         autoRegisterTitle: autoRegisterTitleController.text,
         birthDate: birthDate.value,
         cleaningRequestImageUrl: requestImageUrl,
+        cleaningAddress: (selectedCleaningCity.value.isEmpty) 
+            ? user.cleaningAddress 
+            : '${selectedCleaningCity.value} ${selectedCleaningDistrict.value}'.trim(),
+        cleaningDetailAddress: cleaningDetailAddressController.text,
       );
 
-      await _repository.updateUserProfile(updatedUser);
+      await _repository.updateUserProfile(updatedUser).timeout(Duration(seconds: 30));
       userModel.value = updatedUser;
       
       // Sync Logic
-      if (user.userType == 'staff') {
+      if (user.userType == 'staff' && isAutoRegisterEnabled.value) {
         debugPrint('=== 청소 전문가 자동 등록 시작 ===');
         debugPrint('자동 등록 활성화: ${isAutoRegisterEnabled.value}');
         
-        final existingStaff = await _repository.getAutoRegisteredStaffByAuthorId(user.id);
-        debugPrint('기존 스태프 정보: ${existingStaff != null ? "있음 (ID: ${existingStaff.id}, 자동등록: ${existingStaff.isAutoRegistered})" : "없음"}');
-        
-        final availabilityStr = '근무가능일시: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}';
+        final availabilityStr = '근무가능일시: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}${cleaningDetailsController.text.isNotEmpty ? '\n상세: ${cleaningDetailsController.text}' : ''}';
 
-        if (isAutoRegisterEnabled.value) {
-          debugPrint('자동 등록 활성화 상태 처리 중...');
-          // 자동 등록 활성화 상태
-          if (existingStaff != null) {
-            if (existingStaff.isAutoRegistered) {
-              debugPrint('기존 자동 등록 스태프 업데이트 중...');
-              // 기존 자동 등록된 스태프 -> 전체 정보 업데이트
-              final updatedStaff = existingStaff.copyWith(
-                authorName: updatedUser.userName ?? '',
-                title: autoRegisterTitleController.text.isNotEmpty 
-                    ? autoRegisterTitleController.text 
-                    : existingStaff.title,
-                imageUrl: updatedUser.profileImageUrl,
-                address: updatedUser.address,
-                // latitude: updatedUser.latitude, // Removed
-                // longitude: updatedUser.longitude, // Removed
-                content: availabilityStr,
-                updatedAt: DateTime.now(),
-                availableDays: availableDays.toList(),
-                isAutoRegistered: true,
-                cleaningType: selectedCleaningType.value,
-                cleaningPrice: cleaningPriceController.text,
-                additionalOptionCost: additionalOptionCostController.text,
-              );
-              await _repository.updateCleaningStaff(updatedStaff);
-              debugPrint('자동 등록 스태프 업데이트 완료');
-            } else {
-              debugPrint('기존 수동 등록 스태프 프로필 정보만 동기화 중...');
-              // 기존 수동 등록된 스태프 -> 프로필 정보(이름, 사진, 주소)만 동기화
-              final updatedStaff = existingStaff.copyWith(
-                authorName: updatedUser.userName ?? '',
-                imageUrl: updatedUser.profileImageUrl,
-                address: updatedUser.address,
-                // latitude: updatedUser.latitude, // Removed
-                // longitude: updatedUser.longitude, // Removed
-                updatedAt: DateTime.now(),
-                cleaningPrice: cleaningPriceController.text,
-                additionalOptionCost: additionalOptionCostController.text,
-              );
-              await _repository.updateCleaningStaff(updatedStaff);
-              debugPrint('수동 등록 스태프 동기화 완료');
-            }
-          } else {
-            debugPrint('새로운 자동 등록 스태프 생성 중...');
-            // 스태프 정보 없음 -> 새로 자동 등록 생성
-            final newStaff = CleaningStaff(
-              id: '',
-              authorId: user.id,
-              authorName: updatedUser.userName ?? '',
-              title: autoRegisterTitleController.text.isNotEmpty 
-                  ? autoRegisterTitleController.text 
-                  : '청소 가능합니다',
-              content: availabilityStr,
-              imageUrl: updatedUser.profileImageUrl,
-              address: updatedUser.address,
-              // latitude: updatedUser.latitude, // Removed
-              // longitude: updatedUser.longitude, // Removed
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              availableDays: availableDays.toList(),
-              isAutoRegistered: true,
-              cleaningType: selectedCleaningType.value,
-              cleaningPrice: cleaningPriceController.text,
-              additionalOptionCost: additionalOptionCostController.text,
-            );
-            await _repository.createCleaningStaff(newStaff);
-            debugPrint('새 자동 등록 스태프 생성 완료');
-          }
+        // 기존 게시글 확인
+        final existingStaff = await _repository.getCleaningStaffByAuthorId(user.id);
+        
+        if (existingStaff != null) {
+          debugPrint('기존 게시글 발견 -> 업데이트 및 최상단 이동 (Bump)');
+          final updatedStaff = existingStaff.copyWith(
+            authorName: updatedUser.userName,
+            title: autoRegisterTitleController.text.isNotEmpty 
+                ? autoRegisterTitleController.text 
+                : '청소 가능합니다',
+            content: availabilityStr,
+            imageUrl: updatedUser.profileImageUrl,
+            address: updatedUser.address,
+            createdAt: DateTime.now(), // Bump to top
+            updatedAt: DateTime.now(),
+            availableDays: availableDays.toList(),
+            cleaningType: selectedCleaningType.value,
+            cleaningPrice: cleaningPriceController.text,
+            additionalOptionCost: additionalOptionCostController.text,
+          );
+          await _repository.updateCleaningStaff(updatedStaff);
+          Get.snackbar('성공', '청소 대기 글이 최상단으로 갱신되었습니다!',
+            backgroundColor: Colors.green, colorText: Colors.white);
         } else {
-          debugPrint('자동 등록 비활성화 상태 처리 중...');
-          // 자동 등록 비활성화 상태
-          if (existingStaff != null) {
-            if (existingStaff.isAutoRegistered) {
-              debugPrint('자동 등록 스태프 삭제 중...');
-              // 자동 등록된 스태프라면 삭제
-              await _repository.deleteCleaningStaff(existingStaff.id);
-              debugPrint('자동 등록 스태프 삭제 완료');
-            } else {
-              debugPrint('수동 등록 스태프 프로필 정보만 동기화 중...');
-              // 수동 등록된 스태프라면 -> 프로필 정보(이름, 사진, 주소)만 동기화
-              final updatedStaff = existingStaff.copyWith(
-                authorName: updatedUser.userName ?? '',
-                imageUrl: updatedUser.profileImageUrl,
-                address: updatedUser.address,
-                // latitude: updatedUser.latitude, // Removed
-                // longitude: updatedUser.longitude, // Removed
-                updatedAt: DateTime.now(),
-                cleaningPrice: cleaningPriceController.text,
-                additionalOptionCost: additionalOptionCostController.text,
-              );
-              await _repository.updateCleaningStaff(updatedStaff);
-              debugPrint('수동 등록 스태프 동기화 완료');
-            }
-          }
+          debugPrint('기존 게시글 없음 -> 새 게시글 생성');
+          final newStaff = CleaningStaff(
+            id: '',
+            authorId: user.id,
+            authorName: updatedUser.userName ?? '',
+            title: autoRegisterTitleController.text.isNotEmpty 
+                ? autoRegisterTitleController.text 
+                : '청소 가능합니다',
+            content: availabilityStr,
+            imageUrl: updatedUser.profileImageUrl,
+            address: updatedUser.address,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            availableDays: availableDays.toList(),
+            isAutoRegistered: true,
+            cleaningType: selectedCleaningType.value,
+            cleaningPrice: cleaningPriceController.text,
+            additionalOptionCost: additionalOptionCostController.text,
+          );
+          await _repository.createCleaningStaff(newStaff);
+          Get.snackbar('성공', '새로운 청소 대기 글이 등록되었습니다!',
+            backgroundColor: Colors.green, colorText: Colors.white);
         }
+
+        // 플래그 리셋 (다음 저장 시 중복 실행 방지)
+        isAutoRegisterEnabled.value = false;
+
         debugPrint('=== 청소 전문가 자동 등록 완료 ===');
-      } else if (user.userType == 'owner') {
-        // Owner Logic
-        final existingRequest = await _repository.getAutoRegisteredRequestByAuthorId(user.id);
         
-        // 수정 가능한 상태인지 확인 (pending 상태일 때만 수정 가능)
-        bool isEditable = existingRequest != null && existingRequest.status == 'pending';
+        // 저장 후 종료
+        isEditing.value = false;
+        selectedImage.value = null;
+        quickRegisterImage.value = null;
+        return; 
+      } else if (user.userType == 'staff') {
+         // staff이지만 자동등록 아닐 때 - 그냥 프로필만 저장
+      } else if (user.userType == 'owner' && isAutoRegisterEnabled.value) {
+        // Owner Logic - 간편 업로드 시에만 실행
+        debugPrint('=== Owner 간편 업로드 시작 ===');
+        debugPrint('isAutoRegisterEnabled: ${isAutoRegisterEnabled.value}');
+
+        final addressToSave = (updatedUser.cleaningAddress != null && updatedUser.cleaningAddress!.isNotEmpty) 
+            ? updatedUser.cleaningAddress!
+            : updatedUser.address ?? ''; // Fallback to main address if cleaning address is empty (though validation should catch this)
+            
+        debugPrint('Address to save for request: "$addressToSave"');
         
+        if (addressToSave.trim().isEmpty) {
+           debugPrint('주소가 비어있음 - 등록 중단');
+           Get.snackbar('알림', '청소할 주소가 설정되지 않았습니다. 간편 설정에서 주소를 입력해주세요.',
+              backgroundColor: Colors.orange, colorText: Colors.white);
+           isAutoRegisterEnabled.value = false;
+           return;
+        }
+
         final contentStr = '청소 필요 요일: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}\n상세: ${cleaningDetailsController.text}${cleaningToolLocationController.text.isNotEmpty ? '\n청소도구위치: ${cleaningToolLocationController.text}' : ''}${cleaningPrecautionsController.text.isNotEmpty ? '\n주의사항: ${cleaningPrecautionsController.text}' : ''}';
 
-        if (isAutoRegisterEnabled.value) {
-          if (isEditable && existingRequest.isAutoRegistered) {
-            // 기존 대기중인 자동 등록 의뢰 -> 전체 정보 업데이트
-            final updatedRequest = existingRequest.copyWith(
-              authorName: updatedUser.userName ?? '',
-              title: autoRegisterTitleController.text.isNotEmpty 
-                  ? autoRegisterTitleController.text 
-                  : existingRequest.title,
-              imageUrl: updatedUser.cleaningRequestImageUrl ?? updatedUser.profileImageUrl,
-              address: updatedUser.address,
-              // latitude: updatedUser.latitude, // Removed
-              // longitude: updatedUser.longitude, // Removed
-              content: contentStr,
-              updatedAt: DateTime.now(),
-              availableDays: availableDays.toList(),
-              isAutoRegistered: true,
-              cleaningType: selectedCleaningType.value,
-              cleaningToolLocation: cleaningToolLocationController.text,
-              precautions: cleaningPrecautionsController.text,
-              price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의',
-            );
-            await _repository.updateCleaningRequest(updatedRequest);
-          } else if (isEditable && !existingRequest.isAutoRegistered) {
-            // 기존 대기중인 수동 등록 의뢰 -> 프로필 정보(이름, 사진, 주소)만 동기화
-            final updatedRequest = existingRequest.copyWith(
-              authorName: updatedUser.userName ?? '',
-              imageUrl: updatedUser.profileImageUrl,
-              address: updatedUser.address,
-              // latitude: updatedUser.latitude, // Removed
-              // longitude: updatedUser.longitude, // Removed
-              updatedAt: DateTime.now(),
-            );
-            await _repository.updateCleaningRequest(updatedRequest);
-          } else {
-            // 대기중인 의뢰가 없거나(완료/진행중 포함) -> 새로 자동 등록 생성
-            // 단, 이미 진행중/완료된 의뢰가 있어도 새로운 의뢰를 생성함 (다음 청소 건)
-            final newRequest = CleaningRequest(
-              id: '',
-              authorId: user.id,
-              authorName: updatedUser.userName ?? '',
-              title: autoRegisterTitleController.text.isNotEmpty 
-                  ? autoRegisterTitleController.text 
-                  : '${updatedUser.userName}님의 청소 의뢰',
-              content: contentStr,
-              price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의', // Default price
-              imageUrl: updatedUser.cleaningRequestImageUrl ?? updatedUser.profileImageUrl,
-              address: updatedUser.address,
-              // latitude: updatedUser.latitude, // Removed
-              // longitude: updatedUser.longitude, // Removed
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-              status: 'pending',
-              availableDays: availableDays.toList(),
-              isAutoRegistered: true,
-              cleaningType: selectedCleaningType.value,
-              cleaningToolLocation: cleaningToolLocationController.text,
-              precautions: cleaningPrecautionsController.text,
-            );
-            await _repository.createCleaningRequest(newRequest);
-          }
-        } else {
-          // 자동 등록 비활성화 상태
-          if (isEditable && existingRequest.isAutoRegistered) {
-            // 대기중인 자동 등록 의뢰라면 삭제
-            await _repository.deleteCleaningRequest(existingRequest.id);
-          } else if (isEditable && !existingRequest.isAutoRegistered) {
-            // 대기중인 수동 등록 의뢰라면 -> 프로필 정보(이름, 사진, 주소)만 동기화
-            final updatedRequest = existingRequest.copyWith(
-              authorName: updatedUser.userName ?? '',
-              imageUrl: updatedUser.profileImageUrl,
-              address: updatedUser.address,
-              // latitude: updatedUser.latitude, // Removed
-              // longitude: updatedUser.longitude, // Removed
-              updatedAt: DateTime.now(),
-            );
-            await _repository.updateCleaningRequest(updatedRequest);
-          }
+        final newRequest = CleaningRequest(
+          id: '',
+          authorId: user.id,
+          authorName: updatedUser.userName ?? '',
+          title: autoRegisterTitleController.text.isNotEmpty 
+              ? autoRegisterTitleController.text 
+              : '${updatedUser.userName}님의 청소 의뢰',
+          content: contentStr,
+          price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의',
+          imageUrl: updatedUser.cleaningRequestImageUrl ?? updatedUser.profileImageUrl,
+          address: addressToSave,
+          detailAddress: updatedUser.cleaningDetailAddress,
+          // latitude: updatedUser.latitude, // Removed
+          // longitude: updatedUser.longitude, // Removed
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          status: 'pending',
+          availableDays: availableDays.toList(),
+          isAutoRegistered: true,
+          cleaningType: selectedCleaningType.value,
+          cleaningToolLocation: cleaningToolLocationController.text,
+          precautions: cleaningPrecautionsController.text,
+        );
+        
+        debugPrint('Creating cleaning request...');
+        await _repository.createCleaningRequest(newRequest).timeout(Duration(seconds: 30));
+        debugPrint('새 자동 등록 의뢰 생성 완료 (강제)');
+
+        // Navigate to Home Page (Tab 0) to show the new request
+        if (Get.isRegistered<MainController>()) {
+          Get.find<MainController>().changeIndex(0);
         }
+        
+        // 플래그 리셋
+        isAutoRegisterEnabled.value = false;
+        
+        // 성공 메시지 - 간편 업로드 성공
+        isEditing.value = false;
+        selectedImage.value = null;
+        quickRegisterImage.value = null;
+        selectedRequestImage.value = null;
+        
+        Get.snackbar('성공', '청소 의뢰가 등록되었습니다!',
+          backgroundColor: Colors.green, colorText: Colors.white);
+        debugPrint('=== Owner 간편 업로드 완료 ===');
+        return; // 여기서 종료하여 아래 일반 저장 메시지가 안 뜨도록
       }
+
       
       isEditing.value = false;
+      // isEditingQuickSettings.value = false; // Removed
       selectedImage.value = null;
+      quickRegisterImage.value = null;
+      selectedRequestImage.value = null;
       
+      // 일반 프로필 저장 성공 메시지
       Get.snackbar('성공', '프로필이 업데이트되었습니다',
         backgroundColor: Colors.green, colorText: Colors.white);
+    } on TimeoutException catch (_) {
+      Get.snackbar('연결 시간 초과', '서버 응답이 늦어지고 있습니다. 네트워크 연결을 확인하고 다시 시도해주세요.',
+          backgroundColor: Colors.orange, colorText: Colors.white, duration: Duration(seconds: 3));
+    } on SocketException catch (_) {
+      Get.snackbar('연결 오류', '인터넷 연결이 불안정합니다. Wi-Fi 또는 데이터를 확인해주세요.',
+          backgroundColor: Colors.red, colorText: Colors.white, duration: Duration(seconds: 3));
     } catch (e) {
-      Get.snackbar('오류', '프로필 업데이트 실패: $e',
-        backgroundColor: Colors.red, colorText: Colors.white);
+      debugPrint('saveProfile 에러: $e');
+      
+      // 중요: 에러 발생 시 자동 등록 플래그를 초기화하여, 
+      // 다음 번 '저장' 버튼 클릭 시 의도치 않게 간편 업로드가 실행되는 것을 방지함.
+      if (isAutoRegisterEnabled.value) {
+         isAutoRegisterEnabled.value = false;
+      }
+
+      // "Failed to resolve name" is often wrapped in a generic exception or PlatformException,
+      // so we check the string message as a fallback.
+      if (e.toString().contains('Failed to resolve name') || e.toString().contains('host lookup')) {
+         Get.snackbar('네트워크 오류', '서버를 찾을 수 없습니다. 인터넷 연결을 확인해주세요.',
+          backgroundColor: Colors.red, colorText: Colors.white, duration: Duration(seconds: 3));
+      } else {
+        Get.snackbar('오류', '프로필 업데이트 실패: $e',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      }
     } finally {
       isLoading.value = false;
+
     }
   }
 
@@ -580,6 +617,16 @@ class ProfileController extends GetxController {
 
   void updateDistrict(String district) {
     selectedDistrict.value = district;
+  }
+  
+  void updateCleaningDistricts(String city) {
+    selectedCleaningCity.value = city;
+    cleaningDistricts.assignAll(Regions.data[city] ?? []);
+    selectedCleaningDistrict.value = '';
+  }
+
+  void updateCleaningDistrict(String district) {
+    selectedCleaningDistrict.value = district;
   }
 
   Future<void> logout() async {
@@ -640,110 +687,20 @@ class ProfileController extends GetxController {
   }
 
   Future<void> executeAutoRegister() async {
-    final user = userModel.value;
-    if (user == null) return;
-
-    // 자동 등록이 꺼져있다면 켜기
-    if (!isAutoRegisterEnabled.value) {
-      isAutoRegisterEnabled.value = true;
-      // 설정 값 저장을 위해 saveProfile 호출 (프로필 업데이트)
-      await saveProfile(); 
-      return; 
-    }
-
-    // 이미 켜져있는 상태에서 버튼 클릭 시 -> 무조건 새로 추가
-    if (user.userType == 'staff') {
-      await _createNewStaffPosting();
-    } else {
-      await _createNewRequestPosting();
-    }
+    // 간편 업로드 버튼 클릭 시 -> 저장 로직(saveProfile)과 동일하게 처리
+    // saveProfile 내부에 '무조건 게시글 생성' 로직이 포함되어 있음
+    debugPrint('간편 업로드 버튼 클릭 -> saveProfile 호출');
+    
+    // 자동 등록 활성화 플래그 설정
+    isAutoRegisterEnabled.value = true;
+    
+    await saveProfile();
+    
+    // saveProfile에서 성공 스낵바를 띄우므로 여기서는 추가 작업 불필요
   }
 
-  Future<void> _createNewStaffPosting() async {
-    final user = userModel.value;
-    if (user == null) return;
 
-    try {
-      isLoading.value = true;
-      
-      final availabilityStr = '근무가능일시: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}';
 
-      final newStaff = CleaningStaff(
-        id: '', // Repo will generate ID
-        authorId: user.id,
-        authorName: user.userName ?? '',
-        title: autoRegisterTitleController.text.isNotEmpty 
-            ? autoRegisterTitleController.text 
-            : '청소 가능합니다',
-        content: availabilityStr,
-        imageUrl: user.profileImageUrl,
-        address: user.address,
-        // latitude: user.latitude, // Removed
-        // longitude: user.longitude, // Removed
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        availableDays: availableDays.toList(),
-        isAutoRegistered: true,
-        cleaningType: selectedCleaningType.value,
-        cleaningPrice: cleaningPriceController.text,
-        additionalOptionCost: additionalOptionCostController.text,
-      );
-
-      await _repository.createCleaningStaff(newStaff);
-      
-      Get.snackbar('성공', '새로운 근무 프로필이 등록되었습니다!',
-        backgroundColor: Colors.green, colorText: Colors.white);
-    } catch (e) {
-      Get.snackbar('오류', '등록 실패: $e',
-        backgroundColor: Colors.red, colorText: Colors.white);
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> _createNewRequestPosting() async {
-    final user = userModel.value;
-    if (user == null) return;
-
-    try {
-      isLoading.value = true;
-      
-      final contentStr = '청소 필요 요일: ${availableDays.join(', ')}\n시간: ${startTime.value != null ? _formatTime(startTime.value!) : ''} ~ ${endTime.value != null ? _formatTime(endTime.value!) : ''}\n상세: ${cleaningDetailsController.text}${cleaningToolLocationController.text.isNotEmpty ? '\n청소도구위치: ${cleaningToolLocationController.text}' : ''}${cleaningPrecautionsController.text.isNotEmpty ? '\n주의사항: ${cleaningPrecautionsController.text}' : ''}';
-
-      final newRequest = CleaningRequest(
-        id: '', // Repo will generate ID
-        authorId: user.id,
-        authorName: user.userName ?? '',
-        title: autoRegisterTitleController.text.isNotEmpty 
-            ? autoRegisterTitleController.text 
-            : '${user.userName}님의 청소 의뢰',
-        content: contentStr,
-        price: cleaningPriceController.text.isNotEmpty ? cleaningPriceController.text : '협의',
-        imageUrl: user.cleaningRequestImageUrl ?? user.profileImageUrl,
-        address: user.address,
-        // latitude: user.latitude, // Removed
-        // longitude: user.longitude, // Removed
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        status: 'pending',
-        availableDays: availableDays.toList(),
-        isAutoRegistered: true,
-        cleaningType: selectedCleaningType.value,
-        cleaningToolLocation: cleaningToolLocationController.text,
-        precautions: cleaningPrecautionsController.text,
-      );
-
-      await _repository.createCleaningRequest(newRequest);
-      
-      Get.snackbar('성공', '새로운 청소 의뢰가 등록되었습니다!',
-        backgroundColor: Colors.green, colorText: Colors.white);
-    } catch (e) {
-      Get.snackbar('오류', '등록 실패: $e',
-        backgroundColor: Colors.red, colorText: Colors.white);
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
   /// 회원 탈퇴
   Future<void> deleteAccount() async {

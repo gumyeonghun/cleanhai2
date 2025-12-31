@@ -20,6 +20,8 @@ class CleaningStaff {
   final String? availableStartTime; // New field
   final String? availableEndTime; // New field
   final String? cleaningDuration;
+  final bool isDeleted; // Soft delete flag
+  final DateTime? deletedAt; // Soft delete timestamp
 
   CleaningStaff({
     required this.id,
@@ -41,6 +43,8 @@ class CleaningStaff {
     this.availableStartTime,
     this.availableEndTime,
     this.cleaningDuration,
+    this.isDeleted = false,
+    this.deletedAt,
   });
 
   // Firestore에서 데이터를 가져올 때 사용
@@ -58,7 +62,9 @@ class CleaningStaff {
       // latitude: data['latitude'], // Removed
       // longitude: data['longitude'], // Removed
       createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      updatedAt: data['updatedAt'] != null 
+          ? (data['updatedAt'] as Timestamp).toDate() 
+          : (data['createdAt'] as Timestamp).toDate(),
       availableDays: data['availableDays'] != null ? List<String>.from(data['availableDays']) : null,
       isAutoRegistered: data['isAutoRegistered'] ?? false,
       cleaningType: data['cleaningType'],
@@ -67,6 +73,8 @@ class CleaningStaff {
       availableStartTime: data['availableStartTime'],
       availableEndTime: data['availableEndTime'],
       cleaningDuration: data['cleaningDuration'],
+      isDeleted: data['isDeleted'] ?? false,
+      deletedAt: data['deletedAt'] != null ? (data['deletedAt'] as Timestamp).toDate() : null,
     );
   }
 
@@ -92,6 +100,8 @@ class CleaningStaff {
       'availableStartTime': availableStartTime,
       'availableEndTime': availableEndTime,
       'cleaningDuration': cleaningDuration,
+      'isDeleted': isDeleted,
+      'deletedAt': deletedAt != null ? Timestamp.fromDate(deletedAt!) : null,
     };
   }
 
@@ -116,6 +126,8 @@ class CleaningStaff {
     String? availableStartTime,
     String? availableEndTime,
     String? cleaningDuration,
+    bool? isDeleted,
+    DateTime? deletedAt,
   }) {
     return CleaningStaff(
       id: id ?? this.id,
@@ -138,6 +150,8 @@ class CleaningStaff {
       availableStartTime: availableStartTime ?? this.availableStartTime,
       availableEndTime: availableEndTime ?? this.availableEndTime,
       cleaningDuration: cleaningDuration ?? this.cleaningDuration,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 }

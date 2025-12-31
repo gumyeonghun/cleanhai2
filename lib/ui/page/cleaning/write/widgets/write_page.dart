@@ -63,7 +63,7 @@ class WritePage extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Obx(() => controller.isLoading.value
@@ -161,13 +161,9 @@ class WritePage extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      _buildLabel(
                         controller.selectedType.value == 'staff' ? '전문 분야' : '청소 종류',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
+                        true,
                       ),
                       SizedBox(height: 8),
                       Container(
@@ -209,14 +205,7 @@ class WritePage extends StatelessWidget {
               }),
               
               // 제목
-              Text(
-                '제목',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
+              _buildLabel('제목', true),
               SizedBox(height: 8),
               Obx(() => TextFormField(
                 controller: controller.titleController,
@@ -256,14 +245,7 @@ class WritePage extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '청소 의뢰인 이름',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
+                      _buildLabel('청소 의뢰인 이름', false),
                       SizedBox(height: 8),
                       TextFormField(
                         controller: controller.requesterNameController,
@@ -301,14 +283,7 @@ class WritePage extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '청소 금액',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
+                      _buildLabel('청소 금액', true),
                       SizedBox(height: 8),
                       TextFormField(
                         controller: controller.priceController,
@@ -354,14 +329,7 @@ class WritePage extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '청소 필요 날짜 및 시간',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
+                      _buildLabel('청소 필요 날짜 및 시간', true),
                       SizedBox(height: 8),
                       GestureDetector(
                         onTap: () => controller.pickCleaningDate(context),
@@ -388,7 +356,7 @@ class WritePage extends StatelessWidget {
                                   return Text(
                                     date != null
                                         ? '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}'
-                                        : '날짜 및 시간 선택 (선택사항)',
+                                        : '날짜 및 시간 선택',
                                     style: TextStyle(
                                       color: date != null ? Colors.black87 : Colors.grey[400],
                                       fontSize: 16,
@@ -414,14 +382,7 @@ class WritePage extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '청소 필요 기간',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
+                      _buildLabel('청소 필요 기간', true),
                       SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
@@ -430,7 +391,7 @@ class WritePage extends StatelessWidget {
                           border: Border.all(color: Colors.grey[200]!),
                         ),
                         child: DropdownButtonFormField<String>(
-                          value: controller.selectedCleaningDuration.value,
+                          initialValue: controller.selectedCleaningDuration.value,
                           decoration: InputDecoration(
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                             border: InputBorder.none,
@@ -456,14 +417,7 @@ class WritePage extends StatelessWidget {
               }),
               
               // 내용
-              Text(
-                '내용',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
+              _buildLabel('내용', true),
               SizedBox(height: 8),
               SizedBox(
                 height: 200,
@@ -511,14 +465,7 @@ class WritePage extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '청소 도구 위치',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
+                      _buildLabel('청소 도구 위치', false),
                       SizedBox(height: 8),
                       TextFormField(
                         controller: controller.cleaningToolLocationController,
@@ -545,14 +492,7 @@ class WritePage extends StatelessWidget {
                       ),
                       SizedBox(height: 24),
 
-                      Text(
-                        '청소시 주의사항',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
+                      _buildLabel('청소시 주의사항', false),
                       SizedBox(height: 8),
                       TextFormField(
                         controller: controller.precautionsController,
@@ -586,14 +526,7 @@ class WritePage extends StatelessWidget {
               }),
 
               // 주소 선택
-              Text(
-                '위치',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
+              _buildLabel('위치', true),
               SizedBox(height: 8),
               Row(
                 children: [
@@ -695,14 +628,7 @@ class WritePage extends StatelessWidget {
               SizedBox(height: 24),
 
               // 이미지 선택
-              Text(
-                '사진',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                ),
-              ),
+              _buildLabel('사진', false),
               SizedBox(height: 8),
               GestureDetector(
                 onTap: controller.pickImage,
@@ -759,6 +685,28 @@ class WritePage extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+  Widget _buildLabel(String text, bool isRequired) {
+    return Text.rich(
+      TextSpan(
+        text: text,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey[700],
+        ),
+        children: [
+          TextSpan(
+            text: isRequired ? ' (필수)' : ' (선택)',
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }

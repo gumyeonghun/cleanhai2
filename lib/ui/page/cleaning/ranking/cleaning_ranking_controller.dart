@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:cleanhai2/data/model/cleaning_staff.dart';
 import 'package:cleanhai2/data/repository/cleaning_repository.dart';
-
+import 'package:flutter/foundation.dart';
 class CleaningRankingController extends GetxController {
   final CleaningRepository _repository = CleaningRepository();
 
@@ -57,7 +57,7 @@ class CleaningRankingController extends GetxController {
       rankedStaffList.assignAll(staffWithRatings);
 
     } catch (e) {
-      print('Error fetching ranking: $e');
+      debugPrint('Error fetching ranking: $e');
     } finally {
       isLoading.value = false;
     }

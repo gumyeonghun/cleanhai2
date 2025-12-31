@@ -101,7 +101,7 @@ class HomePage extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Color(0xFF1E88E5).withOpacity(0.3),
+                color: Color(0xFF1E88E5).withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: Offset(0, 4),
               ),
@@ -297,7 +297,7 @@ class HomePage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: Offset(0, 4),
             ),
@@ -319,18 +319,18 @@ class HomePage extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: () {
                             switch (request.status) {
-                              case 'accepted': return Colors.green.withOpacity(0.1);
-                              case 'in_progress': return Colors.blue.withOpacity(0.1);
-                              default: return Colors.orange.withOpacity(0.1);
+                              case 'accepted': return Colors.green.withValues(alpha: 0.1);
+                              case 'in_progress': return Colors.blue.withValues(alpha: 0.1);
+                              default: return Colors.orange.withValues(alpha: 0.1);
                             }
                           }(),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
                             color: () {
                               switch (request.status) {
-                                case 'accepted': return Colors.green.withOpacity(0.5);
-                                case 'in_progress': return Colors.blue.withOpacity(0.5);
-                                default: return Colors.orange.withOpacity(0.5);
+                                case 'accepted': return Colors.green.withValues(alpha: 0.5);
+                                case 'in_progress': return Colors.blue.withValues(alpha: 0.5);
+                                default: return Colors.orange.withValues(alpha: 0.5);
                               }
                             }(),
                           ),

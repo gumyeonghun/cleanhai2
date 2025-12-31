@@ -1,0 +1,146 @@
+Analyzing cleanhai2...                                          
+
+warning • Unused import: 'package:cleanhai2/ui2/global_controller/interstitial_ad_controller.dart' • lib/main.dart:4:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/login_signup_page.dart:58:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/login_signup_page.dart:91:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/login_signup_page.dart:529:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/login_signup_page.dart:532:63 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/login_signup_page.dart:538:66 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/login_signup_page.dart:545:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/login_signup_page.dart:548:63 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/login_signup_page.dart:564:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/login_signup_page.dart:676:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/auth/social_login_setup_page.dart:277:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/chat/chat_room_list_controller.dart:52:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/chat/chat_room_page.dart:130:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/chat/chat_room_page.dart:201:53 • deprecated_member_use
+warning • Unused import: 'package:intl/intl.dart' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:6:8 • unused_import
+warning • Unused import: '../../write/widgets/write_page.dart' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:11:8 • unused_import
+warning • Unused import: '../../report/widgets/completion_report_view_page.dart' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:12:8 • unused_import
+warning • Unused import: '../../profile/widgets/profile_page.dart' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:15:8 • unused_import
+warning • This class (or a class that this class inherits from) is marked as '@immutable', but one or more of its instance fields aren't final: DetailPage.body • lib/ui/page/cleaning/detail/widgets/detail_page.dart:17:7 • must_be_immutable
+  error • Can't define a const constructor for a class with non-final fields • lib/ui/page/cleaning/detail/widgets/detail_page.dart:21:9 • const_constructor_with_non_final_field
+  error • The element type 'Set<Row>' can't be assigned to the list type 'Widget' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:38:45 • list_element_type_not_assignable
+  error • Unexpected text 'return' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:39:15 • unexpected_token
+  error • Expected to find '}' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:110:16 • expected_token
+  error • Expected to find ';' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:111:13 • expected_token
+warning • Dead code • lib/ui/page/cleaning/detail/widgets/detail_page.dart:112:13 • dead_code
+  error • Expected to find ')' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:112:13 • expected_token
+  error • Expected to find ']' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:112:13 • expected_token
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:113:12 • expected_class_member
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:113:13 • expected_class_member
+   info • The variable name 'Obx' isn't a lowerCamelCase identifier • lib/ui/page/cleaning/detail/widgets/detail_page.dart:114:11 • non_constant_identifier_names
+   info • Use the generic function type syntax to declare the parameter '' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:114:15 • use_function_type_syntax_for_parameters
+  error • Expected an identifier • lib/ui/page/cleaning/detail/widgets/detail_page.dart:114:15 • missing_identifier
+  error • Expected to find ')' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:114:18 • expected_token
+  error • A function body must be provided • lib/ui/page/cleaning/detail/widgets/detail_page.dart:131:13 • missing_function_body
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:131:13 • expected_class_member
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:132:9 • expected_class_member
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:132:10 • expected_class_member
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:133:7 • expected_class_member
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:133:8 • expected_class_member
+   info • An uninitialized field should have an explicit type annotation • lib/ui/page/cleaning/detail/widgets/detail_page.dart:134:7 • prefer_typing_uninitialized_variables
+  error • Expected to find ';' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:134:7 • expected_token
+  error • Variables must be declared using the keywords 'const', 'final', 'var' or a type name • lib/ui/page/cleaning/detail/widgets/detail_page.dart:134:7 • missing_const_final_var_or_type
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:134:11 • expected_class_member
+   info • The variable name 'Obx' isn't a lowerCamelCase identifier • lib/ui/page/cleaning/detail/widgets/detail_page.dart:134:13 • non_constant_identifier_names
+  error • The name 'Obx' is already defined • lib/ui/page/cleaning/detail/widgets/detail_page.dart:134:13 • duplicate_definition
+   info • Use the generic function type syntax to declare the parameter '' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:134:17 • use_function_type_syntax_for_parameters
+  error • Expected an identifier • lib/ui/page/cleaning/detail/widgets/detail_page.dart:134:17 • missing_identifier
+  error • Expected to find ')' • lib/ui/page/cleaning/detail/widgets/detail_page.dart:134:20 • expected_token
+  error • A function body must be provided • lib/ui/page/cleaning/detail/widgets/detail_page.dart:1184:9 • missing_function_body
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:1184:9 • expected_class_member
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:1185:5 • expected_class_member
+  error • Expected a class member • lib/ui/page/cleaning/detail/widgets/detail_page.dart:1185:6 • expected_class_member
+warning • The declaration '_showApplicantProfile' isn't referenced • lib/ui/page/cleaning/detail/widgets/detail_page.dart:1200:8 • unused_element
+  error • Expected a method, getter, setter or operator declaration • lib/ui/page/cleaning/detail/widgets/detail_page.dart:1495:1 • expected_executable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/detail/widgets/staff_review_list_page.dart:95:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/detail/widgets/staff_review_list_page.dart:270:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/detail/widgets/staff_review_list_page.dart:325:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/detail/widgets/staff_review_list_page.dart:327:80 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart:83:36 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart:87:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart:94:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart:98:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart:103:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart:110:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart:114:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart:133:35 • deprecated_member_use
+   info • Use a 'SizedBox' to add whitespace to a layout • lib/ui/page/cleaning/history/widgets/my_cleaning_history_page.dart:242:15 • sized_box_for_whitespace
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/home/widgets/home_page.dart:104:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/home/widgets/home_page.dart:300:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/home/widgets/home_page.dart:322:68 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/home/widgets/home_page.dart:323:70 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/home/widgets/home_page.dart:324:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/home/widgets/home_page.dart:331:70 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/home/widgets/home_page.dart:332:72 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/home/widgets/home_page.dart:333:63 • deprecated_member_use
+   info • Use a 'SizedBox' to add whitespace to a layout • lib/ui/page/cleaning/home/widgets/home_page.dart:437:15 • sized_box_for_whitespace
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/knowhow/widgets/cleaning_knowhow_page.dart:95:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/knowhow/widgets/cleaning_knowhow_write_page.dart:100:57 • deprecated_member_use
+warning • Unused import: 'package:cleanhai2/data/model/review.dart' • lib/ui/page/cleaning/profile/profile_controller.dart:13:8 • unused_import
+warning • The declaration '_createNewStaffPosting' isn't referenced • lib/ui/page/cleaning/profile/profile_controller.dart:703:16 • unused_element
+warning • The declaration '_createNewRequestPosting' isn't referenced • lib/ui/page/cleaning/profile/profile_controller.dart:745:16 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/owner_payment_history_page.dart:117:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/owner_payment_history_page.dart:128:74 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/owner_payment_history_page.dart:133:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/owner_payment_history_page.dart:153:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/owner_payment_history_page.dart:211:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/owner_payment_history_page.dart:222:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/owner_payment_history_page.dart:280:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:85:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:143:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:144:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:174:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:227:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:382:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:402:64 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:451:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:471:64 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:520:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:607:70 • deprecated_member_use
+   info • Use interpolation to compose strings and values • lib/ui/page/cleaning/profile/widgets/profile_page.dart:805:69 • prefer_interpolation_to_compose_strings
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/profile_page.dart:1125:55 • deprecated_member_use
+   info • Unnecessary use of 'toList' in a spread • lib/ui/page/cleaning/profile/widgets/profile_page.dart:1262:36 • unnecessary_to_list_in_spreads
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/staff_settlement_page.dart:117:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/staff_settlement_page.dart:128:89 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/staff_settlement_page.dart:133:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/staff_settlement_page.dart:153:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/staff_settlement_page.dart:211:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/profile/widgets/staff_settlement_page.dart:222:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/progress/widgets/cleaning_progress_page.dart:151:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/progress/widgets/cleaning_progress_page.dart:265:33 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/ui/page/cleaning/ranking/cleaning_ranking_controller.dart:60:7 • avoid_print
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/ranking/widgets/cleaning_ranking_page.dart:122:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/ranking/widgets/cleaning_ranking_page.dart:136:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/ranking/widgets/cleaning_ranking_page.dart:176:56 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/recommendation/widgets/cleaning_recommendation_page.dart:95:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/recommendation/widgets/cleaning_recommendation_write_page.dart:100:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/report/widgets/completion_report_view_page.dart:195:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/report/widgets/completion_report_view_page.dart:197:60 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:215:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:260:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:379:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:427:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:490:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:492:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:1027:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:1031:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:1038:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:1042:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/schedule/widgets/my_schedule_page.dart:1046:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/staff_waiting/widgets/staff_profile_write_page.dart:47:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/staff_waiting/widgets/staff_profile_write_page.dart:49:65 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/ui/page/cleaning/staff_waiting/widgets/staff_profile_write_page.dart:190:21 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/ui/page/cleaning/staff_waiting/widgets/staff_profile_write_page.dart:348:21 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/staff_waiting/widgets/staff_waiting_page.dart:307:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/staff_waiting/widgets/staff_waiting_page.dart:362:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/staff_waiting/widgets/staff_waiting_page.dart:364:65 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/staff_waiting/widgets/staff_waiting_page.dart:522:58 • deprecated_member_use
+   info • Use a 'SizedBox' to add whitespace to a layout • lib/ui/page/cleaning/staff_waiting/widgets/staff_waiting_page.dart:581:15 • sized_box_for_whitespace
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/cleaning/write/widgets/write_page.dart:66:39 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/ui/page/cleaning/write/widgets/write_page.dart:394:27 • deprecated_member_use
+warning • The declaration '_encodeQueryParameters' isn't referenced • lib/ui/page/inquiry/customer_inquiry_controller.dart:108:11 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/inquiry/customer_inquiry_page.dart:103:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/page/main/widgets/main_page.dart:41:35 • deprecated_member_use
+

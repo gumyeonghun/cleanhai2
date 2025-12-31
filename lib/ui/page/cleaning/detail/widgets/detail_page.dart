@@ -13,6 +13,7 @@ import '../../report/widgets/completion_report_view_page.dart';
 import '../detail_controller.dart';
 import 'staff_review_list_page.dart';
 
+
 class DetailPage extends StatelessWidget {
   final CleaningRequest? cleaningRequest;
   final CleaningStaff? cleaningStaff;
@@ -36,52 +37,85 @@ class DetailPage extends StatelessWidget {
         actions: [
           Obx(() {
             if (!controller.isAuthor.value) {
-              return _iconButton(Icons.message, () async {
-                final myUser = FirebaseAuth.instance.currentUser;
-                if (myUser == null) return;
+              return Row(
+                children: [
+                  _iconButton(Icons.message, () async {
+                    final myUser = FirebaseAuth.instance.currentUser;
+                    if (myUser == null) return;
 
-                // 작성자 정보 가져오기
-                final authorId = cleaningRequest?.authorId ?? cleaningStaff?.authorId ?? '';
-                final authorName = cleaningRequest?.authorName ?? cleaningStaff?.authorName ?? '알 수 없음';
-                
-                if (authorId.isEmpty) {
-                  Get.snackbar('조회 실패', '상대방의 정보를 불러올 수 없습니다.');
-                  return;
-                }
+                    // 작성자 정보 가져오기
+                    final authorId = cleaningRequest?.authorId ?? cleaningStaff?.authorId ?? '';
+                    final authorName = cleaningRequest?.authorName ?? cleaningStaff?.authorName ?? '알 수 없음';
+                    
+                    if (authorId.isEmpty) {
+                      Get.snackbar('조회 실패', '상대방의 정보를 불러올 수 없습니다.');
+                      return;
+                    }
 
-                try {
-                  // 내 이름 가져오기
-                  final myUserData = await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(myUser.uid)
-                      .get();
-                  final myName = myUserData.data()?['userName'] ?? '사용자';
+                    try {
+                      // 내 이름 가져오기
+                      final myUserData = await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(myUser.uid)
+                          .get();
+                      final myName = myUserData.data()?['userName'] ?? '사용자';
 
-                  // 채팅방 생성 또는 가져오기
-                  final chatRoom = await ChatRepository().getOrCreateChatRoom(
-                    myUser.uid,
-                    authorId,
-                    myName,
-                    authorName,
-                  );
+                      // 채팅방 생성 또는 가져오기
+                      final chatRoom = await ChatRepository().getOrCreateChatRoom(
+                        myUser.uid,
+                        authorId,
+                        myName,
+                        authorName,
+                      );
 
-                  // 채팅방으로 이동
-                  Get.to(() => ChatRoomPage(chatRoom: chatRoom));
-                } catch (e) {
-                  Get.snackbar('오류', '채팅방을 생성할 수 없습니다: $e');
-                }
-              });
+                      // 채팅방으로 이동
+                      Get.to(() => ChatRoomPage(chatRoom: chatRoom));
+                    } catch (e) {
+                      Get.snackbar('오류', '채팅방을 생성할 수 없습니다: $e');
+                    }
+                  }),
+                  // Report / Block Menu
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+                    onSelected: (value) {
+                      if (value == 'report') {
+                        controller.reportItem(); // Call controller method
+                      } else if (value == 'block') {
+                        controller.blockUser(); // Call controller method
+                      }
+                    },
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'report',
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag_outlined, color: Colors.red, size: 20),
+                            SizedBox(width: 8),
+                            Text('신고하기', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'block',
+                        child: Row(
+                          children: [
+                            Icon(Icons.block_outlined, color: Colors.grey, size: 20),
+                            SizedBox(width: 8),
+                            Text('차단하기'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
             }
             return SizedBox.shrink();
           }),
           Obx(() {
             if (controller.isAuthor.value) {
-              // 자동 등록된 스태프는 삭제/편집 버튼 숨김
-              final isAutoRegistered = cleaningStaff?.isAutoRegistered ?? false;
-              
               return Row(
                 children: [
-                  if (!isAutoRegistered) ...[
                     _iconButton(Icons.delete, () {
                       controller.deleteItem();
                     }),
@@ -91,7 +125,6 @@ class DetailPage extends StatelessWidget {
                         existingStaff: cleaningStaff,
                       ));
                     }),
-                  ],
                 ],
               );
             }
@@ -193,9 +226,9 @@ class DetailPage extends StatelessWidget {
                             margin: EdgeInsets.only(top: 8, bottom: 8),
                             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
+                              color: Colors.amber.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -229,9 +262,9 @@ class DetailPage extends StatelessWidget {
                           margin: EdgeInsets.only(top: 8, bottom: 8),
                           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.1),
+                            color: Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -262,9 +295,9 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color(0xFF1E88E5).withOpacity(0.1),
+                        color: Color(0xFF1E88E5).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Color(0xFF1E88E5).withOpacity(0.3)),
+                        border: Border.all(color: Color(0xFF1E88E5).withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -305,9 +338,9 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -342,9 +375,9 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.purple.withOpacity(0.1),
+                        color: Colors.purple.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                        border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -360,12 +393,55 @@ class DetailPage extends StatelessWidget {
                           ),
                           Expanded(
                             child: Text(
-                              currentRequest!.cleaningDuration!,
+                              currentRequest.cleaningDuration ?? '',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.purple[700],
                               ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // 청소 장소 (청소 의뢰일 때만)
+                  if (currentRequest != null && currentRequest.address != null && currentRequest.address!.isNotEmpty) ...[
+                    SizedBox(height: 15),
+                    Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.location_on, color: Colors.blueGrey),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '청소 장소',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '${currentRequest.address!} ${currentRequest.detailAddress ?? ''}'.trim(),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -379,9 +455,9 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.withOpacity(0.3)),
+                        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,9 +495,9 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.blueGrey.withOpacity(0.1),
+                        color: Colors.blueGrey.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blueGrey.withOpacity(0.3)),
+                        border: Border.all(color: Colors.blueGrey.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -463,9 +539,9 @@ class DetailPage extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.1),
+                          color: Colors.purple.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                          border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -499,9 +575,9 @@ class DetailPage extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.1),
+                          color: Colors.purple.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.purple.withOpacity(0.3)),
+                          border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,9 +613,9 @@ class DetailPage extends StatelessWidget {
                       Container(
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.1),
+                          color: Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -578,9 +654,9 @@ class DetailPage extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Color(0xFF1E88E5).withOpacity(0.1),
+                        color: Color(0xFF1E88E5).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Color(0xFF1E88E5).withOpacity(0.3)),
+                        border: Border.all(color: Color(0xFF1E88E5).withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -650,7 +726,82 @@ class DetailPage extends StatelessWidget {
 
                   ],
                   
+                  
+
+                  
                   // 청소 신청 버튼 (청소 의뢰이고, 작성자가 아닐 때)
+                  // 청소 전문가 대기글인 경우 (의뢰하기 기능)
+                  if (cleaningStaff != null && currentRequest == null && !isAuthor && currentUser != null) ...[
+                     // 청소 전문가 대기글인 경우 (의뢰하기 기능)
+                     SizedBox(height: 24),
+                     Obx(() {
+                        final status = controller.existingRequestStatus.value;
+                        if (status == 'pending') {
+                           return Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.orange),
+                            ),
+                            child: Text(
+                              '청소의뢰대기중',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange,
+                              ),
+                            ),
+                          );
+                        } else if (status == 'accepted') {
+                           return Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.green),
+                            ),
+                            child: Text(
+                              '청소 결제대기중', // Or matched
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          );
+                        } else {
+                          // 신청 가능
+                           return SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: controller.requestCleaningFromStaff,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF1E88E5),
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                '청소 의뢰하기',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                     }),
+                  ],
+                  
+                  // 청소 신청 아이템 로직 (청소 전문가, 혹은 청소 의뢰)
                   if (currentRequest != null && !isAuthor && currentUser != null) ...[
                     SizedBox(height: 24),
                     // Direct Request Acceptance (Staff)
@@ -724,7 +875,7 @@ class DetailPage extends StatelessWidget {
                         padding: EdgeInsets.symmetric(vertical: 16),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
+                          color: Colors.green.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.green),
                         ),
@@ -764,9 +915,29 @@ class DetailPage extends StatelessWidget {
                     ],
                   ],
 
-                  // Owner Actions for Direct Request
+                  // Owner sees status banner for Pending/Accepted/InProgress requests to Staff
                   if (currentRequest != null && isAuthor && currentUser != null) ...[
-                     if (currentRequest.targetStaffId != null && 
+                     if (currentRequest.status == 'pending') ...[
+                        SizedBox(height: 24),
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.orange),
+                          ),
+                          child: Text(
+                            '청소의뢰대기중',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ),
+                     ] else if (currentRequest.targetStaffId != null && 
                          currentRequest.acceptedApplicantId != null && 
                          currentRequest.paymentStatus != 'completed') ...[
                         SizedBox(height: 24),
@@ -798,7 +969,7 @@ class DetailPage extends StatelessWidget {
                           padding: EdgeInsets.symmetric(vertical: 16),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: Color(0xFF1E88E5).withOpacity(0.1),
+                            color: Color(0xFF1E88E5).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Color(0xFF1E88E5)),
                           ),
@@ -818,7 +989,7 @@ class DetailPage extends StatelessWidget {
                           padding: EdgeInsets.symmetric(vertical: 16),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.1),
+                            color: Colors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.green),
                           ),
@@ -864,82 +1035,8 @@ class DetailPage extends StatelessWidget {
                       ),
                    ],
                                     // 청소 전문가 프로필 보기일 때 의뢰하기 버튼 (의뢰인만 가능)
-                   if (controller.currentStaff.value != null && 
-                       currentUser != null && 
-                       controller.currentUserType.value == 'owner') ...[
-                      SizedBox(height: 24),
-                      Obx(() {
-                        final existingStatus = controller.existingRequestStatus.value;
-                        if (existingStatus.isNotEmpty) {
-                          String statusText = '';
-                          Color statusColor = Colors.grey;
-                          
-                          switch (existingStatus) {
-                            case 'pending':
-                              statusText = '의뢰 대기중 (결제 전)';
-                              statusColor = Colors.orange;
-                              break;
-                            case 'accepted':
-                              statusText = '매칭 완료 - 결제 대기중';
-                              statusColor = Colors.green;
-                              break;
-                            case 'in_progress':
-                              statusText = '청소 진행중';
-                              statusColor = Colors.blue;
-                              break;
-                            default:
-                              statusText = '의뢰 진행중';
-                              statusColor = Colors.grey;
-                          }
-                          
-                          return Container(
-                             width: double.infinity,
-                             padding: EdgeInsets.symmetric(vertical: 16),
-                             alignment: Alignment.center,
-                             decoration: BoxDecoration(
-                               color: statusColor.withOpacity(0.1),
-                               borderRadius: BorderRadius.circular(12),
-                               border: Border.all(color: statusColor),
-                             ),
-                             child: Text(
-                               statusText,
-                               style: TextStyle(
-                                 fontSize: 16,
-                                 fontWeight: FontWeight.bold,
-                                 color: statusColor,
-                               ),
-                             ),
-                           );
-                        } else {
-                          return SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                Get.to(() => WritePage(
-                                  type: 'request',
-                                  targetStaffId: controller.currentStaff.value!.authorId,
-                                ));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFF1E88E5),
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                '청소 의뢰하기',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          );
-                        }
-                      }),
-                   ],
+                   // 신청자 목록 (작성자일 때만)
+
                   
                    // 신청자 목록 (작성자일 때만)
                   if (currentRequest != null && isAuthor && currentRequest.applicants.isNotEmpty) ...[
@@ -967,7 +1064,7 @@ class DetailPage extends StatelessWidget {
                             margin: EdgeInsets.only(bottom: 8),
                             padding: EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isAccepted ? Color(0xFF1E88E5).withOpacity(0.1) : Colors.grey[100],
+                              color: isAccepted ? Color(0xFF1E88E5).withValues(alpha: 0.1) : Colors.grey[100],
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isAccepted ? Color(0xFF1E88E5) : Colors.grey[300]!,
